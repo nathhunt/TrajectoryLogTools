@@ -26,8 +26,11 @@ different folders or drives sit side by side. No folder is remembered as a defau
     range) and **Recent logs**;
   * you can drag files or folders anywhere onto the window;
   * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
-* **Each entry** shows the plan name (from the log's metadata), fields, treatment date,
-  version and folder. Badges mark **Interrupted** deliveries and logs whose **CRC failed** (still
+* **Each entry** shows the plan name and **patient ID** (from the log's metadata), fields,
+  treatment date, version and folder. The filter matches the patient ID too.
+  The patient ID is also shown on the log page, on both sides of Compare (with a warning when
+  A and B are different patients), on the Rebuild page and its deliveries, in Export and in the
+  details windows. Badges mark **Interrupted** deliveries and logs whose **CRC failed** (still
   opened, with a warning).
 * **Ticking** logs selects them for **Compare** (two) or **Export…** (any number). **✕** closes
   them; nothing is deleted.
@@ -53,10 +56,16 @@ From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
   them in Settings;
 * below are the leaf-difference map and the gantry and MU charts, then folded details: planned
   differences, per field, beam holds, all statistics, the full report;
-* **File differences (validation)** compares every stored value, for example to check a v4.0
-  conversion against its original.
+* the gantry and MU charts share one legend, above them, and zoom and pan separately;
+* **File differences (validation) → Compare the files…** opens the **File comparison** window,
+  which compares every stored value, for example to check a v4.0 conversion against its original.
+  It gives the verdict and cards (header, subbeams, axes, stored values), then a table of the
+  header and subbeam fields that differ (A and B side by side), a table of the axes (how many
+  values differ, expected or actual, in how many snapshots, the largest difference and where it
+  starts) and, for the axis picked, the values that differ. What was ignored is listed. The text
+  the command line prints is on the **As text** tab.
 
-You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
+The **←** button goes back to the log. You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
 
 **Rebuild Eclipse MLC** writes, for each field, the Eclipse MLC file of the leaf positions as
 delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or on the shown log
@@ -80,13 +89,29 @@ Each field gets a status:
 * **Check first:** written, with the reasons listed;
 * **Failed:** nothing written, with the reason.
 
-Each result shows delivered vs planned (for information), the leaf-gap rules and the gantry, with
-the difference map, a leaf-by-leaf view and the QA report.
+Each result shows delivered vs planned (for information), the leaf-gap rules and the gantry.
+**Details…** opens the field in a window of its own: status and what to check, the QA report's
+numbers as cards (delivered vs planned, leaf-gap rules, gantry, control points, MU, snapshots
+used, how it was built, and the Eclipse export check when one was used), then the difference map,
+a leaf-by-leaf view and the full report. **‹ ›** step through the fields of the rebuild.
 
 **Export** works on the ticked logs (or the shown one), wherever they are:
 * **What to write:** v4.0 `.bin`, CSV, full dump CSV and/or raw dump text, each with its own options.
+* **v4.0 header** (every log): machine **TrueBeam (0)** (default) or **Halcyon (1)**; serial
+  number **removed** (default), kept or changed; couch rotation, pitch and roll **removed**
+  (default) or kept.
+* **Header details…** (one v5.1 log only) changes the patient ID, plan name, plan UID and field
+  (beam / subbeam) names written to the v4.0 file. Each shows the value in the log beside the one
+  to write; anything not changed is copied exactly. The original log is never changed, and the
+  CSV and dump exports are written from it.
 * **Where:** one folder for all, or next to each log in a `converted` subfolder.
 * Progress is shown per log. A run log is saved in the export folder.
+
+**Charts:** on a page, the scroll wheel scrolls the page and **Ctrl + scroll** zooms the chart
+(without moving the page); drag pans, double-click goes back to the full view. Right-click →
+*Open in New Window* shows a chart in a window of its own, where the wheel alone zooms (as in the
+Rebuild details window). Over a table, the wheel scrolls the table if it has more rows to show,
+otherwise the page.
 
 **Settings** (gear icon): theme (follow Windows, light or dark; ◐ toggles), optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in
@@ -162,6 +187,7 @@ to add from, and `--start-folder <folder>` for the Open dialogs. Arguments of ea
 
 ```
 TrajectoryLogCli to-v4   <input.bin | folder> [-o <file|folder>] [--keep-machine-info] [--time-csv] [--drop-couch-rotations] [--axis-scale 1|2|3]
+                         [--machine truebeam|halcyon] [--keep-serial | --serial <text>] [--set-meta "KEY=VALUE" ...] [--subbeam-name N=NAME ...]
 TrajectoryLogCli to-csv  <input.bin | folder> [-o <folder>] [--no-mlc] [--actual-only] [--full]
 TrajectoryLogCli dump    <input.bin | folder> [-o <folder>]
 TrajectoryLogCli compare-delivery <logA> <logB> [-o <folder>] [--no-plot] [--keep-first-snapshot]

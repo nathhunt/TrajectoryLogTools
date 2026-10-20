@@ -15,9 +15,16 @@ What to-v4 changes (per P1069495-002-B, "Introduction"):
      MU, BeamHold, ControlPoint, MLC. HAL 5.0 writes Time, ControlPoint, MU, BeamHold, Gantry,
      Coll, ... instead; the spec does not give either order, so readers that assume the v4.0
      order would otherwise mislabel the axes.
-  4. Machine specifier (1 byte) + serial number (6 bytes) are zeroed unless
-     --keep-machine-info. The 5.1 spec lists them as new in 5.1, although the header table
-     of the 4.0 spec (P1069495-001-A) also has them.
+  4. Machine specifier (1 byte) + serial number (6 bytes): by default the specifier is written
+     as 0 (TrueBeam) and the serial number zeroed. --machine truebeam|halcyon sets the
+     specifier (0 / 1), --keep-serial keeps the serial, --serial sets it; --keep-machine-info
+     keeps both exactly as stored (unless --machine / --serial is also given). The 5.1 spec
+     lists them as new in 5.1, although the header table of the 4.0 spec (P1069495-001-A)
+     also has them.
+     Optional header edits: --set-meta "KEY=VALUE" changes (or adds; empty VALUE removes) a
+     "Key:<tab>value" line of the metadata, keeping the other lines byte for byte (the text
+     must still fit the 745-byte field); --subbeam-name N=NAME renames subbeam N. The app's
+     Header details window uses these for the patient ID, plan name, plan UID and field names.
   5. Axis scale copied unchanged (5.1 writes 3, which is also a legal 4.0 value).
   Header rebuilt, subbeams copied verbatim, CRC recomputed.
 

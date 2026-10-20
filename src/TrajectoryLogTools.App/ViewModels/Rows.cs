@@ -134,6 +134,7 @@ namespace TrajectoryLogTools.App.ViewModels
     /// </summary>
     public sealed class MlcFieldGroup : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
+        public string PatientId { get; set; }
         public string Title { get; set; }
         public string Detail { get; set; }
         public System.Collections.Generic.List<MlcSubbeamRow> Fields { get; } = new System.Collections.Generic.List<MlcSubbeamRow>();

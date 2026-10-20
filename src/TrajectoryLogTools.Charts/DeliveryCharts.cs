@@ -10,8 +10,11 @@ namespace TrajectoryLogTools.Charts
 {
     public static class DeliveryCharts
     {
-        /// <summary>A - B of the gantry ("Gantry") or MU ("MU") along the control points.</summary>
-        public static void AxisDifference(Plot plt, DeliveryComparisonResult r, string axis)
+        /// <summary>
+        /// A - B of the gantry ("Gantry") or MU ("MU") along the control points. Without
+        /// <paramref name="legend"/> the caller shows one legend for both charts (the app does).
+        /// </summary>
+        public static void AxisDifference(Plot plt, DeliveryComparisonResult r, string axis, bool legend = true)
         {
             ChartStyle.ClearAll(plt);
             bool gantry = axis == "Gantry";
@@ -21,7 +24,8 @@ namespace TrajectoryLogTools.Charts
             ChartStyle.Title(plt, gantry ? "Gantry angle difference" : "MU difference");
             plt.XLabel("Control point");
             plt.YLabel(gantry ? "deg" : "MU");
-            plt.ShowLegend(Alignment.UpperRight);
+            if (legend) plt.ShowLegend(Alignment.UpperRight);
+            else plt.HideLegend();
             ChartStyle.Finish(plt);
         }
 

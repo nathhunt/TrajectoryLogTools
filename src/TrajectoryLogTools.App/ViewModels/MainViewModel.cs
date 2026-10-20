@@ -90,7 +90,7 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             string f = (Filter ?? "").Trim();
             if (f.Length == 0) return true;
-            return new[] { l.DisplayName, l.FieldsText, l.DateText, l.Version, l.Path }
+            return new[] { l.PatientId, l.DisplayName, l.FieldsText, l.DateText, l.Version, l.Path }
                 .Any(s => s != null && s.IndexOf(f, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 

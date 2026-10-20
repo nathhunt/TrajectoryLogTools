@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using Xunit;
@@ -182,7 +183,7 @@ namespace TrajectoryLogTools.Tests
         [InlineData("to-csv", "--axis-scale", "3", "to-v4 / to-v5")]
         [InlineData("to-v4", "--time-from", "t.csv", "to-v5")]
         [InlineData("to-v4", "--start-time", "10:00:00", "to-v5")]
-        [InlineData("to-v4", "--serial", "X", "to-v5")]
+        [InlineData("to-csv", "--serial", "X", "to-v4 / to-v5")]
         [InlineData("to-v4", "--expect", "4.0", "version")]
         [InlineData("to-v4", "--tolerance", "1", "compare")]
         [InlineData("to-v4", "--max-diffs", "1", "compare")]
@@ -288,6 +289,23 @@ namespace TrajectoryLogTools.Tests
                 foreach (string cmd in Options.CommandNames.Concat(new[] { "compare-delivery", "reconstruct-mlc" }))
                     Assert.Contains("TrajectoryLogCli " + cmd, c.Out);
             }
+        }
+
+        [Fact]
+        public void ToV4_HeaderOptions()
+        {
+            Options o = Parse("to-v4", "in.bin", "--machine", "halcyon", "--serial", "QA1", "--keep-serial",
+                              "--set-meta", "Patient ID=QA001", "--set-meta", "Plan UID=", "--subbeam-name", "2=Arc B");
+            Assert.Equal(1, o.MachineSpecifier);
+            Assert.Equal("QA1", o.Serial);
+            Assert.True(o.KeepSerial);
+            Assert.Equal(new KeyValuePair<string, string>("Patient ID", "QA001"), o.MetaEdits[0]);
+            Assert.Null(o.MetaEdits[1].Value);
+            Assert.Equal("Arc B", o.SubbeamNames[2]);
+            Assert.Throws<ArgumentException>(() => Parse("to-v4", "in.bin", "--machine", "elekta"));
+            Assert.Throws<ArgumentException>(() => Parse("to-v4", "in.bin", "--set-meta", "novalue"));
+            Assert.Throws<ArgumentException>(() => Parse("to-v4", "in.bin", "--subbeam-name", "0=x"));
+            Assert.Throws<ArgumentException>(() => Parse("to-csv", "in.bin", "--machine", "halcyon"));
         }
     }
 }

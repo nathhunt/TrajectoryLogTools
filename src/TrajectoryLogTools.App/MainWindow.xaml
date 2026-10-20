@@ -149,6 +149,7 @@
                                                                   Visibility="{Binding Badge, Converter={StaticResource NotEmptyToVisibility}}" />
                                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                             </DockPanel>
+                                            <views:PatientTag Id="{Binding PatientId}" Margin="0,1,0,1" />
                                             <TextBlock Text="{Binding SubtitleText}" Style="{StaticResource Secondary}" />
                                             <TextBlock Text="{Binding FolderShort}" Style="{StaticResource Secondary}" />
                                         </StackPanel>

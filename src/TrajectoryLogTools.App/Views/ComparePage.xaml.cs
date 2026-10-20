@@ -15,8 +15,6 @@ namespace TrajectoryLogTools.App.Views
         {
             InitializeComponent();
             PlotSetup.Configure(ActualPlot, GantryPlot, MuPlot, ExpectedPlot);
-            GantryPlot.Plot.Axes.Link(MuPlot, true, false);
-            MuPlot.Plot.Axes.Link(GantryPlot, true, false);
             DataContextChanged += OnDataContextChanged;
             Loaded += (s, e) => Theme.Changed += OnThemeChanged;
             Unloaded += (s, e) => Theme.Changed -= OnThemeChanged;
@@ -41,8 +39,8 @@ namespace TrajectoryLogTools.App.Views
             {
                 DeliveryCharts.LeafDifference(ActualPlot.Plot, r, true);
                 DeliveryCharts.LeafDifference(ExpectedPlot.Plot, r, false);
-                DeliveryCharts.AxisDifference(GantryPlot.Plot, r, "Gantry");
-                DeliveryCharts.AxisDifference(MuPlot.Plot, r, "MU");
+                DeliveryCharts.AxisDifference(GantryPlot.Plot, r, "Gantry", legend: false);   // one legend for both, above them
+                DeliveryCharts.AxisDifference(MuPlot.Plot, r, "MU", legend: false);
             }
             foreach (var p in new[] { ActualPlot, GantryPlot, MuPlot, ExpectedPlot }) p.Refresh();
         }

@@ -20,6 +20,12 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine("      --axis-scale <1|2|3>  header axis-scale value (axis data NOT converted)");
             Console.WriteLine("      --time-csv            save the removed time axis to <output>_time.csv");
             Console.WriteLine("      --drop-couch-rotations  leave out couch rotation, pitch and roll");
+            Console.WriteLine("      --machine truebeam|halcyon  machine specifier written (default truebeam, 0)");
+            Console.WriteLine("      --keep-serial         keep the serial number (default: removed)");
+            Console.WriteLine("      --serial <text>       write this serial number instead (up to 6 characters)");
+            Console.WriteLine("      --set-meta \"KEY=VALUE\" set a metadata line, e.g. \"Patient ID=QA001\" (empty VALUE");
+            Console.WriteLine("                            removes the line); repeat for more");
+            Console.WriteLine("      --subbeam-name N=NAME rename subbeam (field) N, from 1; repeat for more");
             Console.WriteLine();
             Console.WriteLine("  TrajectoryLogCli to-csv <input.bin | folder> [-o <folder>] [options]");
             Console.WriteLine("      Export v4.0 / v5.1 logs to <name>.csv.");

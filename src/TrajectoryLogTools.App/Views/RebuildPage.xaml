@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
              xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
-             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+>
     <DockPanel>
         <!-- Header -->
         <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,14,22,14">
@@ -13,6 +13,7 @@
                 </Button>
                 <StackPanel>
                     <TextBlock Text="Rebuild Eclipse MLC" Style="{StaticResource PageTitle}" />
+                    <views:PatientTag Id="{Binding PatientId}" Margin="0,2,0,2" />
                     <TextBlock Style="{StaticResource Secondary}" ToolTip="{Binding PathsText}">
                         <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding Detail, Mode=OneWay, StringFormat=' · {0}'}" /><Run Text="{Binding MlcText, Mode=OneWay, StringFormat=' · {0}'}" />
                     </TextBlock>
@@ -54,6 +55,7 @@
                                             <Border BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="10,8">
                                                 <CheckBox IsChecked="{Binding Include}" AutomationProperties.Name="{Binding Title}">
                                                     <StackPanel>
+                                                        <views:PatientTag Id="{Binding PatientId}" />
                                                         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
                                                         <TextBlock Text="{Binding Detail}" Style="{StaticResource Secondary}" />
                                                     </StackPanel>
@@ -182,14 +184,14 @@
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Text="Results appear here after Rebuild."
                            Visibility="{Binding Results.Count, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=invert}" />
 
-                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto" MaxHeight="360">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Results}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:RebuildResultRow}">
                                 <Border Style="{StaticResource Box}" Margin="0,0,0,8" Padding="14,12">
                                     <StackPanel>
                                         <DockPanel>
-                                            <Button DockPanel.Dock="Right" Content="Details" Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            <Button DockPanel.Dock="Right" Content="Details…" ToolTip="Summary, difference map, leaf by leaf and the report, in a window" Command="{Binding DataContext.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Style="{StaticResource LinkButton}" />
                                             <views:StatusChip Text="{Binding StatusText}" Kind="{Binding StatusKind}" Margin="0,0,8,0" />
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -232,28 +234,6 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Details of the selected field -->
-                <TabControl Margin="0,8,0,0" Visibility="{Binding Selected, Converter={StaticResource NotEmptyToVisibility}}">
-                    <TabItem Header="Difference map">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="{Binding Selected.Name, StringFormat='{}{0}: written minus planned leaf positions'}" Style="{StaticResource Secondary}" Margin="0,8,0,4" />
-                            <sp:WpfPlot x:Name="DiffPlot" />
-                        </DockPanel>
-                    </TabItem>
-                    <TabItem Header="Leaf by leaf">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,4">
-                                <TextBlock Text="{Binding SelectedValueName}" Width="90" VerticalAlignment="Center" />
-                                <Slider Minimum="0" Maximum="{Binding MaxValue}" Value="{Binding SelectedValue}" IsSnapToTickEnabled="True" TickFrequency="1" Width="420"
-                                        AutomationProperties.Name="Leaf" />
-                            </StackPanel>
-                            <sp:WpfPlot x:Name="LeafPlot" />
-                        </DockPanel>
-                    </TabItem>
-                    <TabItem Header="Report">
-                        <TextBox Text="{Binding SelectedReport, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
-                    </TabItem>
-                </TabControl>
             </DockPanel>
         </Grid>
     </DockPanel>

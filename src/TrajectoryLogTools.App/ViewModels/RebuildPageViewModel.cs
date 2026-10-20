@@ -65,9 +65,6 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private string _minGap = "";
         [ObservableProperty] private bool _includeHold;
         [ObservableProperty] private bool _useExports;
-        [ObservableProperty] private RebuildResultRow _selected;
-        [ObservableProperty] private int _selectedValue = 1;
-        [ObservableProperty] private int _maxValue = 113;
 
         public ObservableCollection<MlcFieldGroup> Groups { get; } = new ObservableCollection<MlcFieldGroup>();
         public ObservableCollection<SkippedLogRow> Skipped { get; } = new ObservableCollection<SkippedLogRow>();
@@ -77,6 +74,15 @@ namespace TrajectoryLogTools.App.ViewModels
         List<LogItem> Usable { get { return Fields.Select(f => f.Log).Distinct().ToList(); } }
 
         public string Title { get { return Items.Count == 1 ? Items[0].DisplayName : Items.Count + " logs"; } }
+        /// <summary>The patient ID when all the logs have the same one; "Several patients" when they differ.</summary>
+        public string PatientId
+        {
+            get
+            {
+                var ids = Items.Select(i => i.PatientId).Where(p => p != null).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                return ids.Count == 1 ? ids[0] : ids.Count > 1 ? "Several patients (" + ids.Count + ")" : null;
+            }
+        }
         public string Detail
         {
             get
@@ -132,10 +138,6 @@ namespace TrajectoryLogTools.App.ViewModels
                 return n == 1 ? "Rebuild 1 field" : "Rebuild " + n + " fields";
             }
         }
-        public string SelectedValueName { get { return "Pair " + (SelectedValue / 2 + 1) + (SelectedValue % 2 == 0 ? " X1" : " X2"); } }
-        public string SelectedReport { get { return Selected?.Result?.Report ?? Selected?.Error ?? ""; } }
-
-        public event EventHandler ChartsChanged;
 
         public RebuildPageViewModel(IEnumerable<LogItem> items, MainViewModel main)
         {
@@ -150,16 +152,6 @@ namespace TrajectoryLogTools.App.ViewModels
             Load();
         }
 
-        void RaiseCharts() { var h = ChartsChanged; if (h != null) h(this, EventArgs.Empty); }
-
-        partial void OnSelectedChanged(RebuildResultRow value)
-        {
-            OnPropertyChanged(nameof(SelectedReport));
-            if (value?.Result?.Reconstructed != null) MaxValue = value.Result.Reconstructed.GetLength(1) - 1;
-            RaiseCharts();
-        }
-
-        partial void OnSelectedValueChanged(int value) { OnPropertyChanged(nameof(SelectedValueName)); RaiseCharts(); }
 
         // =========================================================================================
         // Finding the fields
@@ -244,6 +236,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 int logs = fields.Select(f => f.Log).Distinct().Count();
                 var group = new MlcFieldGroup
                 {
+                    PatientId = first.PatientId,
                     Title = first.DisplayName,
                     Detail = first.Date.ToString("dd MMM yyyy", Inv) + " · " + Count(fields.Count, "field") + " in " + Count(logs, "log"),
                 };
@@ -279,7 +272,7 @@ namespace TrajectoryLogTools.App.ViewModels
             }
         }
 
-        static string Patient(LogItem l) { return l.Header?.Meta("Patient ID") ?? l.Header?.Meta("PatientID") ?? ""; }
+        static string Patient(LogItem l) { return l.PatientId ?? ""; }
 
         static string Count(int n, string what) { return n + " " + what + (n == 1 ? "" : "s"); }
 
@@ -309,7 +302,7 @@ namespace TrajectoryLogTools.App.ViewModels
         [RelayCommand]
         void OpenFolder()
         {
-            LogItem log = Selected?.Log ?? Fields.FirstOrDefault()?.Log ?? Items.FirstOrDefault();
+            LogItem log = Results.FirstOrDefault()?.Log ?? Fields.FirstOrDefault()?.Log ?? Items.FirstOrDefault();
             if (log != null) Dialogs.OpenFolder(FolderFor(log));
         }
 
@@ -403,7 +396,6 @@ namespace TrajectoryLogTools.App.ViewModels
 
             IsBusy = true;
             Results.Clear();
-            Selected = null;
             var all = new List<SubbeamResult>();
             var folders = new List<string>();
             try
@@ -450,7 +442,6 @@ namespace TrajectoryLogTools.App.ViewModels
                         }
                     }
                 }
-                Selected = Results.FirstOrDefault();
                 int ready = all.Count(s => s.Status == RebuildStatus.Ready);
                 string where = folders.Count == 1 ? folders[0] : folders.Count + " folders (next to each log)";
                 _main.ShowNotice(ready == all.Count
@@ -482,7 +473,14 @@ namespace TrajectoryLogTools.App.ViewModels
             return row;
         }
 
+        /// <summary>Opens the details of a field (summary, difference map, leaf by leaf, report) in a window of its own.</summary>
         [RelayCommand]
-        void SelectResult(RebuildResultRow row) { if (row != null) Selected = row; }
+        void ShowDetails(RebuildResultRow row)
+        {
+            if (row == null) return;
+            var w = new Views.RebuildDetailsWindow { DataContext = new RebuildDetailsViewModel(Results.ToList(), Results.IndexOf(row)) };
+            w.Owner = System.Windows.Application.Current.MainWindow;
+            w.Show();
+        }
     }
 }

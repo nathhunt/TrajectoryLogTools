@@ -25,10 +25,10 @@ namespace TrajectoryLogTools.App.ViewModels
         readonly MainViewModel _main;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(PathA), nameof(DateA))]
+        [NotifyPropertyChangedFor(nameof(PathA), nameof(DateA), nameof(PatientWarning))]
         private LogItem _a;
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(PathB), nameof(DateB))]
+        [NotifyPropertyChangedFor(nameof(PathB), nameof(DateB), nameof(PatientWarning))]
         private LogItem _b;
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private string _error = "";
@@ -36,13 +36,21 @@ namespace TrajectoryLogTools.App.ViewModels
         /// <summary>"ok" (same plan) or "caution" (the plans differ).</summary>
         [ObservableProperty] private string _verdictKind = "ok";
         [ObservableProperty] private string _report = "";
-        [ObservableProperty] private string _fileComparison = "";
         [ObservableProperty] private bool _fileIgnoreVersion = true;
 
         public string PathA { get { return A == null ? "" : A.Path; } }
         public string PathB { get { return B == null ? "" : B.Path; } }
         public string DateA { get { return A == null ? "" : A.DisplayName + " · " + A.DateText; } }
         public string DateB { get { return B == null ? "" : B.DisplayName + " · " + B.DateText; } }
+        /// <summary>Set when the two logs name different patients.</summary>
+        public string PatientWarning
+        {
+            get
+            {
+                if (A?.PatientId == null || B?.PatientId == null || string.Equals(A.PatientId, B.PatientId, StringComparison.OrdinalIgnoreCase)) return "";
+                return "A and B are different patients (" + A.PatientId + " and " + B.PatientId + ").";
+            }
+        }
 
         public ObservableCollection<Fact> Cards { get; } = new ObservableCollection<Fact>();
         public ObservableCollection<BeamRow> Beams { get; } = new ObservableCollection<BeamRow>();
@@ -94,13 +102,20 @@ namespace TrajectoryLogTools.App.ViewModels
         [RelayCommand]
         void BackToA() { if (A != null) _main.ShowLog(A); }
 
+        /// <summary>Back to the log shown before (A or B), else A.</summary>
+        [RelayCommand]
+        void Back()
+        {
+            LogItem back = _main.CurrentLog != null && (_main.CurrentLog == A || _main.CurrentLog == B) ? _main.CurrentLog : A;
+            if (back != null && _main.Logs.Contains(back)) _main.ShowLog(back);
+        }
+
         async void Run()
         {
             IsBusy = true;
             Error = "";
             Result = null;
             Cards.Clear(); Beams.Clear(); Holds.Clear(); Axes.Clear();
-            FileComparison = "";
             OnPropertyChanged(nameof(CanCompareFiles));
             try
             {
@@ -115,7 +130,7 @@ namespace TrajectoryLogTools.App.ViewModels
             catch (Exception ex)
             {
                 Error = "These two logs can't be compared delivery by delivery: " + ex.Message +
-                        (CanCompareFiles ? " The file comparison below still works." : "");
+                        (CanCompareFiles ? " The file comparison (File differences, below) still works." : "");
             }
             finally
             {
@@ -186,19 +201,14 @@ namespace TrajectoryLogTools.App.ViewModels
             return f;
         }
 
+        /// <summary>Opens the File comparison window for A and B (not modal, so it can sit beside the page).</summary>
         [RelayCommand]
-        async Task CompareFiles()
+        void CompareFiles()
         {
             if (!CanCompareFiles) return;
-            var opt = new Options { Command = Command.Compare, IgnoreVersion = FileIgnoreVersion, IgnoreCrc = true, MaxDiffs = 50 };
-            string a = A.Path, b = B.Path;
-            try
-            {
-                bool same = false;
-                List<string> lines = await Task.Run(() => Commands.RunCompare(a, b, opt, out same));
-                FileComparison = string.Join(Environment.NewLine, lines);
-            }
-            catch (Exception ex) { FileComparison = "Could not compare the files: " + ex.Message; }
+            var w = new Views.FileCompareWindow { DataContext = new FileCompareViewModel(A, B, FileIgnoreVersion) };
+            w.Owner = System.Windows.Application.Current.MainWindow;
+            w.Show();
         }
 
         [RelayCommand]

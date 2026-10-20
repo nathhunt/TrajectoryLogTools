@@ -1,5 +1,6 @@
 // ExportViewModel.cs - Export the selected logs, wherever they are, to any of: v4.0 .bin, CSV,
-// full dump CSV, raw dump text. Output goes to one folder, or next to each log in a "converted"
+// full dump CSV, raw dump text. The v4.0 header options (machine, serial number, couch axes)
+// apply to every log; one log's patient, plan and field names can also be changed (Header details). Output goes to one folder, or next to each log in a "converted"
 // subfolder. The work is done by TrajectoryLogTools.Core.Commands, the same code as the CLI.
 
 using System;
@@ -21,7 +22,7 @@ namespace TrajectoryLogTools.App.ViewModels
     public partial class ExportRow : ObservableObject
     {
         public LogItem Log { get; set; }
-        public string Name { get { return Log.DisplayName + " · " + Log.DateText; } }
+        public string Name { get { return (Log.PatientId != null ? Log.PatientId + " · " : "") + Log.DisplayName + " · " + Log.DateText; } }
         public string Folder { get { return Log.FolderShort; } }
         [ObservableProperty] private string _status = "";
         /// <summary>"neutral", "ok", "caution" or "critical".</summary>
@@ -36,7 +37,15 @@ namespace TrajectoryLogTools.App.ViewModels
         public ObservableCollection<ExportRow> Rows { get; } = new ObservableCollection<ExportRow>();
 
         [ObservableProperty] private bool _toV4 = true;
-        [ObservableProperty] private bool _keepMachineInfo;
+        // v4.0 header
+        [ObservableProperty] private bool _machineHalcyon;
+        [ObservableProperty] private bool _removeSerial = true;
+        [ObservableProperty] private bool _keepSerial;
+        [ObservableProperty] private bool _changeSerial;
+        [ObservableProperty] private string _newSerial = "";
+        [ObservableProperty] private bool _removeCouch = true;
+        /// <summary>Single log only: header details changed in the Header details window.</summary>
+        [ObservableProperty] private HeaderEditViewModel _headerEdits;
         [ObservableProperty] private bool _timeCsv;
         [ObservableProperty] private bool _toCsv;
         [ObservableProperty] private bool _noMlc;
@@ -56,6 +65,16 @@ namespace TrajectoryLogTools.App.ViewModels
         public string V4Note { get; }
         public bool AnyCrcFailed { get; }
         public bool ShowProgress { get { return IsBusy || IsDone; } }
+        /// <summary>Header details (patient, plan, field names) can be changed when exporting one v5.1 log.</summary>
+        public bool CanEditHeader { get { return Rows.Count == 1 && Rows[0].Log.Header != null && Rows[0].Log.Header.Version == "5.1"; } }
+        public string HeaderEditsText
+        {
+            get
+            {
+                var changes = HeaderEdits?.Changes() ?? new List<string>();
+                return changes.Count == 0 ? "Patient, plan and field names as in the log." : "Changed: " + string.Join("; ", changes) + ".";
+            }
+        }
 
         CancellationTokenSource _cts;
 
@@ -69,6 +88,16 @@ namespace TrajectoryLogTools.App.ViewModels
                       : v51 + " of " + logs.Count + " are v5.1; the others are skipped (" + (csv > 0 ? "already v4.0 or CSV" : "already v4.0") + ").");
             AnyCrcFailed = logs.Any(l => l.CrcFailed);
             IgnoreCrc = false;
+        }
+
+        partial void OnHeaderEditsChanged(HeaderEditViewModel value) { OnPropertyChanged(nameof(HeaderEditsText)); }
+
+        [RelayCommand]
+        void EditHeader()
+        {
+            if (!CanEditHeader) return;
+            var vm = HeaderEdits?.Copy() ?? new HeaderEditViewModel(Rows[0].Log.Header);
+            if (Dialogs.ShowDialog(new Views.HeaderEditWindow { DataContext = vm }) == true) HeaderEdits = vm;
         }
 
         partial void OnIsBusyChanged(bool value) { OnPropertyChanged(nameof(ShowProgress)); }
@@ -95,6 +124,13 @@ namespace TrajectoryLogTools.App.ViewModels
         public string Validate()
         {
             if (!ToV4 && !ToCsv && !FullCsv && !Dump) return "Choose at least one thing to write.";
+            if (ToV4 && ChangeSerial && (NewSerial.Length > 6 || NewSerial.Any(c => c < 32 || c > 126)))
+                return "The serial number must be up to 6 letters, digits or other plain (ASCII) characters.";
+            if (ToV4 && HeaderEdits != null)
+            {
+                string e = HeaderEdits.Validate();
+                if (e != null) return e;
+            }
             if (OneFolder)
             {
                 string f = Folder.Trim().Trim('"');
@@ -113,8 +149,12 @@ namespace TrajectoryLogTools.App.ViewModels
             IsBusy = true;
             IsDone = false;
             _cts = new CancellationTokenSource();
-            var jobs = new Jobs { ToV4 = ToV4, ToCsv = ToCsv, FullCsv = FullCsv, Dump = Dump, KeepMachineInfo = KeepMachineInfo, TimeCsv = TimeCsv,
-                                  NoMlc = NoMlc, ActualOnly = ActualOnly, Overwrite = Overwrite, IgnoreCrc = IgnoreCrc };
+            var jobs = new Jobs { ToV4 = ToV4, ToCsv = ToCsv, FullCsv = FullCsv, Dump = Dump, TimeCsv = TimeCsv,
+                                  NoMlc = NoMlc, ActualOnly = ActualOnly, Overwrite = Overwrite, IgnoreCrc = IgnoreCrc,
+                                  Machine = MachineHalcyon ? 1 : 0, KeepSerial = KeepSerial, Serial = ChangeSerial ? NewSerial : null,
+                                  DropCouch = RemoveCouch,
+                                  MetaEdits = HeaderEdits?.MetaEdits() ?? new List<KeyValuePair<string, string>>(),
+                                  SubbeamNames = HeaderEdits?.SubbeamNames() ?? new Dictionary<int, string>() };
             string folder = OneFolder ? Folder.Trim().Trim('"') : null;
             int ok = 0, failed = 0, skipped = 0;
             var runLog = new StringBuilder();
@@ -164,7 +204,14 @@ namespace TrajectoryLogTools.App.ViewModels
             return line.Trim();
         }
 
-        sealed class Jobs { public bool ToV4, ToCsv, FullCsv, Dump, KeepMachineInfo, TimeCsv, NoMlc, ActualOnly, Overwrite, IgnoreCrc; }
+        sealed class Jobs
+        {
+            public bool ToV4, ToCsv, FullCsv, Dump, TimeCsv, NoMlc, ActualOnly, Overwrite, IgnoreCrc, KeepSerial, DropCouch;
+            public int Machine;
+            public string Serial;
+            public List<KeyValuePair<string, string>> MetaEdits;
+            public Dictionary<int, string> SubbeamNames;
+        }
 
         /// <summary>(0 = all OK, 1 = nothing to do, 2 = something failed, lines).</summary>
         static Tuple<int, List<string>> Work(string path, string outDir, Jobs j)
@@ -182,10 +229,20 @@ namespace TrajectoryLogTools.App.ViewModels
             Func<Command, Options> opt = c => new Options
             {
                 Command = c, Output = outDir, Overwrite = j.Overwrite, IgnoreCrc = j.IgnoreCrc,
-                KeepMachineInfo = c == Command.ToV4 && j.KeepMachineInfo, TimeCsv = c == Command.ToV4 && j.TimeCsv,
+                TimeCsv = c == Command.ToV4 && j.TimeCsv,
                 NoMlc = c == Command.ToCsv && j.NoMlc, ActualOnly = c == Command.ToCsv && j.ActualOnly,
             };
-            if (j.ToV4) run(() => Commands.RunToV4(path, true, opt(Command.ToV4)));
+            if (j.ToV4)
+            {
+                Options o = opt(Command.ToV4);
+                o.MachineSpecifier = j.Machine;
+                o.KeepSerial = j.KeepSerial;
+                o.Serial = j.Serial;
+                o.DropCouchRotations = j.DropCouch;
+                o.MetaEdits = j.MetaEdits;
+                o.SubbeamNames = j.SubbeamNames;
+                run(() => Commands.RunToV4(path, true, o));
+            }
             if (j.ToCsv) run(() => Commands.RunToCsv(path, opt(Command.ToCsv)));
             if (j.FullCsv) { var o = opt(Command.ToCsv); o.Full = true; o.NoMlc = false; o.ActualOnly = false; run(() => Commands.RunToCsv(path, o)); }
             if (j.Dump) run(() => Commands.RunDump(path, opt(Command.Dump)));

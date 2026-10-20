@@ -42,7 +42,9 @@ namespace TrajectoryLogTools.App.Services
         /// <summary>Shows a dialog window over the main window.</summary>
         public static bool? ShowDialog(Window w)
         {
-            w.Owner = Application.Current.MainWindow;
+            Window active = null;
+            foreach (Window x in Application.Current.Windows) if (x.IsActive && x != w) active = x;
+            w.Owner = active ?? Application.Current.MainWindow;
             w.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             return w.ShowDialog();
         }

@@ -30,8 +30,28 @@
                             <CheckBox IsChecked="{Binding ToV4}" Content="v4.0 log (.bin)" FontWeight="SemiBold" />
                             <TextBlock Text="{Binding V4Note}" Style="{StaticResource Hint}" Margin="28,2,0,6" />
                             <StackPanel Margin="28,0,0,0" IsEnabled="{Binding ToV4}">
-                                <CheckBox Content="Keep machine specifier and serial" IsChecked="{Binding KeepMachineInfo}" />
+                                <TextBlock Text="Machine" Style="{StaticResource Secondary}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
+                                    <RadioButton Content="TrueBeam (0)" IsChecked="{Binding MachineHalcyon, Converter={StaticResource Not}}" GroupName="Machine" Margin="0,0,12,0" />
+                                    <RadioButton Content="Halcyon (1)" IsChecked="{Binding MachineHalcyon}" GroupName="Machine" />
+                                </StackPanel>
+                                <TextBlock Text="Serial number" Style="{StaticResource Secondary}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <RadioButton Content="Remove" IsChecked="{Binding RemoveSerial}" GroupName="Serial" Margin="0,0,12,0" />
+                                    <RadioButton Content="Keep" IsChecked="{Binding KeepSerial}" GroupName="Serial" Margin="0,0,12,0" />
+                                    <RadioButton Content="Change to" IsChecked="{Binding ChangeSerial}" GroupName="Serial" />
+                                </StackPanel>
+                                <TextBox Text="{Binding NewSerial, UpdateSourceTrigger=PropertyChanged}" MaxLength="6" Width="120" HorizontalAlignment="Left" Margin="0,4,0,0"
+                                         AutomationProperties.Name="New serial number" ToolTip="Up to 6 characters"
+                                         Visibility="{Binding ChangeSerial, Converter={StaticResource BoolToVisibility}}" />
+                                <CheckBox Content="Remove couch rotation, pitch and roll" IsChecked="{Binding RemoveCouch}" Margin="0,8,0,0" />
                                 <CheckBox Content="Save the removed time axis (_time.csv)" IsChecked="{Binding TimeCsv}" />
+                                <!-- One log: patient, plan and field names -->
+                                <StackPanel Margin="0,8,0,0" Visibility="{Binding CanEditHeader, Converter={StaticResource BoolToVisibility}}">
+                                    <Button Content="Header details…" Command="{Binding EditHeaderCommand}" HorizontalAlignment="Left" Padding="10,4"
+                                            ToolTip="Change the patient ID, plan name, plan UID or field names written to the v4.0 file" />
+                                    <TextBlock Text="{Binding HeaderEditsText}" Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Border>

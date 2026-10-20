@@ -126,7 +126,7 @@ namespace TrajectoryLogTools.Core
         public static void WriteString(byte[] b, int offset, int length, string value, bool wide)
         {
             Array.Clear(b, offset, length);
-            byte[] bytes = wide ? Encoding.Unicode.GetBytes(value) : Encoding.ASCII.GetBytes(value);
+            byte[] bytes = wide ? Encoding.Unicode.GetBytes(value) : Encoding.UTF8.GetBytes(value);   // UTF-8 = ASCII for plain text
             Buffer.BlockCopy(bytes, 0, b, offset, Math.Min(bytes.Length, length - (wide ? 2 : 1)));
         }
     }

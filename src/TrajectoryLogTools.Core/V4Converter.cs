@@ -15,6 +15,12 @@ namespace TrajectoryLogTools.Core
     // =============================================================================================
     public static class V4Converter
     {
+        /// <summary>"TrueBeam" (0), "Halcyon / Ethos" (1), else the number.</summary>
+        public static string MachineName(int specifier)
+        {
+            return specifier == 0 ? "TrueBeam" : specifier == 1 ? "Halcyon / Ethos" : specifier.ToString(CultureInfo.InvariantCulture);
+        }
+
         /// <summary>Axis order of v4.0 logs, as written by HAL 2.0 - 4.0 MR1 machines; the spec does not state it.</summary>
         public static readonly int[] V4AxisOrder = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 40, 41, 42, 50 };
 
@@ -61,10 +67,29 @@ namespace TrajectoryLogTools.Core
             BinUtil.WriteInt(header, ref q, log.Truncated);
             BinUtil.WriteInt(header, ref q, log.NumSnapshots);
             BinUtil.WriteInt(header, ref q, log.MlcModel);
-            Buffer.BlockCopy(src, log.MetaOffset, header, q, TrajectoryLog.MetaDataBytes);
+            string meta = log.MetaDataText;
+            foreach (var e in opt.MetaEdits) meta = MetaData.Set(meta, e.Key, e.Value);
+            if (opt.MetaEdits.Count == 0)
+                Buffer.BlockCopy(src, log.MetaOffset, header, q, TrajectoryLog.MetaDataBytes);
+            else
+            {
+                byte[] mb = MetaData.Encode(meta);
+                Buffer.BlockCopy(mb, 0, header, q, mb.Length);   // the rest stays zero
+            }
             q += TrajectoryLog.MetaDataBytes;
-            if (opt.KeepMachineInfo)
-                Buffer.BlockCopy(src, log.MetaOffset + TrajectoryLog.MetaDataBytes, header, q, 7);
+
+            // Machine specifier (1 byte) + serial number (6 bytes)
+            int machine = opt.MachineSpecifier ?? (opt.KeepMachineInfo ? log.MachineSpecifier : 0);
+            string serial = opt.Serial ?? (opt.KeepMachineInfo || opt.KeepSerial ? log.MachineSerial : "");
+            if (opt.KeepMachineInfo && opt.MachineSpecifier == null && opt.Serial == null)
+                Buffer.BlockCopy(src, log.MetaOffset + TrajectoryLog.MetaDataBytes, header, q, 7);   // exactly as stored
+            else
+            {
+                if (serial.Length > 6 || serial.Any(c => c < 32 || c > 126)) throw new ArgumentException("The serial number must be up to 6 ASCII characters.");
+                header[q] = (byte)machine;
+                byte[] sb = Encoding.ASCII.GetBytes(serial);
+                Buffer.BlockCopy(sb, 0, header, q + 1, sb.Length);
+            }
 
             // Body
             int snapBytes = log.FloatsPerSnapshot * 4;
@@ -77,6 +102,18 @@ namespace TrajectoryLogTools.Core
             Buffer.BlockCopy(header, 0, dst, 0, TrajectoryLog.HeaderSize);
             Buffer.BlockCopy(src, TrajectoryLog.HeaderSize, dst, TrajectoryLog.HeaderSize,
                              log.NumSubbeamsField * TrajectoryLog.SubbeamBytes);
+            foreach (var n in opt.SubbeamNames)
+            {
+                if (n.Key < 1 || n.Key > log.NumSubbeamsField)
+                    throw new ArgumentException("Subbeam " + n.Key + " is not in the log (it has " + log.NumSubbeamsField + ").");
+                // name: 512 bytes after control point, MU, radiation time and sequence (4 bytes each)
+                int at = TrajectoryLog.HeaderSize + (n.Key - 1) * TrajectoryLog.SubbeamBytes + 16;
+                bool wide;
+                BinUtil.ReadString(src, at, 512, out wide);
+                if ((wide ? Encoding.Unicode.GetByteCount(n.Value) + 2 : Encoding.UTF8.GetByteCount(n.Value) + 1) > 512)
+                    throw new ArgumentException("Subbeam " + n.Key + " name is too long.");
+                BinUtil.WriteString(dst, at, 512, n.Value, wide);
+            }
 
             int dstPos = log.DataOffset;
             for (int s = 0; s < log.NumSnapshots; s++)
@@ -109,9 +146,15 @@ namespace TrajectoryLogTools.Core
             if (opt.AxisScale.HasValue && opt.AxisScale.Value != log.AxisScale)
                 notes.Add(string.Format("WARNING: axis-scale flag changed {0} -> {1}; axis values were NOT converted.",
                                         log.AxisScale, newAxisScale));
-            if (!opt.KeepMachineInfo)
-                notes.Add(string.Format("Machine specifier {0} / serial '{1}' removed from header.",
-                                        log.MachineSpecifier, log.MachineSerial));
+            if (machine != log.MachineSpecifier)
+                notes.Add(string.Format("Machine specifier {0} -> {1} ({2}).", log.MachineSpecifier, machine, MachineName(machine)));
+            if (serial != log.MachineSerial)
+                notes.Add(serial.Length == 0 ? "Serial number '" + log.MachineSerial + "' removed from header."
+                                             : "Serial number '" + log.MachineSerial + "' -> '" + serial + "'.");
+            foreach (var e in opt.MetaEdits)
+                notes.Add(e.Value == null ? "Metadata '" + e.Key + "' removed." : "Metadata '" + e.Key + "' set to '" + e.Value + "'.");
+            foreach (var n in opt.SubbeamNames.OrderBy(x => x.Key))
+                notes.Add("Subbeam " + n.Key + " renamed '" + log.Subbeams[n.Key - 1].Name + "' -> '" + n.Value + "'.");
             return dst;
         }
     }

@@ -1,0 +1,151 @@
+<Window x:Class="TrajectoryLogTools.App.Views.FileCompareWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
+        xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
+        Title="File comparison" Width="1100" Height="820" MinWidth="760" MinHeight="560"
+        Background="{DynamicResource ApplicationBackgroundBrush}" ResizeMode="CanResizeWithGrip">
+    <DockPanel Margin="24,18,24,16">
+        <!-- What is compared -->
+        <DockPanel DockPanel.Dock="Top">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <Button Content="Copy as text" Command="{Binding CopyTextCommand}" Padding="12,6" Margin="0,0,8,0" ToolTip="The comparison as the command line prints it" />
+                <Button Content="Close" Click="Close_Click" Padding="16,6" />
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="File comparison" Style="{StaticResource PageTitle}" Margin="0,0,0,8" />
+                <DockPanel Margin="0,0,0,4">
+                    <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
+                        <TextBlock Text="A" Foreground="{DynamicResource SolidBackgroundFillColorBaseBrush}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding NameA}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding A.Path}" />
+                </DockPanel>
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" BorderThickness="1.5" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
+                        <TextBlock Text="B" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding NameB}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding B.Path}" />
+                </DockPanel>
+                <CheckBox Content="Ignore what differs between v4.0 and v5.1 by design (version, time axis, axis order, machine and serial)"
+                          IsChecked="{Binding IgnoreVersion}" Margin="0,10,0,0" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+            </StackPanel>
+        </DockPanel>
+
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3" Margin="0,10,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+        <Border DockPanel.Dock="Top" Padding="12,8" CornerRadius="6" Margin="0,12,0,0" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Verdict and cards -->
+        <Border DockPanel.Dock="Top" Padding="12,8" CornerRadius="6" Margin="0,12,0,10" Visibility="{Binding Verdict, Converter={StaticResource NotEmptyToVisibility}}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding VerdictKind}" Value="caution">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock Text="{Binding Verdict}" TextWrapping="Wrap" FontWeight="SemiBold" />
+        </Border>
+        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Cards}" ItemTemplate="{StaticResource FactCard}" Margin="0,0,-10,10" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <TabControl>
+            <TabItem Header="Summary">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header and subbeam fields -->
+                    <StackPanel Visibility="{Binding HasFields, Converter={StaticResource BoolToVisibility}}" Margin="0,0,0,10">
+                        <TextBlock Text="Header and subbeam fields that differ" Style="{StaticResource SectionTitle}" />
+                        <DataGrid ItemsSource="{Binding Fields}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" MaxHeight="190"
+                                  CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Where" Binding="{Binding Section}" />
+                                <DataGridTextColumn Header="Field" Binding="{Binding Name}" />
+                                <DataGridTextColumn Header="A" Binding="{Binding A}" Width="*" />
+                                <DataGridTextColumn Header="B" Binding="{Binding B}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+
+                    <!-- Notes: what was ignored -->
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding Notes}" Focusable="False" Margin="0,0,0,10"
+                                  Visibility="{Binding HasNotes, Converter={StaticResource BoolToVisibility}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,1">
+                                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE946;" FontSize="12" Margin="0,1,6,0"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Top" />
+                                    <TextBlock Text="{Binding}" Style="{StaticResource Secondary}" TextWrapping="Wrap" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Axes -->
+                    <DockPanel Grid.Row="2">
+                        <DockPanel DockPanel.Dock="Top">
+                            <CheckBox DockPanel.Dock="Right" Content="Only axes that differ" IsChecked="{Binding OnlyDiffering}" />
+                            <TextBlock Text="Axes (expected and actual, every sample)" Style="{StaticResource SectionTitle}" />
+                        </DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Every axis is the same in both files." Style="{StaticResource Hint}"
+                                   Visibility="{Binding Axes.Count, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=invert}" />
+                        <DataGrid ItemsSource="{Binding Axes}" SelectedItem="{Binding SelectedAxis}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                                  CanUserAddRows="False" HorizontalScrollBarVisibility="Auto" SelectionMode="Single"
+                                  Visibility="{Binding Axes.Count, Converter={StaticResource NotEmptyToVisibility}}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Axis" Binding="{Binding Axis}" />
+                                <DataGridTemplateColumn Header="">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="{x:Type vm:AxisCompareRow}">
+                                            <views:StatusChip Text="{Binding State}" Kind="{Binding StateKind}" Margin="2" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Samples" Binding="{Binding Samples}" />
+                                <DataGridTextColumn Header="Values differ" Binding="{Binding ValuesDiffer}" />
+                                <DataGridTextColumn Header="of them expected" Binding="{Binding Expected}" />
+                                <DataGridTextColumn Header="of them actual" Binding="{Binding Actual}" />
+                                <DataGridTextColumn Header="Snapshots" Binding="{Binding Snapshots}" />
+                                <DataGridTextColumn Header="Max |A − B|" Binding="{Binding MaxDifference}" />
+                                <DataGridTextColumn Header="First at snapshot" Binding="{Binding First}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+
+                    <!-- Values of the axis picked -->
+                    <TextBlock Grid.Row="3" Text="{Binding ExamplesTitle}" Style="{StaticResource SectionTitle}" Margin="0,12,0,6" />
+                    <DataGrid Grid.Row="4" ItemsSource="{Binding Examples}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                              CanUserAddRows="False" HorizontalScrollBarVisibility="Auto"
+                              Visibility="{Binding Examples.Count, Converter={StaticResource NotEmptyToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Snapshot" Binding="{Binding Snapshot}" />
+                            <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" />
+                            <DataGridTextColumn Header="Record" Binding="{Binding Record}" />
+                            <DataGridTextColumn Header="A" Binding="{Binding A}" />
+                            <DataGridTextColumn Header="B" Binding="{Binding B}" />
+                            <DataGridTextColumn Header="|A − B|" Binding="{Binding Difference, StringFormat=G6}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="As text">
+                <TextBox Text="{Binding RawText, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,10,0,0" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
