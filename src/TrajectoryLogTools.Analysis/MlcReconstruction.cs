@@ -65,6 +65,8 @@ namespace TrajectoryLogTools.Analysis
         public bool IncludeHold;
         /// <summary>Subbeams to process: null / "all", or e.g. "2" or "1,3".</summary>
         public string Subbeams;
+        /// <summary>Folder for the default output names when OutPath is null; null = the log's folder.</summary>
+        public string OutputFolder;
 
         public void Validate()
         {
@@ -83,22 +85,24 @@ namespace TrajectoryLogTools.Analysis
     /// <summary>Outcome for one subbeam (one Eclipse field).</summary>
     public sealed class SubbeamResult
     {
-        public int Subbeam;
-        public bool Ok;
-        public string Error;
+        public int Subbeam { get; set; }
+        public bool Ok { get; set; }
+        public string Error { get; set; }
         /// <summary>One-line summary, e.g. "Subbeam 1: 41 CPs (log CP 0-40), 150.00 MU, gantry 130.0 deg IEC -> x.csv".</summary>
-        public string Summary;
-        public string OutputPath, ReportPath, TemplatePath;
-        public string Report;
-        public int ControlPoints;
+        public string Summary { get; set; }
+        public string OutputPath { get; set; }
+        public string ReportPath { get; set; }
+        public string TemplatePath { get; set; }
+        public string Report { get; set; }
+        public int ControlPoints { get; set; }
         /// <summary>Log control point of this field's control point 0.</summary>
-        public int FirstLogControlPoint;
+        public int FirstLogControlPoint { get; set; }
         /// <summary>Written leaf positions [cp, Eclipse value index], mm IEC.</summary>
-        public double[,] Reconstructed;
+        public double[,] Reconstructed { get; set; }
         /// <summary>The same reconstruction from the log's expected positions (method check).</summary>
-        public double[,] ReconstructedExpected;
+        public double[,] ReconstructedExpected { get; set; }
         /// <summary>Leaf positions of the template, or null without template.</summary>
-        public double[,] TemplatePlan;
+        public double[,] TemplatePlan { get; set; }
     }
 
     public sealed class MlcReconstructionResult
@@ -263,7 +267,7 @@ namespace TrajectoryLogTools.Analysis
                 if (o.OutPath != null)
                     outP = todo.Count == 1 ? o.OutPath : InsertSuffix(o.OutPath, tag);
                 else
-                    outP = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(logPath)),
+                    outP = Path.Combine(o.OutputFolder ?? Path.GetDirectoryName(Path.GetFullPath(logPath)),
                         Path.GetFileNameWithoutExtension(logPath) + tag + "_reconstructed_MLC.csv");
                 string repP;
                 if (o.ReportPath != null)
@@ -305,7 +309,7 @@ namespace TrajectoryLogTools.Analysis
 
         // MU_Actual must rise by more than this above its value at the start of the subbeam
         // before a snapshot counts as part of the delivery (log resolution is 1e-4 MU).
-        internal const double SetupMuTol = 0.001;
+        public const double SetupMuTol = 0.001;
 
         // Processes one subbeam (one Eclipse field) and returns a one-line summary.
         static string ProcessSubbeam(LogData log, MlcReconstructionOptions o, string logPath, MlcGeometry geom,

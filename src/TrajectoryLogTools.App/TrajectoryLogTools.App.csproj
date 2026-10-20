@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Trajectory Log Tools: the Windows GUI (WPF, .NET 10). Published self-contained to a folder,
+       so the Eclipse workstations need no .NET install: see scripts/publish.ps1 or
+       Properties/PublishProfiles/Deploy.pubxml (Visual Studio: right-click > Publish). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 10.0.19041: the Windows SDK version ScottPlot's WPF control (SkiaSharp.Views.WPF) is built for.
+         It is a build-time setting; the app still runs on older Windows: -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <!-- Windows 10 1607 / Windows Server 2016 and later. -->
+    <SupportedOSPlatformVersion>10.0.14393.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TrajectoryLogTools.App</RootNamespace>
+    <AssemblyName>TrajectoryLogTools</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Application.ThemeMode (Fluent theme) is marked experimental in WPF. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <!-- Only English UI resources in the published folder. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.1.59" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
+    <ProjectReference Include="..\TrajectoryLogTools.Charts\TrajectoryLogTools.Charts.csproj" />
+  </ItemGroup>
+
+  <!-- After publishing the GUI, publish the command-line tool into the same folder (same runtime,
+       so shared files are identical) and copy the Eclipse launcher script next to them. -->
+  <Target Name="PublishCliAndLauncher" AfterTargets="Publish" Condition=" '$(RuntimeIdentifier)' != '' ">
+    <MSBuild Projects="..\TrajectoryLogTools.Cli\TrajectoryLogTools.Cli.csproj" Targets="Restore;Publish" RemoveProperties="PublishProfile"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishDir=$(PublishDir);_DummyToForceRestore=$(MSBuildProjectFullPath)" />
+    <Copy SourceFiles="..\..\launcher\LaunchTrajectoryLogTools.cs" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Deploy folder: $([System.IO.Path]::GetFullPath($(PublishDir)))" />
+  </Target>
+</Project>

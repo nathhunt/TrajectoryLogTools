@@ -300,6 +300,12 @@ namespace TrajectoryLogTools.Analysis
             return grid.Select((x, i) => ok[i] ? va[i] - vb[i] : double.NaN).ToArray();
         }
 
+        /// <summary>Per-subbeam table, beam holds, MU, leaf steps and couch of a single log.</summary>
+        public static LogSummary SummariseLog(DeliveryRecord d, string label = null)
+        {
+            return Summarise(d, LeafNames(d), label ?? ShortLabel(d.SourcePath), false);
+        }
+
         static LogSummary Summarise(DeliveryRecord d, string[] leaves, string label, bool dropped)
         {
             var s = new LogSummary { Label = label, DroppedFirstSnapshot = dropped };

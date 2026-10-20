@@ -1,0 +1,203 @@
+{
+    // Run with Terminal > Run Task (Ctrl+Shift+B runs the default "build").
+    // Needs the .NET 10 SDK. The GUI builds on any OS but runs on Windows only.
+    "version": "2.0.0",
+    "tasks": [
+        // ------------------------------------------------------------------------------------
+        // Build
+        // ------------------------------------------------------------------------------------
+        {
+            "label": "build",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/TrajectoryLogTools.sln", "-c", "Debug",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "reveal": "silent" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build release",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/TrajectoryLogTools.sln", "-c", "Release",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": "build",
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build cli",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["build", "${workspaceFolder}/src/TrajectoryLogTools.Cli", "-c", "Debug",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": "build",
+            "presentation": { "reveal": "silent" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "clean",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["clean", "${workspaceFolder}/TrajectoryLogTools.sln", "-consoleLoggerParameters:NoSummary"],
+            "presentation": { "reveal": "silent" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "rebuild",
+            "dependsOrder": "sequence",
+            "dependsOn": ["clean", "build"],
+            "group": "build",
+            "problemMatcher": []
+        },
+
+        // ------------------------------------------------------------------------------------
+        // Publish: Deploy\TrajectoryLogTools\ (self-contained, win-x64) = what goes on the share
+        // ------------------------------------------------------------------------------------
+        {
+            "label": "publish",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["publish", "${workspaceFolder}/src/TrajectoryLogTools.App", "-p:PublishProfile=Deploy",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": "build",
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish to folder",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["publish", "${workspaceFolder}/src/TrajectoryLogTools.App", "-p:PublishProfile=Deploy",
+                     "-p:PublishDir=${input:deployDir}", "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": "build",
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+
+        // ------------------------------------------------------------------------------------
+        // Tests
+        // ------------------------------------------------------------------------------------
+        {
+            "label": "test",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["test", "${workspaceFolder}/tests/TrajectoryLogTools.Tests",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": { "kind": "test", "isDefault": true },
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            // Writes coverage.cobertura.xml under tests\TestResults\
+            "label": "test with coverage",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["test", "${workspaceFolder}/tests/TrajectoryLogTools.Tests",
+                     "--collect:XPlat Code Coverage", "--settings", "${workspaceFolder}/tests/coverage.runsettings",
+                     "--results-directory", "${workspaceFolder}/tests/TestResults",
+                     "-p:GenerateFullPaths=true", "-consoleLoggerParameters:NoSummary"],
+            "group": "test",
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+
+        // ------------------------------------------------------------------------------------
+        // Command-line tool (Debug build) without the debugger
+        // ------------------------------------------------------------------------------------
+        {
+            "label": "cli: convert / export",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+                     "${input:command}", "${input:inputPath}", "--overwrite"],
+            "dependsOn": "build cli",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "cli: compare delivery",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+                     "compare-delivery", "${input:logA}", "${input:logB}"],
+            "dependsOn": "build cli",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "cli: reconstruct Eclipse MLC",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+                     "reconstruct-mlc", "${input:inputPath}"],
+            "dependsOn": "build cli",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "cli: compare files",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+                     "compare", "${input:logA}", "${input:logB}", "${input:compareMode}"],
+            "dependsOn": "build cli",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            // v5.1 -> v4.0 -> v5.1 (or the other way) and compare; every log should come back
+            // byte-for-byte identical. Windows only (PowerShell). Outputs go to <folder>\roundtrip\.
+            "label": "cli: round-trip test",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/RoundTripTest.ps1",
+                     "-Path", "${input:inputPath}"],
+            "dependsOn": "build cli",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            // Re-run the original tools (reference/) to rebuild the golden test files. Needs bash
+            // (Git Bash / WSL on Windows) and Python 3 with pandas, numpy and matplotlib.
+            "label": "regenerate golden files",
+            "type": "process",
+            "command": "bash",
+            "args": ["${workspaceFolder}/reference/golden/regenerate.sh"],
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "open Deploy folder",
+            "type": "process",
+            "command": "explorer.exe",
+            "args": ["${workspaceFolder}\\Deploy\\TrajectoryLogTools"],
+            "presentation": { "reveal": "never" },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "command",
+            "type": "pickString",
+            "description": "Command to run",
+            "options": ["to-v4", "to-csv", "dump", "to-v5", "version"],
+            "default": "to-v4"
+        },
+        { "id": "inputPath", "type": "promptString", "description": "Log file (.bin) or folder of logs" },
+        { "id": "logA", "type": "promptString", "description": "Log A (.bin or CSV export), or folder" },
+        { "id": "logB", "type": "promptString", "description": "Log B (.bin or CSV export), or folder" },
+        {
+            "id": "compareMode",
+            "type": "pickString",
+            "description": "What to compare",
+            "options": [
+                { "label": "everything (exact)", "value": "" },
+                { "label": "--ignore-version (version string, time axis, axis order, machine info)", "value": "--ignore-version" }
+            ],
+            "default": ""
+        },
+        { "id": "deployDir", "type": "promptString", "description": "Deploy folder, e.g. \\\\server\\ESAPI\\TrajectoryLogTools" }
+    ]
+}

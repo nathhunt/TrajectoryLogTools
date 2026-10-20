@@ -1,0 +1,94 @@
+{
+    // Press F5 and pick a configuration. "coreclr" is the .NET debugger of the C# extension.
+    // The GUI runs on Windows only.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "GUI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.App/bin/Debug/net10.0-windows10.0.19041.0/TrajectoryLogTools.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "GUI (pre-filled, as from Eclipse)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.App/bin/Debug/net10.0-windows10.0.19041.0/TrajectoryLogTools.exe",
+            "args": ["--input", "${input:inputPath}", "--output", "${input:outputFolder}", "--mode", "${input:guiMode}", "--tab", "${input:tab}"],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "CLI (convert / export)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build cli",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+            "args": ["${input:command}", "${input:inputPath}", "--overwrite"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "CLI (compare delivery)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build cli",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+            "args": ["compare-delivery", "${input:logA}", "${input:logB}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "CLI (reconstruct Eclipse MLC)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build cli",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.Cli/bin/Debug/net10.0/TrajectoryLogCli.dll",
+            "args": ["reconstruct-mlc", "${input:inputPath}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Attach to process",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "command",
+            "type": "pickString",
+            "description": "Command to run",
+            "options": ["to-v4", "to-csv", "dump", "to-v5", "version"],
+            "default": "to-v4"
+        },
+        { "id": "inputPath", "type": "promptString", "description": "Log file (.bin) or folder of logs" },
+        { "id": "outputFolder", "type": "promptString", "description": "Export folder" },
+        { "id": "logA", "type": "promptString", "description": "Log A (.bin or CSV export)" },
+        { "id": "logB", "type": "promptString", "description": "Log B (.bin or CSV export)" },
+        {
+            "id": "guiMode",
+            "type": "pickString",
+            "description": "Convert & export options",
+            "options": ["v4", "csv", "both", "dump"],
+            "default": "v4"
+        },
+        {
+            "id": "tab",
+            "type": "pickString",
+            "description": "Tab to open on",
+            "options": ["convert", "viewer", "compare", "mlc"],
+            "default": "convert"
+        }
+    ]
+}

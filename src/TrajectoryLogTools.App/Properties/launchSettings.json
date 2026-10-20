@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "TrajectoryLogTools": {
+      "commandName": "Project"
+    },
+    "Pre-filled (as from Eclipse)": {
+      "commandName": "Project",
+      "commandLineArgs": "--input C:\\Logs --output C:\\Logs\\Converted --mode both --tab convert"
+    }
+  }
+}

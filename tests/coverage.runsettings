@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Code coverage for the libraries (Core, Analysis) and the command-line tool.
+     IncludeTestAssembly is off: the test code itself is not measured.
+     dotnet test tests/TrajectoryLogTools.Tests --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <ExcludeByFile>**/tests/**/*.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

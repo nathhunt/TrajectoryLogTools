@@ -1,0 +1,6 @@
+{
+    // Extensions VS Code offers to install when this folder is opened.
+    "recommendations": [
+        "ms-dotnettools.csharp"
+    ]
+}

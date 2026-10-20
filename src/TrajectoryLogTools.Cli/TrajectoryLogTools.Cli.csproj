@@ -5,6 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>TrajectoryLogTools.Cli</RootNamespace>
     <AssemblyName>TrajectoryLogCli</AssemblyName>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\TrajectoryLogTools.Core\TrajectoryLogTools.Core.csproj" />
