@@ -1,29 +1,182 @@
 <Window x:Class="TrajectoryLogTools.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
         xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
         Title="{Binding Title}"
-        Width="1280" Height="860" MinWidth="900" MinHeight="640"
-        WindowStartupLocation="CenterScreen">
-    <Grid Margin="8">
+        Width="1360" Height="880" MinWidth="980" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenCommand}" />
+        <KeyBinding Key="E" Modifiers="Control" Command="{Binding ExportCommand}" />
+        <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseCommand}" />
+    </Window.InputBindings>
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:StartPageViewModel}"><views:StartPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LogPageViewModel}"><views:LogPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ComparePageViewModel}"><views:ComparePage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RebuildPageViewModel}"><views:RebuildPage /></DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="12,0,12,6">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="1" Text="{Binding EnvironmentText}" Opacity="0.55" FontSize="11" Margin="4,6,4,0" TextTrimming="CharacterEllipsis" />
-        <TabControl SelectedIndex="{Binding SelectedTab}">
-            <TabItem Header="Convert &amp; export">
-                <views:ConvertView DataContext="{Binding Convert}" />
-            </TabItem>
-            <TabItem Header="Log viewer">
-                <views:ViewerView DataContext="{Binding Viewer}" />
-            </TabItem>
-            <TabItem Header="Compare">
-                <views:CompareView DataContext="{Binding Compare}" />
-            </TabItem>
-            <TabItem Header="Eclipse MLC">
-                <views:MlcView DataContext="{Binding Mlc}" />
-            </TabItem>
-        </TabControl>
+
+        <!-- Title bar -->
+        <DockPanel Height="46" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE9D9;" FontSize="18" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="4,0,10,0" />
+            <TextBlock DockPanel.Dock="Left" Text="Trajectory Log Tools" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button DockPanel.Dock="Right" Command="{Binding ShowSettingsCommand}" ToolTip="Settings" AutomationProperties.Name="Settings" Padding="8,6" Margin="4,0,0,0">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" />
+            </Button>
+            <Button DockPanel.Dock="Right" Command="{Binding ToggleThemeCommand}" ToolTip="Light / dark" AutomationProperties.Name="Switch between light and dark" Padding="8,6">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE793;" />
+            </Button>
+        </DockPanel>
+
+        <!-- Notification bar -->
+        <Border Grid.Row="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,8"
+                Visibility="{Binding Notice, Converter={StaticResource NotEmptyToVisibility}}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorAttentionBackgroundBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding NoticeKind}" Value="caution">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding NoticeKind}" Value="critical">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Command="{Binding DismissNoticeCommand}" AutomationProperties.Name="Dismiss" Padding="6,4" Background="Transparent" BorderThickness="0">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="11" />
+                </Button>
+                <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Open logs: full pane -->
+            <Border Style="{StaticResource Pane}" Width="310" Margin="0,0,12,0"
+                    Visibility="{Binding ListCollapsed, Converter={StaticResource InverseBoolToVisibility}}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="14,12,10,8">
+                        <Button DockPanel.Dock="Right" Command="{Binding ToggleListCommand}" ToolTip="Hide the list" AutomationProperties.Name="Hide the list"
+                                Padding="6,4" Background="Transparent" BorderThickness="0" Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE76B;" FontSize="12" />
+                        </Button>
+                        <Button DockPanel.Dock="Right" x:Name="MoreButton" Click="MoreButton_Click" ToolTip="Add from folder, recent logs" AutomationProperties.Name="More ways to open"
+                                Padding="8,5" Margin="4,0,0,0">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE70D;" FontSize="11" />
+                            <Button.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="Open files…" InputGestureText="Ctrl+O" Command="{Binding OpenCommand}" />
+                                    <MenuItem Header="Add from folder…" Command="{Binding AddFromFolderDialogCommand}" />
+                                    <MenuItem Header="Recent logs" ItemsSource="{Binding RecentFiles}" Click="Recent_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button DockPanel.Dock="Right" Command="{Binding OpenCommand}" Style="{DynamicResource AccentButtonStyle}" Padding="12,5" ToolTip="Open logs (Ctrl+O)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="12" Margin="0,0,6,0" />
+                                <TextBlock Text="Open" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="Open logs" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <Grid DockPanel.Dock="Top" Margin="14,0,14,8">
+                        <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Filter open logs" />
+                        <TextBlock Text="Filter by plan, field, date or folder" Style="{StaticResource Secondary}" Margin="11,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                                   Visibility="{Binding Filter, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=invert}" />
+                    </Grid>
+
+                    <!-- Footer -->
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="12,8">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Command="{Binding CloseCommand}" ToolTip="Close the selected logs (Ctrl+W); nothing is deleted" AutomationProperties.Name="Close selected logs" Padding="8,5" Margin="6,0,0,0">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="11" />
+                            </Button>
+                            <Button DockPanel.Dock="Right" Content="Export…" Command="{Binding ExportCommand}" Padding="10,5" Margin="6,0,0,0" ToolTip="Export the ticked logs, or the shown log (Ctrl+E)" />
+                            <Button DockPanel.Dock="Right" Content="Compare" Command="{Binding CompareCheckedCommand}" Padding="10,5" ToolTip="Tick two logs to compare them" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectionText}" Style="{StaticResource Secondary}" />
+                                <Button Content="Select all" Command="{Binding CheckAllCommand}" Style="{StaticResource LinkButton}" FontSize="12" HorizontalAlignment="Left" Padding="0" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Margin="14,4,14,10" Padding="10,8">
+                        <TextBlock Text="Drop .bin files or folders anywhere in the window" Style="{StaticResource Hint}" TextAlignment="Center" />
+                    </Border>
+
+                    <Grid>
+                        <ListBox x:Name="LogList" ItemsSource="{Binding LogsView}" SelectedItem="{Binding CurrentLog}" BorderThickness="0" Background="Transparent"
+                                 HorizontalContentAlignment="Stretch" Margin="6,0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" PreviewMouseLeftButtonUp="LogList_PreviewMouseLeftButtonUp"
+                                 AutomationProperties.Name="Open logs">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:LogItem}">
+                                    <Grid ToolTip="{Binding Path}" Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Top" Margin="0,0,4,0" MinWidth="0"
+                                                  AutomationProperties.Name="{Binding DisplayName, StringFormat='Select {0}'}" />
+                                        <StackPanel Grid.Column="1">
+                                            <DockPanel>
+                                                <views:StatusChip DockPanel.Dock="Right" Text="{Binding Badge}" Kind="{Binding BadgeKind}" Margin="6,0,0,0"
+                                                                  Visibility="{Binding Badge, Converter={StaticResource NotEmptyToVisibility}}" />
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding SubtitleText}" Style="{StaticResource Secondary}" />
+                                            <TextBlock Text="{Binding FolderShort}" Style="{StaticResource Secondary}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- Open logs: collapsed to a rail -->
+            <Border Style="{StaticResource Pane}" Width="52" Margin="0,0,12,0"
+                    Visibility="{Binding ListCollapsed, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel HorizontalAlignment="Center" Margin="0,10">
+                    <Button Command="{Binding ToggleListCommand}" ToolTip="Show the list" AutomationProperties.Name="Show open logs" Padding="8,6">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE700;" />
+                    </Button>
+                    <Button Command="{Binding OpenCommand}" ToolTip="Open logs (Ctrl+O)" AutomationProperties.Name="Open logs" Padding="8,6" Margin="0,8,0,0">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" />
+                    </Button>
+                    <TextBlock Text="{Binding SelectionText}" Style="{StaticResource Secondary}" Margin="0,14,0,0" HorizontalAlignment="Center">
+                        <TextBlock.LayoutTransform><RotateTransform Angle="-90" /></TextBlock.LayoutTransform>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- Page -->
+            <Border Grid.Column="1" Style="{StaticResource Pane}">
+                <ContentControl Content="{Binding CurrentPage}" Focusable="False" />
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="3" Text="{Binding EnvironmentText}" Style="{StaticResource Secondary}" FontSize="11" Margin="4,6,4,0" Opacity="0.8" />
     </Grid>
 </Window>

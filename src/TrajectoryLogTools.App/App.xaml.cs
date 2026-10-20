@@ -1,7 +1,8 @@
-// App.xaml.cs - start-up: reads the command-line arguments and opens the main window.
+// App.xaml.cs - start-up: theme, command-line arguments, main window.
 
 using System.Windows;
 using System.Windows.Threading;
+using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.App.ViewModels;
 
 namespace TrajectoryLogTools.App
@@ -12,10 +13,11 @@ namespace TrajectoryLogTools.App
         {
             base.OnStartup(e);
             DispatcherUnhandledException += OnUnhandledException;
-            var vm = new MainViewModel(StartupArgs.Parse(e.Args));
-            var window = new MainWindow { DataContext = vm };
+            Theme.Apply(AppSettings.Current.Theme);
+            var window = new MainWindow();
             MainWindow = window;
-            window.Show();
+            window.Show();   // before the view model: it may open a dialog owned by the window
+            window.DataContext = new MainViewModel(StartupArgs.Parse(e.Args));
         }
 
         static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

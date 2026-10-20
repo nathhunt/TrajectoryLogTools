@@ -39,6 +39,14 @@ namespace TrajectoryLogTools.App.Services
             return dlg.ShowDialog(Application.Current.MainWindow) == true ? dlg.FolderName : null;
         }
 
+        /// <summary>Shows a dialog window over the main window.</summary>
+        public static bool? ShowDialog(Window w)
+        {
+            w.Owner = Application.Current.MainWindow;
+            w.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            return w.ShowDialog();
+        }
+
         public static void Warn(string message)
         {
             MessageBox.Show(Application.Current.MainWindow, message, Title, MessageBoxButton.OK, MessageBoxImage.Warning);

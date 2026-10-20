@@ -1,23 +1,20 @@
-// StartupArgs.cs - command-line arguments, all optional. The Eclipse launcher uses them to
-// pre-fill the form:
-//   --input <file | folder>    log(s) for Convert & export (a single .bin also opens in the viewer)
-//   --output <folder>          export folder
-//   --mode <v4 | csv | both | dump>   initial Convert & export options
-//   --tab <convert | viewer | compare | mlc>   tab to open on
-//   <file.bin>                 a log to open in the viewer (e.g. dragged onto the .exe)
+// StartupArgs.cs - command-line arguments, all optional:
+//   <file.bin | file.csv> ...      logs to open (e.g. passed by the Eclipse launcher, or dragged onto the .exe)
+//   <folder>                       opens Add from folder for it
+//   --input <file | folder>        a log to open, or the folder the open dialogs start in
+//   --start-folder <folder>        the folder the open dialogs start in
+// Arguments of earlier versions (--output, --mode, --tab) are accepted and ignored.
 
-using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace TrajectoryLogTools.App
 {
     public sealed class StartupArgs
     {
-        public string Input;
-        public string Output;
-        public string Mode;
-        public string Tab;
-        public string OpenLog;
+        public List<string> Files = new List<string>();
+        public string Folder;
+        public string StartFolder;
 
         public static StartupArgs Parse(string[] args)
         {
@@ -26,13 +23,20 @@ namespace TrajectoryLogTools.App
             {
                 string a = args[i].ToLowerInvariant();
                 string v = i + 1 < args.Length ? args[i + 1] : null;
-                if ((a == "--input" || a == "-i") && v != null) { s.Input = v; i++; }
-                else if ((a == "--output" || a == "-o") && v != null) { s.Output = v; i++; }
-                else if (a == "--mode" && v != null) { s.Mode = v.ToLowerInvariant(); i++; }
-                else if (a == "--tab" && v != null) { s.Tab = v.ToLowerInvariant(); i++; }
-                else if (!a.StartsWith("-") && s.OpenLog == null && File.Exists(args[i])) s.OpenLog = args[i];
+                if ((a == "--input" || a == "-i") && v != null)
+                {
+                    if (File.Exists(v)) s.Files.Add(v);
+                    else if (Directory.Exists(v)) s.StartFolder = v;
+                    i++;
+                }
+                else if (a == "--start-folder" && v != null) { if (Directory.Exists(v)) s.StartFolder = v; i++; }
+                else if ((a == "--output" || a == "-o" || a == "--mode" || a == "--tab") && v != null) i++;
+                else if (!a.StartsWith("-"))
+                {
+                    if (File.Exists(args[i])) s.Files.Add(args[i]);
+                    else if (Directory.Exists(args[i]) && s.Folder == null) s.Folder = args[i];
+                }
             }
-            if (s.OpenLog == null && s.Input != null && File.Exists(s.Input)) s.OpenLog = s.Input;
             return s;
         }
     }

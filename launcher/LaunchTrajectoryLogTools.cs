@@ -10,7 +10,7 @@
 // Eclipse does not stop it.
 //
 // Setup: set ExePath below to TrajectoryLogTools.exe in the deployed folder (a local path or a UNC
-// share; keep the whole folder together), and optionally the defaults the tool opens with.
+// share; keep the whole folder together), and optionally the folder the Open dialogs start in.
 //
 // The script reads no patient data, so it runs with or without a patient open and does not need
 // to be approved as a writeable script.
@@ -29,15 +29,9 @@ namespace VMS.TPS
         // ---- Edit these for your clinic ------------------------------------------------------
         // Full path of TrajectoryLogTools.exe (in the deployed folder, next to its DLLs).
         const string ExePath = @"TrajectoryLogTools.exe";
-        // Folder the Convert & export tab opens with as input (e.g. where logs are copied from the
-        // machine). Leave empty to start with a blank input.
-        const string DefaultInputFolder = @"";
-        // Folder converted files are exported to by default. Leave empty to start blank.
-        const string DefaultExportFolder = @"";
-        // Initial Convert & export options: "v4" (v5.1 -> v4.0 .bin), "csv", "both" or "dump".
-        const string DefaultMode = "v4";
-        // Tab to open on: "convert", "viewer", "compare" or "mlc" (Eclipse MLC reconstruction).
-        const string DefaultTab = "convert";
+        // Optional: the folder the Open dialogs start in (e.g. where logs are copied from the
+        // machine). Logs can still be opened from anywhere. Leave empty to let Windows decide.
+        const string StartFolder = @"";
         // ---------------------------------------------------------------------------------------
 
         public Script() { }
@@ -54,10 +48,7 @@ namespace VMS.TPS
             }
 
             var args = new StringBuilder();
-            if (DefaultInputFolder.Length > 0) args.Append("--input ").Append(Quote(DefaultInputFolder)).Append(' ');
-            if (DefaultExportFolder.Length > 0) args.Append("--output ").Append(Quote(DefaultExportFolder)).Append(' ');
-            if (DefaultMode.Length > 0) args.Append("--mode ").Append(DefaultMode).Append(' ');
-            if (DefaultTab.Length > 0) args.Append("--tab ").Append(DefaultTab);
+            if (StartFolder.Length > 0) args.Append("--start-folder ").Append(Quote(StartFolder));
 
             try
             {

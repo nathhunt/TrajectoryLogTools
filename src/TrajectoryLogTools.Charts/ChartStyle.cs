@@ -66,8 +66,33 @@ namespace TrajectoryLogTools.Charts
         /// Shows <paramref name="home"/> (default: the data, auto-scaled) and keeps pan / zoom inside
         /// it. <see cref="Home"/> returns to it (double-click in the GUI).
         /// </summary>
+        /// <summary>Dark charts (the GUI sets this from its theme).</summary>
+        public static bool Dark { get; set; }
+
+        /// <summary>Background, axis, grid and legend colours for the current theme.</summary>
+        public static void ApplyTheme(Plot plt)
+        {
+            Color fig = Dark ? Color.FromHex("#202020") : Colors.White;
+            Color data = Dark ? Color.FromHex("#262626") : Colors.White;
+            Color ink = Dark ? Color.FromHex("#E6E6E6") : Color.FromHex("#1A1A1A");
+            Color grid = Dark ? Color.FromHex("#3A3A3A") : Color.FromHex("#E8E8E8");
+            plt.FigureBackground.Color = fig;
+            plt.DataBackground.Color = data;
+            plt.Axes.Color(ink);
+            plt.Grid.MajorLineColor = grid;
+            plt.Legend.BackgroundColor = data;
+            plt.Legend.FontColor = ink;
+            plt.Legend.OutlineColor = grid;
+            foreach (var p in plt.Axes.GetPanels())
+            {
+                var bar = p as ScottPlot.Panels.ColorBar;
+                if (bar != null) bar.LabelStyle.ForeColor = ink;
+            }
+        }
+
         public static void Finish(Plot plt, AxisLimits? home = null)
         {
+            ApplyTheme(plt);
             if (home == null)
             {
                 plt.Axes.AutoScale();
@@ -116,6 +141,7 @@ namespace TrajectoryLogTools.Charts
         {
             ClearAll(plt);
             plt.Title(message, 13);
+            ApplyTheme(plt);
         }
 
         /// <summary>Clips an array of values to +/- clip, leaving NaN alone.</summary>

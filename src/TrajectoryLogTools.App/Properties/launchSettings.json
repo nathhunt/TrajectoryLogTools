@@ -3,9 +3,9 @@
     "TrajectoryLogTools": {
       "commandName": "Project"
     },
-    "Pre-filled (as from Eclipse)": {
+    "Open a log (as from Eclipse)": {
       "commandName": "Project",
-      "commandLineArgs": "--input C:\\Logs --output C:\\Logs\\Converted --mode both --tab convert"
+      "commandLineArgs": "--start-folder C:\\Logs C:\\Logs\\example.bin"
     }
   }
 }

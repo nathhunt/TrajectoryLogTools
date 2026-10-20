@@ -1,0 +1,211 @@
+<UserControl x:Class="TrajectoryLogTools.App.Views.RebuildPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
+             xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
+             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,14,22,14">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Command="{Binding BackCommand}" ToolTip="Back to the log" AutomationProperties.Name="Back to the log" Padding="8,6" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE72B;" />
+                </Button>
+                <StackPanel>
+                    <TextBlock Text="Rebuild Eclipse MLC" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource Secondary}" ToolTip="{Binding Item.Path}">
+                        <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding Detail, Mode=OneWay, StringFormat=' · {0}'}" /><Run Text="{Binding MlcText, Mode=OneWay, StringFormat=' · {0}'}" />
+                    </TextBlock>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="460" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============ Left: what to rebuild ============ -->
+            <Border BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22,18">
+                    <StackPanel IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">
+                        <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                                Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
+                            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+                        </Border>
+
+                        <TextBlock Text="1  Fields" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10"
+                                   Text="Found in the log. Each ticked field gets its own Eclipse MLC file, built from the leaf positions the machine delivered." />
+                        <ItemsControl ItemsSource="{Binding Fields}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:MlcSubbeamRow}">
+                                    <Border Style="{StaticResource Box}" Padding="10,8" Margin="0,0,0,6">
+                                        <StackPanel>
+                                            <CheckBox IsChecked="{Binding Include}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Info}" Style="{StaticResource Secondary}" />
+                                                </StackPanel>
+                                            </CheckBox>
+                                            <!-- Eclipse export of this field (Advanced > Use Eclipse exports) -->
+                                            <DockPanel Margin="28,6,0,0"
+                                                       Visibility="{Binding DataContext.UseExports, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}">
+                                                <Button DockPanel.Dock="Right" Command="{Binding DataContext.ClearExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        ToolTip="No export for this field" AutomationProperties.Name="Remove export" Padding="6,3" Margin="4,0,0,0">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="10" />
+                                                </Button>
+                                                <Button DockPanel.Dock="Right" Content="Choose…" Command="{Binding DataContext.ChooseExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="8,3" FontSize="12" />
+                                                <StackPanel>
+                                                    <TextBlock Style="{StaticResource Secondary}"><Run Text="Eclipse export: " /><Run Text="{Binding TemplateName, Mode=OneWay}" /></TextBlock>
+                                                    <TextBlock Text="{Binding TemplateInfo}" Style="{StaticResource Secondary}" TextWrapping="Wrap"
+                                                               Visibility="{Binding TemplateInfo, Converter={StaticResource NotEmptyToVisibility}}" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="2  Save to" Style="{StaticResource SectionTitle}" Margin="0,14,0,6" />
+                        <RadioButton Content="{Binding NextToLogText}" IsChecked="{Binding SaveNextToLog}" GroupName="SaveTo" />
+                        <RadioButton IsChecked="{Binding SaveNextToLog, Converter={StaticResource Not}}" GroupName="SaveTo" Margin="0,4,0,0">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseFolderCommand}" Padding="8,3" FontSize="12" Margin="8,0,0,0" />
+                                <TextBlock Text="Another folder" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </RadioButton>
+                        <TextBox Text="{Binding OtherFolder, UpdateSourceTrigger=PropertyChanged}" Margin="28,6,0,0" AutomationProperties.Name="Other folder"
+                                 Visibility="{Binding SaveNextToLog, Converter={StaticResource InverseBoolToVisibility}}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files: &lt;log&gt;[_subN]_reconstructed_MLC.csv and a _report.txt for each." />
+
+                        <Expander Margin="0,16,0,0">
+                            <Expander.Header>
+                                <StackPanel>
+                                    <TextBlock Text="Advanced" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding AdvancedSummary}" Style="{StaticResource Secondary}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Margin="4,10,0,0">
+                                <TextBlock Text="Leaf positions" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
+                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual}" GroupName="Pos" Margin="0,0,16,0" />
+                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource Not}}" GroupName="Pos" />
+                                </StackPanel>
+                                <TextBlock Text="Where each sample sits between control points" FontWeight="SemiBold" />
+                                <StackPanel Margin="0,4,0,10">
+                                    <RadioButton Content="From the delivered MU (recommended)" IsChecked="{Binding AxisMu}" GroupName="Axis" />
+                                    <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource Not}}" GroupName="Axis" />
+                                </StackPanel>
+                                <TextBlock Text="Gantry angles" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
+                                    <RadioButton Content="Plan (rebuilt exactly)" IsChecked="{Binding GantryFromPlan}" GroupName="Gantry" Margin="0,0,16,0" />
+                                    <RadioButton Content="Actual" IsChecked="{Binding GantryFromPlan, Converter={StaticResource Not}}" GroupName="Gantry" />
+                                </StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="Minimum leaf gap (mm)" FontWeight="SemiBold" VerticalAlignment="Center" Width="170" />
+                                    <TextBox Text="{Binding MinGap, UpdateSourceTrigger=PropertyChanged}" Width="90" HorizontalAlignment="Left" ToolTip="Empty = the MLC's own (0.5 mm for SX2)"
+                                             AutomationProperties.Name="Minimum leaf gap in mm" />
+                                </DockPanel>
+                                <CheckBox Content="Also use beam-hold snapshots (not recommended)" IsChecked="{Binding IncludeHold}" />
+                                <CheckBox Content="Use Eclipse exports of these beams" IsChecked="{Binding UseExports}" Margin="0,10,0,0" />
+                                <StackPanel Margin="28,4,0,0" Visibility="{Binding UseExports, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="With an export, the file keeps Eclipse's own header, meterset weights, jaws and angles, and only the leaf positions are replaced. Exports are matched to the fields by control points and gantry angle." />
+                                    <Button Content="Add exports…" Command="{Binding AddExportsCommand}" HorizontalAlignment="Left" Padding="10,4" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                            <Button Content="{Binding RebuildText}" Command="{Binding RebuildCommand}" Style="{DynamicResource AccentButtonStyle}" Padding="18,8" />
+                            <Button Content="Open folder" Command="{Binding OpenFolderCommand}" Padding="14,8" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ============ Right: results ============ -->
+            <DockPanel Grid.Column="1" Margin="22,18,22,16">
+                <TextBlock DockPanel.Dock="Top" Text="Results" Style="{StaticResource SectionTitle}" />
+                <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3" Margin="0,0,0,8" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Text="Results appear here after Rebuild."
+                           Visibility="{Binding Results.Count, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=invert}" />
+
+                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto" MaxHeight="360">
+                    <ItemsControl ItemsSource="{Binding Results}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:RebuildResultRow}">
+                                <Border Style="{StaticResource Box}" Margin="0,0,0,8" Padding="14,12">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Details" Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" Style="{StaticResource LinkButton}" />
+                                            <views:StatusChip Text="{Binding StatusText}" Kind="{Binding StatusKind}" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding FileName}" Style="{StaticResource Secondary}" Margin="0,4,0,8"
+                                                   Visibility="{Binding FileName, Converter={StaticResource NotEmptyToVisibility}}" />
+                                        <UniformGrid Rows="1" Visibility="{Binding Ok, Converter={StaticResource BoolToVisibility}}">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Text="Delivered vs planned" Style="{StaticResource Secondary}" />
+                                                <TextBlock Text="{Binding Delivered}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding DeliveredDetail}" Style="{StaticResource Secondary}" TextWrapping="Wrap" TextTrimming="None" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Text="Eclipse leaf-gap rules" Style="{StaticResource Secondary}" />
+                                                <TextBlock Text="{Binding GapRules}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding GapDetail}" Style="{StaticResource Secondary}" TextWrapping="Wrap" TextTrimming="None" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <TextBlock Text="Gantry" Style="{StaticResource Secondary}" />
+                                                <TextBlock Text="{Binding Gantry}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding GantryDetail}" Style="{StaticResource Secondary}" TextWrapping="Wrap" TextTrimming="None" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                        <ItemsControl ItemsSource="{Binding Problems}" Margin="0,8,0,0" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,2">
+                                                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="12" Margin="0,0,6,0"
+                                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" VerticalAlignment="Top" />
+                                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Details of the selected field -->
+                <TabControl Margin="0,8,0,0" Visibility="{Binding Selected, Converter={StaticResource NotEmptyToVisibility}}">
+                    <TabItem Header="Difference map">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="{Binding Selected.Name, StringFormat='{}{0}: written minus planned leaf positions'}" Style="{StaticResource Secondary}" Margin="0,8,0,4" />
+                            <sp:WpfPlot x:Name="DiffPlot" />
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="Leaf by leaf">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,4">
+                                <TextBlock Text="{Binding SelectedValueName}" Width="90" VerticalAlignment="Center" />
+                                <Slider Minimum="0" Maximum="{Binding MaxValue}" Value="{Binding SelectedValue}" IsSnapToTickEnabled="True" TickFrequency="1" Width="420"
+                                        AutomationProperties.Name="Leaf" />
+                            </StackPanel>
+                            <sp:WpfPlot x:Name="LeafPlot" />
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="Report">
+                        <TextBox Text="{Binding SelectedReport, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
+                    </TabItem>
+                </TabControl>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

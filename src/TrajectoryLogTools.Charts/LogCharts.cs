@@ -77,6 +77,47 @@ namespace TrajectoryLogTools.Charts
             plt.YLabel("Leaf number");
         }
 
+        /// <summary>RMS of actual - expected per leaf (mm), beam on, as horizontal bars (leaf 1 at the top).</summary>
+        public static void LeafRms(Plot plt, DeliveryRecord d)
+        {
+            ChartStyle.ClearAll(plt);
+            int leaves = d == null ? 0 : d.LeafCount;
+            if (leaves == 0) { ChartStyle.Empty(plt, ""); return; }
+            var bars = new List<Bar>();
+            double max = 0;
+            for (int l = 1; l <= leaves; l++)
+            {
+                double[] a = d.Column(DeliveryRecord.LeafColumn(l, "Actual")), e = d.Column(DeliveryRecord.LeafColumn(l, "Expected"));
+                double sum2 = 0; int n = 0;
+                for (int s = 0; s < d.RowCount; s++)
+                    if (d.IsBeamOn(s)) { double v = (a[s] - e[s]) * 10; sum2 += v * v; n++; }
+                double rms = n > 0 ? Math.Sqrt(sum2 / n) : 0;
+                max = Math.Max(max, rms);
+                bars.Add(new Bar { Position = l, Value = rms, Size = 0.8, FillColor = ChartStyle.Expected, LineWidth = 0 });
+            }
+            var bp = plt.Add.Bars(bars);
+            bp.Horizontal = true;
+            ChartStyle.Title(plt, "RMS per leaf (mm)");
+            plt.YLabel("Leaf number");
+            ChartStyle.Finish(plt, new AxisLimits(0, Math.Max(max * 1.05, 0.001), leaves + 0.5, 0.5));
+        }
+
+        /// <summary>The leaves with the largest RMS actual - expected (beam on): (leaf, mm).</summary>
+        public static List<KeyValuePair<int, double>> WorstLeaves(DeliveryRecord d, int count)
+        {
+            var r = new List<KeyValuePair<int, double>>();
+            if (d == null) return r;
+            for (int l = 1; l <= d.LeafCount; l++)
+            {
+                double[] a = d.Column(DeliveryRecord.LeafColumn(l, "Actual")), e = d.Column(DeliveryRecord.LeafColumn(l, "Expected"));
+                double sum2 = 0; int n = 0;
+                for (int s = 0; s < d.RowCount; s++)
+                    if (d.IsBeamOn(s)) { double v = (a[s] - e[s]) * 10; sum2 += v * v; n++; }
+                r.Add(new KeyValuePair<int, double>(l, n > 0 ? Math.Sqrt(sum2 / n) : 0));
+            }
+            return r.OrderByDescending(x => x.Value).Take(count).ToList();
+        }
+
         static void ShadeHolds(Plot plt, DeliveryRecord d, double[] x)
         {
             int s = 0;

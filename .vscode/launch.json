@@ -15,12 +15,12 @@
             "stopAtEntry": false
         },
         {
-            "name": "GUI (pre-filled, as from Eclipse)",
+            "name": "GUI (open a log, as from Eclipse)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/src/TrajectoryLogTools.App/bin/Debug/net10.0-windows10.0.19041.0/TrajectoryLogTools.exe",
-            "args": ["--input", "${input:inputPath}", "--output", "${input:outputFolder}", "--mode", "${input:guiMode}", "--tab", "${input:tab}"],
+            "args": ["${input:inputPath}"],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
             "stopAtEntry": false
@@ -73,22 +73,7 @@
             "default": "to-v4"
         },
         { "id": "inputPath", "type": "promptString", "description": "Log file (.bin) or folder of logs" },
-        { "id": "outputFolder", "type": "promptString", "description": "Export folder" },
         { "id": "logA", "type": "promptString", "description": "Log A (.bin or CSV export)" },
-        { "id": "logB", "type": "promptString", "description": "Log B (.bin or CSV export)" },
-        {
-            "id": "guiMode",
-            "type": "pickString",
-            "description": "Convert & export options",
-            "options": ["v4", "csv", "both", "dump"],
-            "default": "v4"
-        },
-        {
-            "id": "tab",
-            "type": "pickString",
-            "description": "Tab to open on",
-            "options": ["convert", "viewer", "compare", "mlc"],
-            "default": "convert"
-        }
+        { "id": "logB", "type": "promptString", "description": "Log B (.bin or CSV export)" }
     ]
 }

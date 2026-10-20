@@ -103,7 +103,32 @@ namespace TrajectoryLogTools.Analysis
         public double[,] ReconstructedExpected { get; set; }
         /// <summary>Leaf positions of the template, or null without template.</summary>
         public double[,] TemplatePlan { get; set; }
+
+        /// <summary>Ready (all checks passed), CheckFirst (written, but see Problems) or Failed.</summary>
+        public RebuildStatus Status { get; set; }
+        /// <summary>Why the status is CheckFirst, one sentence each; empty when Ready.</summary>
+        public List<string> Problems { get; set; } = new List<string>();
+        /// <summary>Planned MU of the field and gantry of its first control point (IEC).</summary>
+        public double Mu { get; set; }
+        public double GantryStartIec { get; set; }
+        /// <summary>How the gantry angles were written, e.g. "evenly spaced arc 130.0 -> 230.0 deg ...".</summary>
+        public string GantryNote { get; set; }
+        /// <summary>Control-point intervals k..k+1 (field CP numbering) with no beam-on sample to fit.</summary>
+        public List<int> EmptyIntervals { get; set; } = new List<int>();
+        /// <summary>Leaf gaps or closed-pair moves Eclipse would reject, after the gap rules were applied.</summary>
+        public int RemainingGapProblems { get; set; }
+        /// <summary>Gaps closed exactly / opened to the minimum gap by the rules.</summary>
+        public int GapsClosed { get; set; }
+        public int GapsOpened { get; set; }
+        /// <summary>Written (actual) minus planned (expected) positions: RMS and max |difference|, mm, and where.</summary>
+        public double DeliveredRmsMm { get; set; }
+        public double DeliveredMaxMm { get; set; }
+        public string DeliveredMaxAt { get; set; }
+        /// <summary>With a template: reconstruction from expected positions vs the template, max |difference| mm.</summary>
+        public double MethodCheckMaxMm { get; set; } = double.NaN;
     }
+
+    public enum RebuildStatus { Ready, CheckFirst, Failed }
 
     public sealed class MlcReconstructionResult
     {
@@ -285,6 +310,7 @@ namespace TrajectoryLogTools.Analysis
                 }
                 catch (Exception ex)
                 {
+                    res.Status = RebuildStatus.Failed;
                     res.Error = ex.Message;
                     res.Summary = "Subbeam " + sb + ": FAILED - " + ex.Message;
                     say("ERROR (subbeam " + sb + "): " + ex.Message);
@@ -389,6 +415,14 @@ namespace TrajectoryLogTools.Analysis
             double[] coord = new double[rows.Count];
             for (int s = 0; s < rows.Count; s++)
                 coord[s] = axis == "cp" ? rows[s][cCp] : InverseInterp(muKnots, rows[s][cMuA]);
+            // control-point intervals without a sample (the fit bridges them linearly)
+            var perInterval = new int[Math.Max(1, nCp - 1)];
+            foreach (double c in coord)
+            {
+                double x = Math.Min(Math.Max(c, 0.0), nCp - 1);
+                int k = Math.Min((int)Math.Floor(x), nCp - 2);
+                if (k >= 0) perInterval[k]++;
+            }
 
             // ---------------- leaf fits ----------------
             var ys = new double[nLeaf * 2][];   // [0..nLeaf) chosen positions, [nLeaf..2nLeaf) expected (for QA)
@@ -532,6 +566,41 @@ namespace TrajectoryLogTools.Analysis
             say(rep.ToString().TrimEnd());
             say("Report: " + reportPath);
             res.OutputPath = outPath; res.ReportPath = reportPath; res.Report = rep.ToString();
+            res.Mu = muTotal;
+            res.GantryStartIec = template != null ? template.Cps[0][5] : gantryOut[0];
+            res.GantryNote = template != null ? "from the template" : gantryHow;
+            for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0) res.EmptyIntervals.Add(k);
+            res.RemainingGapProblems = nGapViol + nDynViol;
+            res.GapsClosed = nClosed; res.GapsOpened = nOpened;
+            DiffStats(recon, reconExp, nCp, nLeaf, geom, res);
+            if (template != null)
+            {
+                double mc = 0;
+                for (int cp = 0; cp < nCp; cp++)
+                    for (int k = 0; k < nLeaf; k++)
+                        mc = Math.Max(mc, Math.Abs(reconExp[cp, k] - template.Cps[cp][EclipseMlcFile.NonLeafFields + k]));
+                res.MethodCheckMaxMm = mc;
+                double gMax = 0, mwMax = 0;
+                for (int cp = 0; cp < nCp; cp++)
+                {
+                    gMax = Math.Max(gMax, Math.Abs(AngleDiff(fitExp[nLeaf][cp], template.Cps[cp][5])));
+                    mwMax = Math.Max(mwMax, Math.Abs(muKnots[cp] / muTotal - template.Cps[cp][0]));
+                }
+                if (gMax > 0.5 || mwMax > 0.002)
+                    res.Problems.Add(Fmt("The Eclipse export does not look like this beam (gantry differs by up to {0:F2} deg, meterset weight by up to {1:F4}).", gMax, mwMax));
+                if (Math.Abs(AngleDiff(template.Cps[0][6], coll)) > 0.5)
+                    res.Problems.Add(Fmt("The collimator in the log ({0:F1} deg) differs from the Eclipse export ({1:F1} deg).", coll, template.Cps[0][6]));
+                if (mc > MethodCheckLimitMm)
+                    res.Problems.Add(Fmt("Method check: rebuilding the planned positions differs from the Eclipse export by up to {0:F3} mm (expected about 0).", mc));
+            }
+            if (res.RemainingGapProblems > 0)
+                res.Problems.Add(res.RemainingGapProblems + " leaf gap(s) remain that Eclipse may reject (see the report).");
+            if (res.EmptyIntervals.Count > 0)
+                res.Problems.Add("No beam-on samples between control points " + DescribeIntervals(res.EmptyIntervals) +
+                                 "; leaf positions there were interpolated.");
+            if (template == null && gantryHow.StartsWith("not evenly spaced", StringComparison.Ordinal))
+                res.Problems.Add("The gantry is not an evenly spaced arc, so its angles were rounded to 0.01 deg instead of rebuilt exactly.");
+            res.Status = res.Problems.Count == 0 ? RebuildStatus.Ready : RebuildStatus.CheckFirst;
             res.ControlPoints = nCp; res.FirstLogControlPoint = cp0;
             res.Reconstructed = recon; res.ReconstructedExpected = reconExp;
             if (template != null)
@@ -543,6 +612,41 @@ namespace TrajectoryLogTools.Analysis
             double g0 = template != null ? template.Cps[0][5] : gantryOut[0];
             return Fmt("Subbeam {0}: {1} CPs (log CP {2}-{3}), {4:F2} MU, gantry {5:F1} deg IEC -> {6}",
                 subbeam, nCp, cp0, cp0 + nCp - 1, muTotal, g0, System.IO.Path.GetFileName(outPath));
+        }
+
+        /// <summary>Method check above this (mm) makes a field "check first".</summary>
+        public const double MethodCheckLimitMm = 0.05;
+
+        static void DiffStats(double[,] a, double[,] b, int nCp, int nVal, MlcGeometry geom, SubbeamResult res)
+        {
+            double max = 0, sum2 = 0; int worstCp = 0, worstK = 0; long n = 0;
+            for (int cp = 0; cp < nCp; cp++)
+                for (int k = 0; k < nVal; k++)
+                {
+                    double d = a[cp, k] - b[cp, k];
+                    sum2 += d * d; n++;
+                    if (Math.Abs(d) > max) { max = Math.Abs(d); worstCp = cp; worstK = k; }
+                }
+            res.DeliveredRmsMm = n > 0 ? Math.Sqrt(sum2 / n) : 0;
+            res.DeliveredMaxMm = max;
+            string layer = geom.LayerOfPair(worstK / 2);
+            res.DeliveredMaxAt = Fmt("CP {0}, pair {1} {2}{3}", worstCp, worstK / 2 + 1, worstK % 2 == 0 ? "X1" : "X2",
+                                     layer.Length > 0 ? " (" + layer + ")" : "");
+        }
+
+        /// <summary>e.g. [3, 4, 5, 9] -> "3-6 and 9-10".</summary>
+        static string DescribeIntervals(List<int> ks)
+        {
+            var parts = new List<string>();
+            int i = 0;
+            while (i < ks.Count)
+            {
+                int j = i;
+                while (j + 1 < ks.Count && ks[j + 1] == ks[j] + 1) j++;
+                parts.Add(ks[i] + "-" + (ks[j] + 1));
+                i = j + 1;
+            }
+            return parts.Count == 1 ? parts[0] : string.Join(", ", parts.Take(parts.Count - 1)) + " and " + parts[parts.Count - 1];
         }
 
         // Log leaf j (0-based) -> Eclipse value index, sign flipped where the MLC needs it

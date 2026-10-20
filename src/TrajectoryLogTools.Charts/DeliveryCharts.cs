@@ -34,9 +34,9 @@ namespace TrajectoryLogTools.Charts
             if (leaves == 0 || r.Grid.Length == 0) { ChartStyle.Empty(plt, "No leaf data"); return; }
             double sum2 = 0, max = 0; long n = 0;
             foreach (double v in m) if (!double.IsNaN(v)) { sum2 += v * v; n++; max = Math.Max(max, Math.Abs(v)); }
-            // Leaf 1 at the top, as in the Python figure.
-            ChartStyle.DiffHeatmap(plt, ChartStyle.Clip(m, 0.2),
-                new CoordinateRect(r.Grid[0], r.Grid[r.Grid.Length - 1], leaves + 0.5, 0.5), 0.2, "mm (clipped at ±0.2)");
+            // Leaf 1 at the top; colour scale +/- the largest |difference|.
+            ChartStyle.DiffHeatmap(plt, m, new CoordinateRect(r.Grid[0], r.Grid[r.Grid.Length - 1], leaves + 0.5, 0.5),
+                ChartStyle.SymmetricRange(max), "mm");
             ChartStyle.Finish(plt, new AxisLimits(r.Grid[0], r.Grid[r.Grid.Length - 1], leaves + 0.5, 0.5));
             ChartStyle.Title(plt, string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 "{0} leaf positions, A − B   (RMS {1:F3} mm, max {2:F2} mm)", actual ? "Actual" : "Expected",
@@ -47,6 +47,14 @@ namespace TrajectoryLogTools.Charts
 
         /// <summary>The 2 x 2 figure: gantry and MU differences, expected and actual leaf differences.</summary>
         public static void SaveFigure(DeliveryComparisonResult r, string path, int width = 1950, int height = 1275)
+        {
+            bool dark = ChartStyle.Dark;
+            ChartStyle.Dark = false;   // saved figures are always light
+            try { Save(r, path, width, height); }
+            finally { ChartStyle.Dark = dark; }
+        }
+
+        static void Save(DeliveryComparisonResult r, string path, int width, int height)
         {
             var mp = new Multiplot();
             mp.AddPlots(4);

@@ -101,6 +101,7 @@ namespace TrajectoryLogTools.App.ViewModels
     public sealed class MlcSubbeamRow : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
         public int Subbeam { get; set; }
+        public string Name { get; set; }
         public string Info { get; set; }
         public int ControlPoints { get; set; }
 

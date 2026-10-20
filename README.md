@@ -5,43 +5,84 @@ combines four earlier tools:
 
 | Earlier tool | Now |
 |---|---|
-| TrajectoryLogConverter (GUI + `HalcyonTrajectoryLogTool`) | **Convert & export** tab; CLI `to-v4`, `to-csv`, `to-v5`, `version`, `compare` |
-| `TrajectoryLogDump.cs` | **Raw dump** (Convert & export tab and Log viewer); CLI `dump` |
-| `compare_trajectory_logs.py` | **Compare** tab, *Delivery comparison*; CLI `compare-delivery` |
-| `LogToEclipseMlc.cs` | **Eclipse MLC** tab; CLI `reconstruct-mlc` |
+| TrajectoryLogConverter (GUI + `HalcyonTrajectoryLogTool`) | **Export** (v4.0 `.bin`, CSV, full CSV); CLI `to-v4`, `to-csv`, `to-v5`, `version`, `compare` |
+| `TrajectoryLogDump.cs` | **Raw** tab of a log, and **Export > Raw dump**; CLI `dump` |
+| `compare_trajectory_logs.py` | **Compare**; CLI `compare-delivery` |
+| `LogToEclipseMlc.cs` | **Rebuild Eclipse MLC**; CLI `reconstruct-mlc` |
 
 The analyses work straight from the `.bin` log; you no longer have to export a CSV first. CSV
 exports, from this tool or the old converter, still work as input.
 
 ## The application
 
-* **Convert & export**: a single log or a folder of logs (optionally with subfolders and a
-  treatment date range, taken from the `_yyyyMMddHHmmss` stamp in the file name). Choose any of:
-  * convert v5.1 to v4.0;
-  * export CSV (`<name>.csv`), or the full dump as CSV (`_full.csv`);
-  * write a raw dump (`<name>.txt`, every byte as stored).
+The window has two parts: **Open logs** on the left and the selected log (or what you're doing
+with it) on the right.
 
-  Subfolders are mirrored in the output, and each run writes a `TrajectoryLogConversion_<date>_<time>.log`.
-* **Log viewer**: open one log to see:
-  * the header, metadata and subbeams;
-  * a per-subbeam delivery table (gantry, MU planned/delivered, beam-on and hold time, MLC error);
-  * every beam hold, classed as start / end / move / interruption;
-  * charts of any axis (expected, actual, actual − expected, against time or control point);
-  * an MLC error map;
-  * the raw dump.
+**Open logs.** Logs are opened from anywhere and each keeps its own location, so two logs from
+different folders or drives sit side by side. No folder is remembered as a default.
+* **Ways to open:**
+  * **Open** (Ctrl+O) picks one or more files;
+  * the **▾** menu has **Add from folder…** (optionally with subfolders and a treatment date
+    range) and **Recent logs**;
+  * you can drag files or folders anywhere onto the window;
+  * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
+* **Each entry** shows the plan name (from the log's metadata), fields, treatment date,
+  version and folder. Badges mark **Interrupted** deliveries and logs whose **CRC failed** (still
+  opened, with a warning).
+* **Ticking** logs selects them for **Compare** (two) or **Export…** (any number). **✕** closes
+  them; nothing is deleted.
+* The pane folds to a narrow strip (‹) when you want the room.
 
-  From here you can send the log to Compare or Eclipse MLC.
-* **Compare**:
-  * *Delivery comparison*: two deliveries of the same field, matched by control point using
-    beam-on samples only. Shows differences by axis and per leaf, per beam and holds for both
-    logs, and the 2 × 2 figure. **Save results** writes the same CSVs, PNG and report the Python
-    script wrote.
-  * *File comparison*: header, subbeams and every value, for example to check a v4.0 conversion
-    against its v5.1 original.
-* **Eclipse MLC**: rebuild the Eclipse MLC file (MLCPlan serialization) of every field of a log,
-  together with a QA report. Add the Eclipse exports of the beams (templates) all at once; they
-  are matched to the fields by control-point count and gantry angle. You can see the written
-  positions against the plan as a difference map or leaf by leaf.
+**A log** has key facts across the top (MU delivered vs planned, duration, interruptions, MLC
+error, file status) and four tabs:
+* **Overview:** the delivery timeline (beam on, interruptions and planned holds, with details on
+  hover), the per-field table (gantry and collimator in IEC, MU, beam-on time, MLC error), beam
+  holds, and the header and metadata.
+* **Axes:** pick an axis to see expected and actual, and actual − expected underneath (zooming
+  one zooms both), against time or control point.
+* **MLC:** actual − expected for every leaf, beam on, against time or control point, with the
+  RMS per leaf beside it and the worst leaves named.
+* **Raw:** the whole file as stored (header with byte offsets, subbeams, every value, CRC), with
+  find.
+
+From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
+
+**Compare** (two ticked logs, or *Compare with…*) works answer first:
+* it says what was compared (same plan delivered twice, or plans that differ);
+* cards show the MLC, gantry and MU differences, marked within or over your tolerances if you set
+  them in Settings;
+* below are the leaf-difference map and the gantry and MU charts, then folded details: planned
+  differences, per field, beam holds, all statistics, the full report;
+* **File differences (validation)** compares every stored value, for example to check a v4.0
+  conversion against its original.
+
+You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
+
+**Rebuild Eclipse MLC** writes, for each field of a log, the Eclipse MLC file of the leaf
+positions as delivered:
+1. The fields are found automatically; untick any you don't want.
+2. Choose where to save: next to the log, or another folder.
+3. **Advanced** (folded) holds the method options with their defaults. **Use Eclipse exports**,
+   off by default, makes the file keep an Eclipse export's header, meterset weights, jaws and
+   angles; the exports are matched to the fields by control points and gantry angle.
+
+Each field gets a status:
+* **Ready to import:** no leaf-gap problem left, gantry rebuilt cleanly, every control point had
+  data;
+* **Check first:** written, with the reasons listed;
+* **Failed:** nothing written, with the reason.
+
+Each result shows delivered vs planned (for information), the leaf-gap rules and the gantry, with
+the difference map, a leaf-by-leaf view and the QA report.
+
+**Export** works on the ticked logs (or the shown one), wherever they are:
+* **What to write:** v4.0 `.bin`, CSV, full dump CSV and/or raw dump text, each with its own options.
+* **Where:** one folder for all, or next to each log in a `converted` subfolder.
+* Progress is shown per log. A run log is saved in the export folder.
+
+**Settings** (gear icon): theme (follow Windows, light or dark; ◐ toggles), optional Compare
+tolerances, and clearing the recent logs list. They are saved per user in
+`%AppData%\TrajectoryLogTools\settings.json`.
 
 The app opens no ESAPI session and needs no Eclipse login or script approval. It only reads and
 writes files.
@@ -96,10 +137,8 @@ can be .NET 10.
 
 1. Publish, and copy the whole `Deploy\TrajectoryLogTools` folder to a location the Eclipse
    workstations (or the Citrix servers Eclipse runs on) can read.
-2. Edit the constants at the top of `LaunchTrajectoryLogTools.cs`:
-   * `ExePath` (required);
-   * optionally `DefaultInputFolder`, `DefaultExportFolder`, `DefaultMode` (`v4`, `csv`, `both`
-     or `dump`) and `DefaultTab` (`convert`, `viewer`, `compare` or `mlc`).
+2. Edit the constants at the top of `LaunchTrajectoryLogTools.cs`: `ExePath` (required), and
+   optionally `StartFolder`, the folder the Open dialogs start in.
 3. Copy the script into your Eclipse scripts folder (e.g. `\\<server>\va_data$\ProgramData\Vision\PublishedScripts`)
    and run it from **Tools > Scripts**.
 
@@ -107,9 +146,9 @@ The first time, check the line at the bottom of the window. It shows the Windows
 .NET runtime and the folder the app runs from. If the app doesn't start, the usual cause is
 application whitelisting (AppLocker / WDAC); ask IT to allow the deployed folder.
 
-The application's own arguments, all optional, are `--input <file|folder> --output <folder>
---mode v4|csv|both|dump --tab convert|viewer|compare|mlc`. A `.bin` path on its own (for example
-a file dragged onto the exe) opens in the log viewer.
+The application's own arguments, all optional: log files to open (`.bin` or `.csv`), a folder
+to add from, and `--start-folder <folder>` for the Open dialogs. Arguments of earlier versions
+(`--input`, `--output`, `--mode`, `--tab`) are still accepted.
 
 ## Command-line tool
 
@@ -151,7 +190,8 @@ The numbers are the same as the originals produced: the golden tests check this,
   * can write to any output folder;
   * in the GUI, matches templates to fields automatically.
 * **Delivery comparison** accepts `.bin` logs directly. The figure is drawn with ScottPlot
-  instead of matplotlib (same layout and colours).
+  instead of matplotlib (same layout), with its colour scale fitted to the data rather than fixed
+  at ±0.2 mm.
 * **Raw dump** is part of the converter. It gives the same text as `TrajectoryLogDump`, and
   `to-csv --full` still gives the same dump as CSV.
 
