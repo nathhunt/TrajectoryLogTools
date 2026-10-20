@@ -14,6 +14,34 @@ namespace TrajectoryLogTools.Core
         public static readonly string[] PatientIdKeys = { "Patient ID", "PatientID", "Patient Id" };
         public static readonly string[] PlanNameKeys = { "Plan Name", "PlanName", "Plan Label", "Plan" };
         public static readonly string[] PlanUidKeys = { "Plan UID", "PlanUID", "SOP Instance UID", "Plan SOP Instance UID", "RT Plan UID" };
+        /// <summary>The beam name line, which holds the name of the first subbeam (field).</summary>
+        public static readonly string[] BeamNameKeys = { "BeamName", "Beam Name" };
+
+        /// <summary>The key a value is stored under: the log's own spelling of one of <paramref name="keys"/>, else the first.</summary>
+        public static string KeyFor(string text, string[] keys) { return FindKey(text, keys) ?? keys[0]; }
+
+        /// <summary>
+        /// The metadata edits to make for a v4.0 export: <paramref name="edits"/>, plus, when subbeam 1
+        /// is renamed, the BeamName line (if the log has one and it isn't edited already), since it
+        /// holds the first subbeam's name.
+        /// </summary>
+        public static List<KeyValuePair<string, string>> EditsWithBeamName(string text, IList<KeyValuePair<string, string>> edits, IDictionary<int, string> subbeamNames)
+        {
+            var all = new List<KeyValuePair<string, string>>(edits);
+            string first;
+            string beamKey = FindKey(text, BeamNameKeys);
+            if (beamKey != null && subbeamNames != null && subbeamNames.TryGetValue(1, out first) &&
+                !all.Any(e => string.Equals(e.Key.Trim(), beamKey, StringComparison.OrdinalIgnoreCase)))
+                all.Add(new KeyValuePair<string, string>(beamKey, first));
+            return all;
+        }
+
+        /// <summary>The text with the edits made, in order.</summary>
+        public static string Apply(string text, IEnumerable<KeyValuePair<string, string>> edits)
+        {
+            foreach (var e in edits) text = Set(text, e.Key, e.Value);
+            return text;
+        }
 
         /// <summary>Most bytes of text the header holds (745 bytes, the last one the terminating zero).</summary>
         public const int MaxBytes = TrajectoryLog.MetaDataBytes - 1;

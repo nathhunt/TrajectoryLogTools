@@ -185,7 +185,7 @@
                            Visibility="{Binding Results.Count, Converter={StaticResource NotEmptyToVisibility}, ConverterParameter=invert}" />
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Results}" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding Results}" Focusable="False" Margin="0,0,14,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:RebuildResultRow}">
                                 <Border Style="{StaticResource Box}" Margin="0,0,0,8" Padding="14,12">

@@ -269,6 +269,7 @@ namespace TrajectoryLogTools.App.ViewModels
         void ToggleTheme()
         {
             AppSettings.Current.Theme = Theme.IsDark ? "Light" : "Dark";
+            AppSettings.Current.ThemeChosen = true;
             AppSettings.Current.Save();
             Theme.Apply(AppSettings.Current.Theme);
         }

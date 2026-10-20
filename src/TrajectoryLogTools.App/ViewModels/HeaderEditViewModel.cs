@@ -22,6 +22,8 @@ namespace TrajectoryLogTools.App.ViewModels
         public int Subbeam { get; set; }
         public string Original { get; set; }
         public string OriginalText { get { return Original == null ? "(not in the log)" : Original.Length == 0 ? "(empty)" : Original; } }
+        /// <summary>A line under the row ("" for none), e.g. that the header's BeamName line follows field 1.</summary>
+        public string Note { get; set; } = "";
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsChanged))]
@@ -49,12 +51,18 @@ namespace TrajectoryLogTools.App.ViewModels
             Details.Add(Detail("Patient ID", MetaData.PatientIdKeys, meta));
             Details.Add(Detail("Plan name", MetaData.PlanNameKeys, meta));
             Details.Add(Detail("Plan UID", MetaData.PlanUidKeys, meta));
+            string beamKey = MetaData.FindKey(meta, MetaData.BeamNameKeys);
             for (int i = 0; i < header.Subbeams.Count; i++)
             {
                 string name = header.Subbeams[i].Name ?? "";
-                Fields.Add(new HeaderValueRow { Label = "Field " + (i + 1), Subbeam = i + 1, Original = name, Value = name });
+                var row = new HeaderValueRow { Label = "Field " + (i + 1), Subbeam = i + 1, Original = name, Value = name };
+                // The header's BeamName line holds the first field's name; renaming field 1 changes it too.
+                if (i == 0 && beamKey != null)
+                    row.Note = "Also written to the header's " + beamKey + " line (in the log: " + (MetaData.Get(meta, beamKey) ?? "empty") + ").";
+                Fields.Add(row);
             }
             var shown = new HashSet<string>(Details.Select(d => d.Key), StringComparer.OrdinalIgnoreCase);
+            if (beamKey != null) shown.Add(beamKey);
             OtherMetadata = string.Join(Environment.NewLine, MetaData.Entries(meta).Where(e => !shown.Contains(e.Key)).Select(e => e.Key + ": " + e.Value));
         }
 
@@ -62,7 +70,7 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             string key = MetaData.FindKey(meta, keys);
             string value = key == null ? null : MetaData.Get(meta, key) ?? "";
-            return new HeaderValueRow { Label = label, Key = key ?? keys[0], Original = value, Value = value ?? "" };
+            return new HeaderValueRow { Label = label, Key = MetaData.KeyFor(meta, keys), Original = value, Value = value ?? "" };
         }
 
         /// <summary>A copy to edit, so Cancel leaves these values alone.</summary>
@@ -99,7 +107,7 @@ namespace TrajectoryLogTools.App.ViewModels
             foreach (HeaderValueRow r in Details.Concat(Fields))
                 if ((r.Value ?? "").IndexOfAny(new[] { '\r', '\n' }) >= 0) return r.Label + " must be one line.";
             string meta = _header.MetaDataText ?? "";
-            foreach (var e in MetaEdits()) meta = MetaData.Set(meta, e.Key, e.Value);
+            meta = MetaData.Apply(meta, MetaData.EditsWithBeamName(meta, MetaEdits(), SubbeamNames()));   // as the export will write it
             int bytes = Encoding.UTF8.GetByteCount(meta);
             if (bytes > MetaData.MaxBytes)
                 return "The patient and plan details would take " + bytes + " bytes; the header holds " + MetaData.MaxBytes + ". Shorten a value.";

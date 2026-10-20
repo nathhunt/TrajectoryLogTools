@@ -8,6 +8,10 @@
         <!-- One row: label, value as in the log, value to write, reset -->
         <DataTemplate x:Key="ValueRow" DataType="{x:Type vm:HeaderValueRow}">
             <Grid Margin="0,0,0,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110" />
                     <ColumnDefinition Width="*" />
@@ -22,6 +26,8 @@
                         Padding="8,4" Margin="6,0,0,0" IsEnabled="{Binding IsChanged}">
                     <TextBlock Style="{StaticResource Icon}" Text="&#xE7A7;" FontSize="12" />
                 </Button>
+                <TextBlock Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding Note}" Style="{StaticResource Hint}" Margin="0,3,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding Note, Converter={StaticResource NotEmptyToVisibility}}" />
             </Grid>
         </DataTemplate>
     </Window.Resources>
@@ -34,7 +40,8 @@
         </DockPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <!-- right margin: room for the scroll bar, which the Fluent theme draws over the content -->
+            <StackPanel Margin="0,0,18,0">
                 <TextBlock Text="Header details" Style="{StaticResource PageTitle}" />
                 <TextBlock Style="{StaticResource Secondary}" Text="{Binding FileName}" Margin="0,2,0,6" />
                 <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,14" TextWrapping="Wrap"

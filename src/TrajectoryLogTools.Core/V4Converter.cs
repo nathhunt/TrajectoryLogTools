@@ -67,9 +67,9 @@ namespace TrajectoryLogTools.Core
             BinUtil.WriteInt(header, ref q, log.Truncated);
             BinUtil.WriteInt(header, ref q, log.NumSnapshots);
             BinUtil.WriteInt(header, ref q, log.MlcModel);
-            string meta = log.MetaDataText;
-            foreach (var e in opt.MetaEdits) meta = MetaData.Set(meta, e.Key, e.Value);
-            if (opt.MetaEdits.Count == 0)
+            var metaEdits = MetaData.EditsWithBeamName(log.MetaDataText, opt.MetaEdits, opt.SubbeamNames);
+            string meta = MetaData.Apply(log.MetaDataText, metaEdits);
+            if (metaEdits.Count == 0)
                 Buffer.BlockCopy(src, log.MetaOffset, header, q, TrajectoryLog.MetaDataBytes);
             else
             {
@@ -151,7 +151,7 @@ namespace TrajectoryLogTools.Core
             if (serial != log.MachineSerial)
                 notes.Add(serial.Length == 0 ? "Serial number '" + log.MachineSerial + "' removed from header."
                                              : "Serial number '" + log.MachineSerial + "' -> '" + serial + "'.");
-            foreach (var e in opt.MetaEdits)
+            foreach (var e in metaEdits)
                 notes.Add(e.Value == null ? "Metadata '" + e.Key + "' removed." : "Metadata '" + e.Key + "' set to '" + e.Value + "'.");
             foreach (var n in opt.SubbeamNames.OrderBy(x => x.Key))
                 notes.Add("Subbeam " + n.Key + " renamed '" + log.Subbeams[n.Key - 1].Name + "' -> '" + n.Value + "'.");

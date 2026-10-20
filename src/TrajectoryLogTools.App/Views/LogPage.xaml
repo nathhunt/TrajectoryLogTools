@@ -43,7 +43,7 @@
         <TabControl SelectedIndex="{Binding SelectedTab}" Margin="16,0,16,12">
             <!-- ================= Overview ================= -->
             <TabItem Header="Overview">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="6,12,6,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="6,12,16,0">
                     <StackPanel>
                         <TextBlock Text="Delivery timeline" Style="{StaticResource SectionTitle}" />
                         <ItemsControl ItemsSource="{Binding Timeline}" Height="30" Focusable="False" x:Name="TimelineBar">

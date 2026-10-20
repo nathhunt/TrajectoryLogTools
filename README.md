@@ -102,7 +102,8 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
   (default) or kept.
 * **Header details…** (one v5.1 log only) changes the patient ID, plan name, plan UID and field
   (beam / subbeam) names written to the v4.0 file. Each shows the value in the log beside the one
-  to write; anything not changed is copied exactly. The original log is never changed, and the
+  to write; anything not changed is copied exactly. Renaming field 1 also changes the header's
+  BeamName line, which holds the first field's name. The original log is never changed, and the
   CSV and dump exports are written from it.
 * **Where:** one folder for all, or next to each log in a `converted` subfolder.
 * Progress is shown per log. A run log is saved in the export folder.
@@ -113,7 +114,7 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
 Rebuild details window). Over a table, the wheel scrolls the table if it has more rows to show,
 otherwise the page.
 
-**Settings** (gear icon): theme (follow Windows, light or dark; ◐ toggles), optional Compare
+**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in
 `%AppData%\TrajectoryLogTools\settings.json`.
 
@@ -184,6 +185,29 @@ to add from, and `--start-folder <folder>` for the Open dialogs. Arguments of ea
 (`--input`, `--output`, `--mode`, `--tab`) are still accepted.
 
 ## Command-line tool
+
+The first four commands do what the app does, with the same options, defaults and output files
+(they call the same code):
+
+```
+TrajectoryLogCli export <log | folder> ... [-o <folder>] [--v4] [--csv] [--full-csv] [--dump]
+                        [--machine truebeam|halcyon] [--serial remove|keep] [--new-serial <text>] [--couch remove|keep] [--save-time]
+                        [--patient-id <text>] [--plan-name <text>] [--plan-uid <text>] [--field-name N=NAME ...]   (one log)
+                        [--no-mlc] [--actual-only]
+TrajectoryLogCli compare-deliveries <logA> <logB> [-o <folder>] [--no-plot]
+TrajectoryLogCli compare-files <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]
+TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...] [--positions actual|expected] [--axis mu|cp]
+                        [--gantry plan|actual] [--min-gap <mm>] [--include-hold] [--field n,m] [--verbose]
+```
+
+* `export` defaults as the Export window: v4.0 only, next to each log in a `converted` subfolder
+  (with `-o`, one folder and a run log); machine TrueBeam, serial removed, couch axes removed.
+  The header details change one log at a time; renaming field 1 also sets the header's BeamName.
+* `rebuild-mlc` works as the Rebuild page: any number of logs, every field (or `--field`), next to
+  each log or in one folder; Eclipse exports are matched to the fields by control points and
+  gantry angle, so their order doesn't matter. It prints each field's status.
+
+The original commands do one kind of output per run and are kept for scripts:
 
 ```
 TrajectoryLogCli to-v4   <input.bin | folder> [-o <file|folder>] [--keep-machine-info] [--time-csv] [--drop-couch-rotations] [--axis-scale 1|2|3]
