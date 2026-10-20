@@ -58,10 +58,18 @@ From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
 
 You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
 
-**Rebuild Eclipse MLC** writes, for each field of a log, the Eclipse MLC file of the leaf
-positions as delivered:
-1. The fields are found automatically; untick any you don't want.
-2. Choose where to save: next to the log, or another folder.
+**Rebuild Eclipse MLC** writes, for each field, the Eclipse MLC file of the leaf positions as
+delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or on the shown log
+(**Rebuild Eclipse MLC…** on its page; if that log is ticked, all the ticked logs).
+1. The fields are found automatically and listed by delivery: one box per plan and day, its
+   fields in the order delivered. A plan delivered as one log per field and a plan delivered as one
+   log with several fields look the same; each field says where it came from ("Own log" or
+   "Field 2 of 3 in one log", the time and the file). A field found in two logs of one delivery,
+   usually one resumed after an interruption, is flagged; each part gets its own file. Logs that
+   can't be rebuilt are listed under **Not included** with the reason. Untick any field you don't
+   want, or a whole delivery with its box's tick.
+2. Choose where to save: next to each log, or one other folder (refused if two logs have the same
+   file name, since their files would overwrite each other).
 3. **Advanced** (folded) holds the method options with their defaults. **Use Eclipse exports**,
    off by default, makes the file keep an Eclipse export's header, meterset weights, jaws and
    angles; the exports are matched to the fields by control points and gantry angle.

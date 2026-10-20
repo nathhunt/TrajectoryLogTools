@@ -82,6 +82,7 @@ namespace TrajectoryLogTools.App.ViewModels
             OnPropertyChanged(nameof(SelectionText));
             CompareCheckedCommand.NotifyCanExecuteChanged();
             ExportCommand.NotifyCanExecuteChanged();
+            RebuildCommand.NotifyCanExecuteChanged();
             CloseCommand.NotifyCanExecuteChanged();
         }
 
@@ -118,9 +119,15 @@ namespace TrajectoryLogTools.App.ViewModels
             CurrentPage = new ComparePageViewModel(a, b, this);
         }
 
-        public void ShowRebuild(LogItem item)
+        public void ShowRebuild(IEnumerable<LogItem> items)
         {
-            CurrentPage = new RebuildPageViewModel(item, this);
+            CurrentPage = new RebuildPageViewModel(items, this);
+        }
+
+        /// <summary>The ticked logs if <paramref name="item"/> is one of them, else just it.</summary>
+        public List<LogItem> WithChecked(LogItem item)
+        {
+            return item.IsChecked ? Logs.Where(l => l.IsChecked).ToList() : new List<LogItem> { item };
         }
 
         // =========================================================================================
@@ -228,6 +235,13 @@ namespace TrajectoryLogTools.App.ViewModels
             if (logs.Count == 0) return;
             var vm = new ExportViewModel(logs);
             Dialogs.ShowDialog(new Views.ExportWindow { DataContext = vm });
+        }
+
+        [RelayCommand(CanExecute = nameof(CanExport))]
+        void Rebuild()
+        {
+            var logs = Targets();
+            if (logs.Count > 0) ShowRebuild(logs);
         }
 
         [RelayCommand]

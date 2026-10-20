@@ -97,13 +97,20 @@ namespace TrajectoryLogTools.App.ViewModels
         }
     }
 
-    /// <summary>A subbeam of the log in the Eclipse MLC tab, with its template.</summary>
+    /// <summary>A field on the Rebuild page: one subbeam of one log, with its Eclipse export.</summary>
     public sealed class MlcSubbeamRow : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
+        public LogItem Log { get; set; }
         public int Subbeam { get; set; }
         public string Name { get; set; }
         public string Info { get; set; }
+        /// <summary>Where the field comes from: "Own log · 10:42 · a.bin" or "Field 2 of 3 in a.bin · 10:42".</summary>
+        public string Source { get; set; }
+        /// <summary>A caution shown under the field ("" for none), e.g. the same field is in another log too.</summary>
+        public string Note { get; set; } = "";
         public int ControlPoints { get; set; }
+        /// <summary>Planned gantry at the first beam-on snapshot (IEC), for matching Eclipse exports.</summary>
+        public double GantryIec { get; set; } = double.NaN;
 
         bool _include = true;
         public bool Include { get { return _include; } set { SetProperty(ref _include, value); } }
@@ -119,5 +126,49 @@ namespace TrajectoryLogTools.App.ViewModels
         public string TemplateInfo { get { return _templateInfo; } set { SetProperty(ref _templateInfo, value); } }
 
         public string TemplateName { get { return string.IsNullOrEmpty(Template) ? "(none)" : System.IO.Path.GetFileName(Template); } }
+    }
+
+    /// <summary>
+    /// The fields of one delivery on the Rebuild page: the logs of one plan on one day, whether the
+    /// machine wrote one log per field or one log with several fields. Its tick ticks them all.
+    /// </summary>
+    public sealed class MlcFieldGroup : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
+    {
+        public string Title { get; set; }
+        public string Detail { get; set; }
+        public System.Collections.Generic.List<MlcSubbeamRow> Fields { get; } = new System.Collections.Generic.List<MlcSubbeamRow>();
+
+        bool _updating;
+
+        /// <summary>True when every field is ticked, false when none, null when some.</summary>
+        public bool? Include
+        {
+            get
+            {
+                int n = System.Linq.Enumerable.Count(Fields, f => f.Include);
+                return n == Fields.Count ? true : n == 0 ? (bool?)false : null;
+            }
+            set
+            {
+                bool on = value != false;
+                _updating = true;
+                foreach (MlcSubbeamRow f in Fields) f.Include = on;
+                _updating = false;
+                OnPropertyChanged();
+            }
+        }
+
+        public void Add(MlcSubbeamRow row)
+        {
+            Fields.Add(row);
+            row.PropertyChanged += (s, e) => { if (!_updating && e.PropertyName == nameof(MlcSubbeamRow.Include)) OnPropertyChanged(nameof(Include)); };
+        }
+    }
+
+    /// <summary>A log the Rebuild page can't use, with the reason.</summary>
+    public sealed class SkippedLogRow
+    {
+        public string Name { get; set; }
+        public string Reason { get; set; }
     }
 }

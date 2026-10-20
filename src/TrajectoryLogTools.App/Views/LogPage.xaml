@@ -8,7 +8,7 @@
         <DockPanel DockPanel.Dock="Top" Margin="22,18,22,0">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
                 <Button Content="Compare with…" Command="{Binding CompareWithCommand}" Padding="12,6" Margin="0,0,8,0" ToolTip="Pick another log to compare this one with" />
-                <Button Content="Rebuild Eclipse MLC…" Command="{Binding RebuildCommand}" Padding="12,6" Margin="0,0,8,0" />
+                <Button Content="Rebuild Eclipse MLC…" Command="{Binding RebuildCommand}" Padding="12,6" Margin="0,0,8,0" ToolTip="This log; if it is ticked, all the ticked logs" />
                 <Button Content="Export…" Command="{Binding ExportCommand}" Padding="12,6" Style="{DynamicResource AccentButtonStyle}" />
             </StackPanel>
             <StackPanel Margin="0,0,16,0">

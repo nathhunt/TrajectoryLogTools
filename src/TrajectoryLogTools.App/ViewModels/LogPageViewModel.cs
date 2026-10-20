@@ -328,7 +328,7 @@ namespace TrajectoryLogTools.App.ViewModels
         }
 
         [RelayCommand]
-        void Rebuild() { _main.ShowRebuild(Item); }
+        void Rebuild() { _main.ShowRebuild(_main.WithChecked(Item)); }
 
         [RelayCommand]
         void Export() { _main.ExportLogs(new List<LogItem> { Item }); }
