@@ -25,8 +25,10 @@ namespace TrajectoryLogTools.App.ViewModels
         public string StateKind { get; set; }
         public string Samples { get; set; }
         public string ValuesDiffer { get; set; }
-        public string Expected { get; set; }
-        public string Actual { get; set; }
+        /// <summary>"354 / 3,746": how many of the values that differ are expected / actual.</summary>
+        public string ExpectedActual { get; set; }
+        /// <summary>Values that are "no value" in one log only.</summary>
+        public string NoValue { get; set; }
         public string Snapshots { get; set; }
         public string MaxDifference { get; set; }
         public string First { get; set; }
@@ -59,6 +61,16 @@ namespace TrajectoryLogTools.App.ViewModels
         public string NameB { get { return Describe(B); } }
         public bool HasFields { get { return Fields.Count > 0; } }
         public bool HasNotes { get { return Notes.Count > 0; } }
+        public string NotesText { get { return string.Join("  ·  ", Notes); } }
+        public string FieldsTab { get { return "Header and subbeams" + (Fields.Count > 0 ? " (" + Fields.Count + " differ)" : " (same)"); } }
+        public string AxesTab
+        {
+            get
+            {
+                int n = _allAxes.Count(x => x.Source.State != "same");
+                return "Axes" + (_allAxes.Count == 0 ? "" : n == 0 ? " (same)" : " (" + n + " of " + _allAxes.Count + " differ)");
+            }
+        }
         public string ExamplesTitle
         {
             get
@@ -122,30 +134,37 @@ namespace TrajectoryLogTools.App.ViewModels
             else
             {
                 Verdict = r.DifferenceCount.ToString("N0", Inv) + (r.DifferenceCount == 1 ? " difference" : " differences") + " found.";
+                bool otherPatient = A.PatientId != null && B.PatientId != null && !string.Equals(A.PatientId, B.PatientId, StringComparison.OrdinalIgnoreCase);
+                if (otherPatient) Verdict += " A and B are different patients (" + A.PatientId + ", " + B.PatientId + ").";
+                else if (!string.Equals(A.DisplayName, B.DisplayName, StringComparison.OrdinalIgnoreCase)) Verdict += " A and B are different plans (" + A.DisplayName + ", " + B.DisplayName + ").";
                 VerdictKind = "caution";
             }
 
-            int header = r.Fields.Count(f => f.Section == "Header"), subbeam = r.Fields.Count - header;
+            int header = r.Fields.Count(f => f.Section == "Header"), meta = r.Fields.Count(f => f.Section == "Metadata");
+            int subbeam = r.Fields.Count - header - meta;
             var differing = r.Axes.Where(x => x.State != "same").ToList();
-            long values = r.Axes.Sum(x => x.ValuesDiffer);
-            Cards.Add(new Fact { Label = "Header", Value = header == 0 ? "Same" : header + " field" + (header == 1 ? "" : "s") + " differ",
-                                 Detail = c.A.Version == c.B.Version ? "v" + c.A.Version + " both" : "v" + c.A.Version + " vs v" + c.B.Version, Kind = header == 0 ? "ok" : "caution" });
-            Cards.Add(new Fact { Label = "Subbeams", Value = subbeam == 0 ? "Same" : subbeam + " field" + (subbeam == 1 ? "" : "s") + " differ",
-                                 Detail = c.A.Subbeams.Count + " in A, " + c.B.Subbeams.Count + " in B", Kind = subbeam == 0 ? "ok" : "caution" });
-            Cards.Add(new Fact { Label = "Axes", Value = r.ByteIdentical ? "Same" : differing.Count == 0 ? "All " + r.Axes.Count + " same" : differing.Count + " of " + r.Axes.Count + " differ",
-                                 Detail = r.SnapshotsCompared.ToString("N0", Inv) + " snapshots compared", Kind = differing.Count == 0 ? "ok" : "caution" });
+            long values = r.Axes.Sum(x => x.ValuesDiffer), noValue = r.Axes.Sum(x => x.NoValueDiffer);
+            Func<int, string, string> count = (n, what) => n == 0 ? "same" : n + " " + what + (n == 1 ? "" : "s") + " differ";
+            Cards.Add(new Fact { Label = "Header", Value = count(header, "field"), Kind = header == 0 ? "ok" : "caution",
+                                 Detail = c.A.Version == c.B.Version ? "v" + c.A.Version + " both" : "v" + c.A.Version + " vs v" + c.B.Version });
+            Cards.Add(new Fact { Label = "Metadata", Value = count(meta, "line"), Kind = meta == 0 ? "ok" : "caution", Detail = "patient, plan, MU…" });
+            Cards.Add(new Fact { Label = "Subbeams", Value = count(subbeam, "field"), Kind = subbeam == 0 ? "ok" : "caution",
+                                 Detail = c.A.Subbeams.Count + " in A, " + c.B.Subbeams.Count + " in B" });
+            Cards.Add(new Fact { Label = "Axes", Value = r.ByteIdentical || differing.Count == 0 ? "same" : differing.Count + " of " + r.Axes.Count + " differ",
+                                 Kind = differing.Count == 0 ? "ok" : "caution", Detail = r.SnapshotsCompared.ToString("N0", Inv) + " snapshots compared" });
             double max = r.Axes.Count == 0 ? 0 : r.Axes.Max(x => x.MaxDifference);
-            Cards.Add(new Fact { Label = "Stored values", Value = values == 0 ? "All equal" : values.ToString("N0", Inv) + " differ",
-                                 Detail = values == 0 ? "Expected and actual, every sample" : "Largest |A − B| " + max.ToString("G6", Inv), Kind = values == 0 ? "ok" : "caution" });
+            Cards.Add(new Fact { Label = "Stored values", Value = values == 0 ? "all equal" : values.ToString("N0", Inv) + " differ", Kind = values == 0 ? "ok" : "caution",
+                                 Detail = values == 0 ? "expected and actual, every sample"
+                                          : (values > noValue ? "largest |A − B| " + max.ToString("G6", Inv) : "") +
+                                            (noValue > 0 ? (values > noValue ? " · " : "") + noValue.ToString("N0", Inv) + " 'no value' in one log" : "") });
 
             foreach (FieldDifference f in r.Fields) Fields.Add(f);
-            foreach (string i in r.Info) Notes.Add(char.ToUpper(i[0], Inv) + i.Substring(1) + ".");
+            foreach (string i in r.Info.Where(x => !x.StartsWith("value differences listed", StringComparison.Ordinal)))   // that one is about the text
+                Notes.Add(char.ToUpper(i[0], Inv) + i.Substring(1));
             if (c.A.CrcWarning != null) Notes.Add("A: " + c.A.CrcWarning);
             if (c.B.CrcWarning != null) Notes.Add("B: " + c.B.CrcWarning);
-            OnPropertyChanged(nameof(HasFields));
-            OnPropertyChanged(nameof(HasNotes));
-
             _allAxes = r.Axes.Select(Row).ToList();
+            foreach (string n in new[] { nameof(HasFields), nameof(HasNotes), nameof(NotesText), nameof(FieldsTab), nameof(AxesTab) }) OnPropertyChanged(n);
             FillAxes();
             SelectedAxis = Axes.FirstOrDefault(x => x.Source.ValuesDiffer > 0);
         }
@@ -167,10 +186,10 @@ namespace TrajectoryLogTools.App.ViewModels
                 StateKind = d.State == "same" ? "ok" : d.State == "differs" ? "caution" : "critical",
                 Samples = d.Samples.ToString(Inv),
                 ValuesDiffer = diff ? d.ValuesDiffer.ToString("N0", Inv) : "",
-                Expected = diff ? d.ExpectedDiffer.ToString("N0", Inv) : "",
-                Actual = diff ? d.ActualDiffer.ToString("N0", Inv) : "",
+                ExpectedActual = diff ? d.ExpectedDiffer.ToString("N0", Inv) + " / " + d.ActualDiffer.ToString("N0", Inv) : "",
+                NoValue = d.NoValueDiffer > 0 ? d.NoValueDiffer.ToString("N0", Inv) : "",
                 Snapshots = diff ? d.SnapshotsDiffer.ToString("N0", Inv) : "",
-                MaxDifference = diff ? d.MaxDifference.ToString("G6", Inv) : "",
+                MaxDifference = diff && d.NoValueDiffer < d.ValuesDiffer ? d.MaxDifference.ToString("G6", Inv) : "",
                 First = diff ? d.FirstSnapshot.ToString(Inv) : "",
             };
         }

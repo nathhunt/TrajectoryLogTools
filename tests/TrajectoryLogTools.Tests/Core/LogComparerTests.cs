@@ -272,5 +272,32 @@ namespace TrajectoryLogTools.Tests
             var r = Compare(LogBuilder.V51(), b);
             Assert.Equal("only in A", r.Axes.Single(x => x.AxisId == 9).State);
         }
+
+        [Fact]
+        public void Structured_MetadataByLine()
+        {
+            var b = LogBuilder.V51();
+            b.Metadata = "Patient ID:\tPAT002\r\nPlan Name:\tPlan1\r\nPlan UID:\t1.2\r\n";
+            var r = Compare(LogBuilder.V51(), b);
+            var meta = r.Fields.Where(f => f.Section == "Metadata").ToList();
+            Assert.Equal(2, meta.Count);
+            Assert.Contains(meta, f => f.Name == "Patient ID" && f.A == "PAT001" && f.B == "PAT002");
+            Assert.Contains(meta, f => f.Name == "Plan UID" && f.A == "(no line)" && f.B == "1.2");
+            Assert.Contains(r.Differences, d => d.StartsWith("Metadata: '"));   // the text is as before
+        }
+
+        [Fact]
+        public void Structured_NoValueCountedApart()
+        {
+            var b = WithValue(LogBuilder.V51(), 1, 0, 0, false, float.MaxValue);
+            b = WithValue(b, 2, 0, 0, false, 1000f);
+            var r = Compare(LogBuilder.V51(), b);
+            AxisDifference coll = r.Axes.Single(x => x.AxisId == 0);
+            Assert.Equal(2, coll.ValuesDiffer);
+            Assert.Equal(1, coll.NoValueDiffer);
+            Assert.True(coll.MaxDifference < 1000);                              // the marker isn't a difference size
+            Assert.Equal("no value", coll.Examples[0].B);
+            Assert.True(double.IsNaN(coll.Examples[0].Difference));
+        }
     }
 }

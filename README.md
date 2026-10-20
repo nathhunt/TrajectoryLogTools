@@ -59,11 +59,14 @@ From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
 * the gantry and MU charts share one legend, above them, and zoom and pan separately;
 * **File differences (validation) → Compare the files…** opens the **File comparison** window,
   which compares every stored value, for example to check a v4.0 conversion against its original.
-  It gives the verdict and cards (header, subbeams, axes, stored values), then a table of the
-  header and subbeam fields that differ (A and B side by side), a table of the axes (how many
-  values differ, expected or actual, in how many snapshots, the largest difference and where it
-  starts) and, for the axis picked, the values that differ. What was ignored is listed. The text
-  the command line prints is on the **As text** tab.
+  At the top: what is compared, the verdict and one row of counts (header, metadata, subbeams,
+  axes, stored values), and what was ignored. Below, tabs that fill the window:
+  * **Axes:** every axis (how many values differ, expected / actual, in how many snapshots, the
+    largest difference, values that are "no value" in one log only, and where it starts) and,
+    under it, the values that differ on the axis picked;
+  * **Header and subbeams:** the fields that differ, A and B side by side, one row per metadata
+    line (Patient ID, Plan Name, …);
+  * **As text:** what the command line prints.
 
 The **←** button goes back to the log. You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
 
@@ -108,11 +111,17 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
 * **Where:** one folder for all, or next to each log in a `converted` subfolder.
 * Progress is shown per log. A run log is saved in the export folder.
 
-**Charts:** on a page, the scroll wheel scrolls the page and **Ctrl + scroll** zooms the chart
-(without moving the page); drag pans, double-click goes back to the full view. Right-click →
-*Open in New Window* shows a chart in a window of its own, where the wheel alone zooms (as in the
-Rebuild details window). Over a table, the wheel scrolls the table if it has more rows to show,
-otherwise the page.
+**Scrolling and zooming.** Wherever the mouse is, exactly one thing scrolls:
+* on a page (log, compare, rebuild) and in the Export and Header details windows, tables and
+  texts are shown at full length with no scroll bar of their own, so the wheel always scrolls
+  the page, whether the mouse is over a table or not;
+* in the File comparison window, the tables fill the window and nothing around them scrolls, so
+  the wheel scrolls the table under the mouse (drag the bar between the two tables to share the
+  room differently);
+* **Shift + wheel** scrolls a table that is wider than its space sideways;
+* **Ctrl + wheel** zooms a chart on a page (the page doesn't move); drag pans, double-click goes
+  back to the full view. Right-click → *Open in New Window* shows a chart in a window of its own,
+  where the wheel alone zooms (as in the Rebuild details window).
 
 **Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in

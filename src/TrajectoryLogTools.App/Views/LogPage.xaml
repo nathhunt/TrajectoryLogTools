@@ -122,7 +122,7 @@
 
                         <Expander Header="Beam holds" Margin="0,18,0,0">
                             <DataGrid ItemsSource="{Binding Holds}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,8,0,0"
-                                      CanUserAddRows="False" HorizontalScrollBarVisibility="Auto" MaxHeight="300">
+                                      CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Type" Binding="{Binding Type}" />
                                     <DataGridTextColumn Header="Field" Binding="{Binding Log}" />
