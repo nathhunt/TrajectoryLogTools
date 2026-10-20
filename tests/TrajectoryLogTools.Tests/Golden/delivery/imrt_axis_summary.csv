@@ -1,0 +1,29 @@
+Axis,Values,Sampling,Mean A-B,RMS A-B,Max |A-B|,P95 |A-B|,P99 |A-B|
+Gantry (deg),Expected,nodes,0.00000,0.00000,0.00000,,
+Gantry (deg),Expected,continuous,0.00000,0.00000,0.00000,,
+Gantry (deg),Actual,nodes,-0.00051,0.01445,0.03449,,
+Gantry (deg),Actual,continuous,-0.00018,0.01320,0.03627,,
+Collimator (deg),Expected,nodes,0.00000,0.00000,0.00000,,
+Collimator (deg),Expected,continuous,0.00000,0.00000,0.00000,,
+Collimator (deg),Actual,nodes,-0.00139,0.00767,0.01750,,
+Collimator (deg),Actual,continuous,-0.00076,0.00703,0.01795,,
+MU,Expected,nodes,0.00000,0.00000,0.00000,,
+MU,Expected,continuous,0.00000,0.00002,0.00008,,
+MU,Actual,nodes,0.00000,0.00000,0.00000,,
+MU,Actual,continuous,-0.00021,0.00161,0.01800,,
+Couch Vrt (cm),Expected,nodes,0.00000,0.00000,0.00000,,
+Couch Vrt (cm),Expected,continuous,0.00000,0.00000,0.00000,,
+Couch Vrt (cm),Actual,nodes,-0.00002,0.00116,0.00200,,
+Couch Vrt (cm),Actual,continuous,-0.00000,0.00085,0.00200,,
+Couch Lng (cm),Expected,nodes,0.00000,0.00000,0.00000,,
+Couch Lng (cm),Expected,continuous,0.00000,0.00000,0.00000,,
+Couch Lng (cm),Actual,nodes,0.00000,0.00000,0.00000,,
+Couch Lng (cm),Actual,continuous,0.00000,0.00000,0.00000,,
+Couch Lat (cm),Expected,nodes,0.00000,0.00000,0.00000,,
+Couch Lat (cm),Expected,continuous,0.00000,0.00000,0.00000,,
+Couch Lat (cm),Actual,nodes,0.00000,0.00000,0.00000,,
+Couch Lat (cm),Actual,continuous,0.00000,0.00000,0.00000,,
+MLC all leaves (mm),Expected,nodes,0.00000,0.00000,0.00000,0.00000,0.00000
+MLC all leaves (mm),Expected,continuous,-0.00000,0.00000,0.00001,0.00000,0.00000
+MLC all leaves (mm),Actual,nodes,-0.00104,0.03652,0.15110,0.07703,0.09964
+MLC all leaves (mm),Actual,continuous,-0.00113,0.03624,0.15110,0.07646,0.09680

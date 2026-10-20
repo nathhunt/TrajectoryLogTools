@@ -1,0 +1,87 @@
+
+=== A − B by axis (nodes = planned control points; continuous = every 0.05 CP) ===
+               Axis   Values   Sampling  Mean A-B  RMS A-B  Max |A-B|  P95 |A-B|  P99 |A-B|
+       Gantry (deg) Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+       Gantry (deg) Expected continuous    0.0000   0.0000     0.0000        NaN        NaN
+       Gantry (deg)   Actual      nodes   -0.0005   0.0144     0.0345        NaN        NaN
+       Gantry (deg)   Actual continuous   -0.0002   0.0132     0.0363        NaN        NaN
+   Collimator (deg) Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+   Collimator (deg) Expected continuous    0.0000   0.0000     0.0000        NaN        NaN
+   Collimator (deg)   Actual      nodes   -0.0014   0.0077     0.0175        NaN        NaN
+   Collimator (deg)   Actual continuous   -0.0008   0.0070     0.0179        NaN        NaN
+                 MU Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+                 MU Expected continuous    0.0000   0.0000     0.0001        NaN        NaN
+                 MU   Actual      nodes    0.0000   0.0000     0.0000        NaN        NaN
+                 MU   Actual continuous   -0.0002   0.0016     0.0180        NaN        NaN
+     Couch Vrt (cm) Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Vrt (cm) Expected continuous    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Vrt (cm)   Actual      nodes   -0.0000   0.0012     0.0020        NaN        NaN
+     Couch Vrt (cm)   Actual continuous   -0.0000   0.0009     0.0020        NaN        NaN
+     Couch Lng (cm) Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lng (cm) Expected continuous    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lng (cm)   Actual      nodes    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lng (cm)   Actual continuous    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lat (cm) Expected      nodes    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lat (cm) Expected continuous    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lat (cm)   Actual      nodes    0.0000   0.0000     0.0000        NaN        NaN
+     Couch Lat (cm)   Actual continuous    0.0000   0.0000     0.0000        NaN        NaN
+MLC all leaves (mm) Expected      nodes    0.0000   0.0000     0.0000     0.0000     0.0000
+MLC all leaves (mm) Expected continuous   -0.0000   0.0000     0.0000     0.0000     0.0000
+MLC all leaves (mm)   Actual      nodes   -0.0010   0.0365     0.1511     0.0770     0.0996
+MLC all leaves (mm)   Actual continuous   -0.0011   0.0362     0.1511     0.0765     0.0968
+
+=== Actual difference vs Expected difference (MLC, continuous) ===
+  corr(ExpectedDiff, ActualDiff): -0.0194
+  RMS of (ActualDiff - ExpectedDiff) mm: 0.0362
+  Max of |ActualDiff - ExpectedDiff| mm: 0.1511
+
+=== Leaves with largest max |A−B| at control points (mm) ===
+  Expected: {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0}
+  Actual:   {71: 0.151, 111: 0.142, 106: 0.135, 30: 0.133, 65: 0.13}
+
+=== Largest per-snapshot leaf step (mm): max, 90th pct of moving steps ===
+  A Expected: max 4.823, p90 1.917
+  A Actual: max 4.842, p90 1.913
+  B Expected: max 4.823, p90 1.883
+  B Actual: max 4.846, p90 1.885
+
+=== Per beam (Subbeam) ===
+  Log A:
+ beam  gantry_deg  coll_deg    CP  MU_planned  MU_delivered  beam_on_s  hold_s  MLC_rms_err_mm  MLC_max_err_mm
+    1     180.000   180.000  0-15      60.000        59.801      1.400   0.240           0.088           0.333
+    2      60.000   180.000 15-30      45.000        44.851      1.400   0.200           0.085           0.328
+    3     300.000   180.000 30-44      80.000        79.817      1.400   0.200           0.082           0.313
+  Log B:
+ beam  gantry_deg  coll_deg    CP  MU_planned  MU_delivered  beam_on_s  hold_s  MLC_rms_err_mm  MLC_max_err_mm
+    1     180.000   180.000  0-15      60.000        59.801      1.120   0.240           0.122           0.449
+    2      60.000   180.000 15-30      45.000        44.851      1.120   0.200           0.117           0.443
+    3     300.000   180.000 30-44      80.000        79.817      1.120   0.400           0.114           0.433
+
+=== Beam holds ('interruption' = hold with no planned gantry/collimator move) ===
+  Log A:
+ type  beam  t_start_s  duration_s     CP      MU  MU_during       gantry         coll  leaf_err_during_mm  leaf_err_1s_after_mm
+start     1      0.000       0.160  0.000   0.000      0.000 180.0->180.0 180.0->180.0               0.020                 0.319
+ move     1      1.580       0.200 14.167  59.801      0.000  160.0->60.0 180.0->180.0               0.020                 0.312
+ move     2      3.200       0.200 29.167 104.651      0.000 100.0->300.0 180.0->180.0               0.020                 0.306
+  end     3      4.820       0.100 44.000 184.468      0.000 300.0->300.0 180.0->180.0               0.278                   NaN
+  Log B:
+        type  beam  t_start_s  duration_s     CP      MU  MU_during       gantry         coll  leaf_err_during_mm  leaf_err_1s_after_mm
+       start     1      0.000       0.160  0.000   0.000      0.000 180.0->180.0 180.0->180.0               0.020                 0.438
+        move     1      1.300       0.200 14.167  59.801      0.000  160.0->60.0 180.0->180.0               0.020                 0.443
+        move     2      2.640       0.200 29.167 104.651      0.000 100.0->300.0 180.0->180.0               0.020                 0.433
+interruption     3      3.440       0.200 37.250 134.131      0.000 300.0->300.0 180.0->180.0               0.378                 0.428
+         end     3      4.180       0.100 44.000 184.468      0.000 300.0->300.0 180.0->180.0               0.408                   NaN
+
+=== Total MU, planned vs delivered ===
+  A: planned 185.000, delivered 184.468, diff -0.532 MU, total time 4.90 s
+  B: planned 185.000, delivered 184.468, diff -0.532 MU, total time 4.26 s
+
+=== Couch (expected, mean actual, actual − expected) ===
+  A CouchVrt_cm: expected -12.300, actual -12.3000, diff +0.000 mm
+  A CouchLng_cm: expected 98.700, actual 98.7020, diff +0.020 mm
+  A CouchLat_cm: expected 0.400, actual 0.3980, diff -0.020 mm
+  B CouchVrt_cm: expected -12.300, actual -12.3000, diff -0.000 mm
+  B CouchLng_cm: expected 98.700, actual 98.7020, diff +0.020 mm
+  B CouchLat_cm: expected 0.400, actual 0.3980, diff -0.020 mm
+
+Wrote results to /tmp/tmp.1MUp2eRD98/delivery_imrt

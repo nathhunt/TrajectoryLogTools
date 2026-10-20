@@ -1,0 +1,18 @@
+Log -> Eclipse MLC reconstruction report
+Generated     : 2026-10-20 00:59:59
+Log file      : vmat_B.csv
+Output file   : out_sub1.csv
+Template      : (none - header/MW/gantry derived from log)
+Subbeam       : 1   (log contains 1,2)
+Subbeam offset: log control points 0-40 -> 0-40; MU offset 0.0000 expected / 0.0000 actual
+Positions     : expected    Axis: cp    Gantry: plan
+Snapshots     : 240 used, 5 beam-hold snapshots excluded, 9 set-up snapshots before dose skipped
+Control points: 41   Leaves: 114   Total MU (expected): 150.00   Delivered MU: 149.85
+Min dynamic leaf gap 0.50 mm: 1101 pair x CP closed exactly, 24 opened to 0.501 mm (max leaf shift 0.001 mm)
+Closed runs pinned stationary: 71 (neighbour apertures widened: 12, max leaf shift 0.002 mm)
+Remaining gaps between 0 and 0.50 mm: 0   Segments with a sub-0.50 mm pair translating: 0
+Gantry        : evenly spaced arc 130.0 -> 230.0 deg, step -6.5000 deg (max adjustment 0.0000 deg)
+
+Reconstructed vs reconstructed-expected (log expected positions, CP axis):
+  RMS 0.000 mm | max 0.000 mm at CP 0, pair 1 (distal) X1 | values >0.5 mm: 0, >1 mm: 0
+Max actual-vs-expected gantry at control points: 0.664 deg

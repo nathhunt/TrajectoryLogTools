@@ -1,0 +1,1553 @@
+{
+ "summary": [
+  {
+   "Axis": "Gantry (deg)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Gantry (deg)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": -1.6687910010455024e-07,
+   "RMS A-B": 2.7250547026864397e-05,
+   "Max |A-B|": 4.949901006057189e-05,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Gantry (deg)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": 0.000976341463415019,
+   "RMS A-B": 0.01490531931568208,
+   "Max |A-B|": 0.03740000000004784,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Gantry (deg)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 0.00021252869192585775,
+   "RMS A-B": 0.013363764338297581,
+   "Max |A-B|": 0.09954758504824213,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Collimator (deg)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Collimator (deg)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Collimator (deg)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": -9.878048780399795e-05,
+   "RMS A-B": 0.008316960338266812,
+   "Max |A-B|": 0.01820000000000732,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Collimator (deg)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 0.00045581075566095564,
+   "RMS A-B": 0.006584157458101275,
+   "Max |A-B|": 0.01820000000000732,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "MU",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "MU",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 5.142063981660026e-07,
+   "RMS A-B": 2.706808649395418e-05,
+   "Max |A-B|": 9.712023043562112e-05,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "MU",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "MU",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 2.1864208008830313e-05,
+   "RMS A-B": 0.0007921989522924195,
+   "Max |A-B|": 0.019240517189643924,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Vrt (cm)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Vrt (cm)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Vrt (cm)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": -0.00030487804878060045,
+   "RMS A-B": 0.001152938980468615,
+   "Max |A-B|": 0.002000000000000668,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Vrt (cm)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": -4.464381535363977e-06,
+   "RMS A-B": 0.0008326370087304603,
+   "Max |A-B|": 0.002000000000000668,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lng (cm)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lng (cm)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lng (cm)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lng (cm)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lat (cm)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lat (cm)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lat (cm)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "Couch Lat (cm)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": null,
+   "P99 |A-B|": null
+  },
+  {
+   "Axis": "MLC all leaves (mm)",
+   "Values": "Expected",
+   "Sampling": "nodes",
+   "Mean A-B": 0.0,
+   "RMS A-B": 0.0,
+   "Max |A-B|": 0.0,
+   "P95 |A-B|": 0.0,
+   "P99 |A-B|": 0.0
+  },
+  {
+   "Axis": "MLC all leaves (mm)",
+   "Values": "Expected",
+   "Sampling": "continuous",
+   "Mean A-B": 3.5180884042142717e-10,
+   "RMS A-B": 4.73429883274335e-06,
+   "Max |A-B|": 0.00012211688483976246,
+   "P95 |A-B|": 9.5796801894421e-06,
+   "P99 |A-B|": 1.734052563400755e-05
+  },
+  {
+   "Axis": "MLC all leaves (mm)",
+   "Values": "Actual",
+   "Sampling": "nodes",
+   "Mean A-B": -1.7363203187849443e-05,
+   "RMS A-B": 0.025043087309702373,
+   "Max |A-B|": 0.22183000000000064,
+   "P95 |A-B|": 0.04927000000000048,
+   "P99 |A-B|": 0.06572026000000016
+  },
+  {
+   "Axis": "MLC all leaves (mm)",
+   "Values": "Actual",
+   "Sampling": "continuous",
+   "Mean A-B": 6.00457845740014e-05,
+   "RMS A-B": 0.023207733487728772,
+   "Max |A-B|": 0.23178150000000008,
+   "P95 |A-B|": 0.04564955253550826,
+   "P99 |A-B|": 0.06164928877175036
+  }
+ ],
+ "per_leaf_columns": [
+  "Mean_Actual_mm",
+  "Mean_Expected_mm",
+  "RMS_Actual_mm",
+  "RMS_Expected_mm",
+  "Max_Actual_mm",
+  "Max_Expected_mm"
+ ],
+ "per_leaf": [
+  {
+   "Leaf": 1,
+   "Mean_Actual_mm": 0.008087487804878052,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026632877700957118,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07220900000000002,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 2,
+   "Mean_Actual_mm": 0.009212304878048718,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02397065403551281,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06553900000000001,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 3,
+   "Mean_Actual_mm": 0.00750513658536575,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024627831412369575,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.067334,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 4,
+   "Mean_Actual_mm": 0.010734001219512013,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.028060310465515003,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07089000000000012,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 5,
+   "Mean_Actual_mm": 0.007424301219512273,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02556517659956505,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06634099999999976,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 6,
+   "Mean_Actual_mm": 0.00522323560975618,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02701106430277002,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.09438600000000075,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 7,
+   "Mean_Actual_mm": 0.00576105731707322,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02390935843595356,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07198400000000049,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 8,
+   "Mean_Actual_mm": 0.0006409829268291972,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023054680803303203,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.08219399999999988,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 9,
+   "Mean_Actual_mm": -0.00275419268292675,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.0223821793646742,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07502200000000014,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 10,
+   "Mean_Actual_mm": -0.003649012195122034,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02194657902532049,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.059310000000001306,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 11,
+   "Mean_Actual_mm": -0.0031947926829267253,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.022547179109429303,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.052856000000000014,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 12,
+   "Mean_Actual_mm": -0.006992565853658436,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02365741995410484,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0634699999999988,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 13,
+   "Mean_Actual_mm": -0.006853998780487792,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02059803403046332,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0572499999999998,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 14,
+   "Mean_Actual_mm": -0.005478748780487898,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02004113306248068,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.04975000000000174,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 15,
+   "Mean_Actual_mm": -0.004779639024390089,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.021972593407769782,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06485000000000074,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 16,
+   "Mean_Actual_mm": -0.006122701329268183,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02392392811771235,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06422999999999845,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 17,
+   "Mean_Actual_mm": -0.006943112195121931,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023548691052950696,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06591600000000031,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 18,
+   "Mean_Actual_mm": -0.0029454414634146713,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025514078170784032,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07012000000000018,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 19,
+   "Mean_Actual_mm": -0.004751880487804998,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02469541533157084,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05908999999999942,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 20,
+   "Mean_Actual_mm": -0.006894220731707498,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02709586125853147,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07187000000000054,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 21,
+   "Mean_Actual_mm": -0.004465792682926773,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02700293892519022,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0646940000000007,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 22,
+   "Mean_Actual_mm": -0.0008482560975608041,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023568251789787716,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06169000000000091,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 23,
+   "Mean_Actual_mm": -0.005567225609756235,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02676315824431727,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07602299999999951,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 24,
+   "Mean_Actual_mm": -0.003048195121951353,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024064227969433805,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06434000000000051,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 25,
+   "Mean_Actual_mm": -0.004465440243902511,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02568601688245914,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07689000000000057,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 26,
+   "Mean_Actual_mm": -0.0034104658536586955,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026623841535910308,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07577399999999956,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 27,
+   "Mean_Actual_mm": -0.00183358804878056,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02292936133572206,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06129000000000051,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 28,
+   "Mean_Actual_mm": -0.003432022073170733,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023844272718988712,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07937000000000083,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 29,
+   "Mean_Actual_mm": -0.004976523170731535,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023186592763609883,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.057960000000001344,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 30,
+   "Mean_Actual_mm": -0.000347759756097502,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02265583423215211,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05892999999999926,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 31,
+   "Mean_Actual_mm": -0.00267985365853654,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026649579418270876,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.11533000000000015,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 32,
+   "Mean_Actual_mm": 0.0015325121951219763,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02626554277459172,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.10315000000000074,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 33,
+   "Mean_Actual_mm": 0.0010210487804878938,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025144368931258296,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.09387000000000034,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 34,
+   "Mean_Actual_mm": 0.0011861829268291842,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025197967125950526,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.08862000000000148,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 35,
+   "Mean_Actual_mm": 0.004461054878048844,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.027656107594590053,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.11125000000000052,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 36,
+   "Mean_Actual_mm": 0.0005875451219512451,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02410337964712192,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.08372999999999964,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 37,
+   "Mean_Actual_mm": 0.004933028048780487,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024053816923239234,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.08332000000000006,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 38,
+   "Mean_Actual_mm": 0.004754507317073101,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02249340194177293,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07370000000000099,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 39,
+   "Mean_Actual_mm": 0.0028640073170730774,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.022816665457885677,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.10221000000000036,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 40,
+   "Mean_Actual_mm": 0.006499614878048591,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02213997393636627,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05863999999999869,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 41,
+   "Mean_Actual_mm": 0.005710689878048633,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023232682141736703,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.061891000000000584,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 42,
+   "Mean_Actual_mm": 0.0031051358536585702,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02297513793865733,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05554599999999993,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 43,
+   "Mean_Actual_mm": 0.000976929634146261,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.020524261935359684,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.049839999999998774,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 44,
+   "Mean_Actual_mm": 0.0015408820487804514,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02294422743325652,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05443000000000087,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 45,
+   "Mean_Actual_mm": 0.002439762560975689,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02273663679412013,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05750299999999986,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 46,
+   "Mean_Actual_mm": 0.004874796341463453,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02178244159911298,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05976099999999929,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 47,
+   "Mean_Actual_mm": 0.003681896341463441,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.021187101823667776,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05914900000000001,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 48,
+   "Mean_Actual_mm": 0.002407773170731731,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023159035636821302,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05887399999999987,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 49,
+   "Mean_Actual_mm": 0.005054480487804796,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.020267455593762206,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05944599999999994,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 50,
+   "Mean_Actual_mm": 0.0031354817073170624,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02067997143352336,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05230999999999986,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 51,
+   "Mean_Actual_mm": 0.005041445121951233,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.01966257207921724,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05260700000000007,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 52,
+   "Mean_Actual_mm": 0.0022757951219512258,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.021402195520172917,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05977200000000016,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 53,
+   "Mean_Actual_mm": 0.005687598902439129,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02517505889245241,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.13517,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 54,
+   "Mean_Actual_mm": 0.004854598780487769,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02591210521173025,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.1319389999999998,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 55,
+   "Mean_Actual_mm": 0.0017679499999999652,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025487702934540602,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.14541499999999985,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 56,
+   "Mean_Actual_mm": 0.0006210182926829134,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.028367008420503274,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.129513,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 57,
+   "Mean_Actual_mm": 0.0005942670731707183,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.030464423345102673,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.14391900000000013,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 58,
+   "Mean_Actual_mm": -0.004411430487804995,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02021412232675707,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05862299999999987,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 59,
+   "Mean_Actual_mm": -0.007461991463414438,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02258411544831999,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05209999999999937,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 60,
+   "Mean_Actual_mm": -0.006898289743902639,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02134703760929136,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06180999999999992,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 61,
+   "Mean_Actual_mm": -0.007080211951219381,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.019006095173681153,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.049279999999998214,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 62,
+   "Mean_Actual_mm": -0.0024461280487803627,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02017759691457197,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05408999999999997,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 63,
+   "Mean_Actual_mm": -0.0025741914634146803,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02092182737643597,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06008999999999931,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 64,
+   "Mean_Actual_mm": -0.0034647560975608564,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.021691800188989068,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0553300000000001,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 65,
+   "Mean_Actual_mm": 0.0012285365853659112,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.019302012722044033,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.060390000000001276,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 66,
+   "Mean_Actual_mm": -0.0026113414634145143,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.017958266083664895,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.050949999999998496,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 67,
+   "Mean_Actual_mm": -0.0023928902439023397,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024324293198815728,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0653999999999999,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 68,
+   "Mean_Actual_mm": 0.004188585365853622,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02154474807430724,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05771999999999888,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 69,
+   "Mean_Actual_mm": -0.000748829268292653,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025888346494504187,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0591460000000002,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 70,
+   "Mean_Actual_mm": 0.0023322585365852886,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02539758268260973,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05749999999999922,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 71,
+   "Mean_Actual_mm": 0.002224382926829373,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023643275071953216,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06259000000000015,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 72,
+   "Mean_Actual_mm": 0.0029219036585367356,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02357303191604229,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05441000000000029,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 73,
+   "Mean_Actual_mm": 0.0029973963414633457,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02560325691047976,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07805000000000062,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 74,
+   "Mean_Actual_mm": 0.004256483902438889,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.028168423983604068,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07252000000000036,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 75,
+   "Mean_Actual_mm": 0.0013762786585365255,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.027355956125624754,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0611000000000006,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 76,
+   "Mean_Actual_mm": 0.004080281707317202,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026983436668863565,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07179999999999964,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 77,
+   "Mean_Actual_mm": 0.004552734146341266,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02160947873935379,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06594999999999906,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 78,
+   "Mean_Actual_mm": 0.006896992682926793,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026830810489721888,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05913700000000022,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 79,
+   "Mean_Actual_mm": 0.004975939024390223,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.027589095816786206,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06514000000000131,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 80,
+   "Mean_Actual_mm": 0.0022734024390243007,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024677705880004317,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06872999999999907,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 81,
+   "Mean_Actual_mm": 0.0028319146341463566,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024224833537397964,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05513999999999797,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 82,
+   "Mean_Actual_mm": 0.005185567073170813,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026704917421742216,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07940000000000058,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 83,
+   "Mean_Actual_mm": 0.004463526829268165,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02295315062650816,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05661000000000138,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 84,
+   "Mean_Actual_mm": 0.008287237804877955,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025224054363122812,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06707599999999925,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 85,
+   "Mean_Actual_mm": 0.005239571219512236,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.020889611102939836,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.056382000000000376,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 86,
+   "Mean_Actual_mm": 0.008422238780487888,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.022493184216418927,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06630999999999831,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 87,
+   "Mean_Actual_mm": 0.007265279268292786,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.023249854418807385,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06666999999999978,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 88,
+   "Mean_Actual_mm": 0.005609778048780503,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.021446403554982573,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.05889000000000033,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 89,
+   "Mean_Actual_mm": 0.0009890378048779916,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024620864988671033,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07163999999999948,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 90,
+   "Mean_Actual_mm": -0.0006804878048780032,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02330701459416631,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0665899999999997,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 91,
+   "Mean_Actual_mm": -0.0037300000000000137,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.022152618424763525,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07070999999999994,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 92,
+   "Mean_Actual_mm": -0.007587463414634109,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024941405966003194,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07096599999999995,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 93,
+   "Mean_Actual_mm": -0.009026301219512131,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02446047195503494,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07300000000000084,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 94,
+   "Mean_Actual_mm": -0.010008442682926853,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02646371332978605,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0851399999999991,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 95,
+   "Mean_Actual_mm": -0.007818647560975615,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026939244543704097,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07423100000000016,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 96,
+   "Mean_Actual_mm": -0.00990089451219516,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.0293840853628291,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.11237000000000164,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 97,
+   "Mean_Actual_mm": -0.0058106670731709244,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025852014598113968,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06268800000000019,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 98,
+   "Mean_Actual_mm": -0.0026748743902437356,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025788027203730884,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.061389999999998945,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 99,
+   "Mean_Actual_mm": -0.004002967439024694,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.024496522987535102,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06052206999999998,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 100,
+   "Mean_Actual_mm": -0.007137804878048657,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.031424413575497266,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07307699999999917,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 101,
+   "Mean_Actual_mm": -0.005707296907317067,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02673042413276943,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06907999999999914,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 102,
+   "Mean_Actual_mm": -0.0049730939024390935,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026787913388879793,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06156900000000021,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 103,
+   "Mean_Actual_mm": -0.0037405431951218334,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.026771349118501073,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06720999999999977,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 104,
+   "Mean_Actual_mm": -0.0031253402439023253,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02958804283988317,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07668999999999926,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 105,
+   "Mean_Actual_mm": -0.0009949097560976643,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.029109762957275596,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07599699999999987,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 106,
+   "Mean_Actual_mm": -0.0027186012195120858,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.027467309175030385,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.06732300000000024,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 107,
+   "Mean_Actual_mm": 1.1234499999985223e-05,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.02470172659506293,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.0716739999999999,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 108,
+   "Mean_Actual_mm": -0.004409849999999976,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.025782791742908144,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.061910000000002796,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 109,
+   "Mean_Actual_mm": -0.001856585365853683,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.030861755787223857,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.07897660000000001,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 110,
+   "Mean_Actual_mm": -0.0003717482926828996,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.033556940420195615,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.16172000000000075,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 111,
+   "Mean_Actual_mm": 0.0013686134146341847,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.03467127275251985,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.19860999999999907,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 112,
+   "Mean_Actual_mm": -0.0027343688292682075,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.03394173155719945,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.22183000000000064,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 113,
+   "Mean_Actual_mm": 0.004045237804878092,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.03807576741955986,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.1968700000000001,
+   "Max_Expected_mm": 0.0
+  },
+  {
+   "Leaf": 114,
+   "Mean_Actual_mm": -0.000665951219512285,
+   "Mean_Expected_mm": 0.0,
+   "RMS_Actual_mm": 0.03620658745816634,
+   "RMS_Expected_mm": 0.0,
+   "Max_Actual_mm": 0.20544000000000118,
+   "Max_Expected_mm": 0.0
+  }
+ ],
+ "extra": {
+  "corr(ExpectedDiff, ActualDiff)": -0.01102677046471893,
+  "RMS of (ActualDiff - ExpectedDiff) mm": 0.023207786173500836,
+  "Max of |ActualDiff - ExpectedDiff| mm": 0.23178150000000008
+ },
+ "logs": {
+  "A": {
+   "rows": 436,
+   "beams": [
+    {
+     "beam": 1.0,
+     "gantry_deg": "50->310",
+     "coll_deg": 165.0,
+     "CP": "0-41",
+     "MU_planned": 150.0,
+     "MU_delivered": 149.8519,
+     "beam_on_s": 3.994999999999999,
+     "hold_s": 0.4650000000000012,
+     "MLC_rms_err_mm": 0.09359619260367866,
+     "MLC_max_err_mm": 0.9066269999999998
+    },
+    {
+     "beam": 2.0,
+     "gantry_deg": "310->50",
+     "coll_deg": 195.0,
+     "CP": "41-81",
+     "MU_planned": 120.0,
+     "MU_delivered": 119.9178,
+     "beam_on_s": 4.0,
+     "hold_s": 0.19899999999999896,
+     "MLC_rms_err_mm": 0.09749103174640453,
+     "MLC_max_err_mm": 1.009584
+    }
+   ],
+   "holds": [
+    {
+     "type": "start",
+     "beam": 1.0,
+     "t_start_s": 0.0,
+     "duration_s": 0.14099999999999957,
+     "CP": 0.0,
+     "MU": 0.0,
+     "MU_during": 0.0,
+     "gantry": "50.0->50.0",
+     "coll": "165.0->165.0",
+     "leaf_err_during_mm": 0.019999000000000544,
+     "leaf_err_1s_after_mm": 0.29342999999999897
+    },
+    {
+     "type": "interruption",
+     "beam": 1.0,
+     "t_start_s": 1.8789999999999996,
+     "duration_s": 0.24300000000000033,
+     "CP": 17.2,
+     "MU": 60.92435,
+     "MU_during": 0.0,
+     "gantry": "161.1->161.1",
+     "coll": "165.0->165.0",
+     "leaf_err_during_mm": 0.24923499999999987,
+     "leaf_err_1s_after_mm": 0.4978389999999999
+    },
+    {
+     "type": "move",
+     "beam": 1.0,
+     "t_start_s": 4.402,
+     "duration_s": 0.1999999999999993,
+     "CP": 40.16667,
+     "MU": 149.8519,
+     "MU_during": 0.0,
+     "gantry": "310.0->310.0",
+     "coll": "170.0->195.0",
+     "leaf_err_during_mm": 0.019988000000000783,
+     "leaf_err_1s_after_mm": 0.313812
+    },
+    {
+     "type": "end",
+     "beam": 2.0,
+     "t_start_s": 8.621,
+     "duration_s": 0.09799999999999898,
+     "CP": 81.0,
+     "MU": 269.7697,
+     "MU_during": 0.0,
+     "gantry": "50.7->50.7",
+     "coll": "195.0->195.0",
+     "leaf_err_during_mm": 0.7398800000000016,
+     "leaf_err_1s_after_mm": null
+    }
+   ],
+   "steps": {
+    "Expected": [
+     7.032039999999997,
+     1.0402599999999995
+    ],
+    "Actual": [
+     7.044509999999999,
+     1.0277975000000001
+    ]
+   },
+   "mu_planned": 270.0,
+   "mu_delivered": 269.7697,
+   "total_time": 8.699,
+   "couch": {
+    "CouchVrt_cm": [
+     -12.3,
+     -12.3,
+     0.0
+    ],
+    "CouchLng_cm": [
+     98.7,
+     98.70199999999998,
+     0.001999999999981128
+    ],
+    "CouchLat_cm": [
+     0.4,
+     0.398,
+     -0.0020000000000000018
+    ]
+   }
+  },
+  "B": {
+   "rows": 525,
+   "beams": [
+    {
+     "beam": 1.0,
+     "gantry_deg": "50->310",
+     "coll_deg": 165.0,
+     "CP": "0-41",
+     "MU_planned": 150.0,
+     "MU_delivered": 149.8519,
+     "beam_on_s": 4.801,
+     "hold_s": 0.23899999999999985,
+     "MLC_rms_err_mm": 0.07516794810030242,
+     "MLC_max_err_mm": 0.7227083
+    },
+    {
+     "beam": 2.0,
+     "gantry_deg": "310->50",
+     "coll_deg": 195.0,
+     "CP": "41-81",
+     "MU_planned": 120.0,
+     "MU_delivered": 119.9178,
+     "beam_on_s": 4.795999999999999,
+     "hold_s": 0.6050000000000013,
+     "MLC_rms_err_mm": 0.07835896919031349,
+     "MLC_max_err_mm": 0.8004359999999988
+    }
+   ],
+   "holds": [
+    {
+     "type": "start",
+     "beam": 1.0,
+     "t_start_s": 0.0,
+     "duration_s": 0.16099999999999956,
+     "CP": 0.0,
+     "MU": 0.0,
+     "MU_during": 0.0,
+     "gantry": "50.0->50.0",
+     "coll": "165.0->165.0",
+     "leaf_err_during_mm": 0.01998999999999973,
+     "leaf_err_1s_after_mm": 0.23776999999999937
+    },
+    {
+     "type": "move",
+     "beam": 1.0,
+     "t_start_s": 4.98,
+     "duration_s": 0.1999999999999993,
+     "CP": 40.16667,
+     "MU": 149.8519,
+     "MU_during": 0.0,
+     "gantry": "310.0->310.0",
+     "coll": "170.0->195.0",
+     "leaf_err_during_mm": 0.01998382,
+     "leaf_err_1s_after_mm": 0.2596989999999999
+    },
+    {
+     "type": "interruption",
+     "beam": 2.0,
+     "t_start_s": 8.262,
+     "duration_s": 0.39899999999999913,
+     "CP": 66.5,
+     "MU": 225.8525,
+     "MU_during": 0.0,
+     "gantry": "144.9->144.9",
+     "coll": "195.0->195.0",
+     "leaf_err_during_mm": 0.3600599999999998,
+     "leaf_err_1s_after_mm": 0.785553
+    },
+    {
+     "type": "end",
+     "beam": 2.0,
+     "t_start_s": 10.398,
+     "duration_s": 0.10200000000000031,
+     "CP": 81.0,
+     "MU": 269.7697,
+     "MU_during": 0.0,
+     "gantry": "50.6->50.6",
+     "coll": "195.0->195.0",
+     "leaf_err_during_mm": 0.6047100000000016,
+     "leaf_err_1s_after_mm": null
+    }
+   ],
+   "steps": {
+    "Expected": [
+     7.032039999999997,
+     1.0120090000000017
+    ],
+    "Actual": [
+     7.061488600000001,
+     1.0094615999999994
+    ]
+   },
+   "mu_planned": 270.0,
+   "mu_delivered": 269.7697,
+   "total_time": 10.48,
+   "couch": {
+    "CouchVrt_cm": [
+     -12.3,
+     -12.3,
+     0.0
+    ],
+    "CouchLng_cm": [
+     98.7,
+     98.70200000000001,
+     0.0020000000000095497
+    ],
+    "CouchLat_cm": [
+     0.4,
+     0.39799999999999996,
+     -0.0020000000000000573
+    ]
+   }
+  }
+ }
+}

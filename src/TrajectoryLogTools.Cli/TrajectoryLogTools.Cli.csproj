@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Command-line tool: every command of the app, for scripting and validation. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TrajectoryLogTools.Cli</RootNamespace>
+    <AssemblyName>TrajectoryLogCli</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrajectoryLogTools.Core\TrajectoryLogTools.Core.csproj" />
+    <ProjectReference Include="..\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
+    <ProjectReference Include="..\TrajectoryLogTools.Charts\TrajectoryLogTools.Charts.csproj" />
+  </ItemGroup>
+</Project>

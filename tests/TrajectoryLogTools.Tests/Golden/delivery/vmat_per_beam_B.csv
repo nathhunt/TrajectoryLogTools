@@ -1,0 +1,3 @@
+beam,gantry_deg,coll_deg,CP,MU_planned,MU_delivered,beam_on_s,hold_s,MLC_rms_err_mm,MLC_max_err_mm
+1,50->310,165.0000,0-41,150.0000,149.8519,4.8010,0.2390,0.0752,0.7227
+2,310->50,195.0000,41-81,120.0000,119.9178,4.7960,0.6050,0.0784,0.8004

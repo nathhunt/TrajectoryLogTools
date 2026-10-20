@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Trajectory log engine: parsing, v4.0 / v5.1 conversion, comparison, CSV and raw dumps.
+       Also built for .NET Framework 4.8, so it could be used from an ESAPI script or a 4.8 tool. -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net48</TargetFrameworks>
+    <RootNamespace>TrajectoryLogTools.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <!-- .NET Framework 4.8 reference assemblies from NuGet: no Developer Pack needed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

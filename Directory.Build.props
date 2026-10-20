@@ -1,0 +1,15 @@
+<Project>
+  <!-- Settings shared by every project in the repository. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <!-- The engine was written before nullable reference types; keep the code style consistent. -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Company>TrajectoryLogTools</Company>
+    <Product>Trajectory Log Tools</Product>
+    <Version>1.0.0</Version>
+    <!-- Lets the WPF app build (not run) on Linux / macOS too, e.g. for CI. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

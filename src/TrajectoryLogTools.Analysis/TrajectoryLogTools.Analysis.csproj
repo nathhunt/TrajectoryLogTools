@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Analyses built on the engine: delivery comparison and Eclipse MLC reconstruction.
+       Also built for .NET Framework 4.8, like the engine. -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net48</TargetFrameworks>
+    <RootNamespace>TrajectoryLogTools.Analysis</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrajectoryLogTools.Core\TrajectoryLogTools.Core.csproj" />
+  </ItemGroup>
+</Project>

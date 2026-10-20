@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Charts shared by the GUI (shown in ScottPlot WPF controls) and the command-line tool
+       (saved as PNG). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TrajectoryLogTools.Charts</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ScottPlot" Version="5.1.59" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
+  </ItemGroup>
+</Project>

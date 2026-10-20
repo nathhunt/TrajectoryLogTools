@@ -1,0 +1,38 @@
+Reading log imrt_B.csv
+
+===== Subbeam 1 of 1,2,3 =====
+ERROR (subbeam 1): Template imrt_field1_eclipse.csv has 15 control points but subbeam 1 covers log control points 0-15 (16 control points).
+
+===== Subbeam 2 of 1,2,3 =====
+ERROR (subbeam 2): Template imrt_field2_eclipse.csv has 15 control points but subbeam 2 covers log control points 15-30 (16 control points).
+
+===== Subbeam 3 of 1,2,3 =====
+Wrote out_sub3.csv
+Log -> Eclipse MLC reconstruction report
+Generated     : 2026-10-20 00:59:59
+Log file      : imrt_B.csv
+Output file   : out_sub3.csv
+Template      : imrt_field3_eclipse.csv
+Subbeam       : 3   (log contains 1,2,3)
+Subbeam offset: log control points 30-44 -> 0-14; MU offset 105.0000 expected / 104.6515 actual
+Positions     : actual    Axis: mu    Gantry: template
+Snapshots     : 71 used, 0 beam-hold snapshots excluded, 6 set-up snapshots before dose skipped
+Control points: 15   Leaves: 114   Total MU (expected): 80.00   Delivered MU: 79.82
+Min dynamic leaf gap 0.50 mm: 454 pair x CP closed exactly, 7 opened to 0.501 mm (max leaf shift 0.095 mm)
+Closed runs pinned stationary: 46 (neighbour apertures widened: 0, max leaf shift 0.031 mm)
+Remaining gaps between 0 and 0.50 mm: 0   Segments with a sub-0.50 mm pair translating: 0
+
+Reconstructed vs reconstructed-expected (log expected positions, CP axis):
+  RMS 0.066 mm | max 0.340 mm at CP 0, pair 40 (proximal) X2 | values >0.5 mm: 0, >1 mm: 0
+Method check - reconstructed EXPECTED vs template plan (should be ~0):
+  RMS 0.000 mm | max 0.001 mm at CP 0, pair 27 (distal) X2 | values >0.5 mm: 0, >1 mm: 0
+Written file vs template plan:
+  RMS 0.066 mm | max 0.340 mm at CP 0, pair 40 (proximal) X2 | values >0.5 mm: 0, >1 mm: 0
+Log vs template consistency: max gantry diff 0.000 deg, max meterset weight diff 0.00000
+Max actual-vs-expected gantry at control points: 0.018 deg
+Report: out_sub3_report.txt
+
+===== Summary =====
+Subbeam 1: FAILED - Template imrt_field1_eclipse.csv has 15 control points but subbeam 1 covers log control points 0-15 (16 control points).
+Subbeam 2: FAILED - Template imrt_field2_eclipse.csv has 15 control points but subbeam 2 covers log control points 15-30 (16 control points).
+Subbeam 3: 15 CPs (log CP 30-44), 80.00 MU, gantry 240.0 deg IEC -> out_sub3.csv
