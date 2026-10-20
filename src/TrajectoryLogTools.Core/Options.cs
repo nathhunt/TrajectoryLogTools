@@ -30,10 +30,18 @@ namespace TrajectoryLogTools.Core
         public int? AxisScale;               // also to-v5
         public bool TimeCsv;
         public bool DropCouchRotations;
+        /// <summary>to-v4: machine specifier written (0 TrueBeam, 1 Halcyon / Ethos); null = 0, or kept with KeepMachineInfo.</summary>
+        public int? MachineSpecifier;
+        /// <summary>to-v4: keep the serial number (otherwise removed, unless KeepMachineInfo or Serial).</summary>
+        public bool KeepSerial;
+        /// <summary>to-v4: metadata lines to change, in order: key -> new value (null removes the line).</summary>
+        public List<KeyValuePair<string, string>> MetaEdits = new List<KeyValuePair<string, string>>();
+        /// <summary>to-v4: new subbeam (field) names, by 1-based subbeam number.</summary>
+        public Dictionary<int, string> SubbeamNames = new Dictionary<int, string>();
         // to-v5
         public string TimeFrom;
         public double? StartTime;            // seconds since midnight
-        public string Serial;
+        public string Serial;                // also to-v4
         public bool AddCouchRotations;
         // to-csv
         public bool NoMlc;
@@ -74,6 +82,32 @@ namespace TrajectoryLogTools.Core
                     case "--keep-machine-info": RequireCmd(o, a, Command.ToV4); o.KeepMachineInfo = true; break;
                     case "--time-csv": RequireCmd(o, a, Command.ToV4); o.TimeCsv = true; break;
                     case "--drop-couch-rotations": RequireCmd(o, a, Command.ToV4); o.DropCouchRotations = true; break;
+                    case "--machine":
+                        RequireCmd(o, a, Command.ToV4);
+                        o.MachineSpecifier = ParseMachine(Next(args, ref i, a));
+                        break;
+                    case "--keep-serial": RequireCmd(o, a, Command.ToV4); o.KeepSerial = true; break;
+                    case "--set-meta":
+                    {
+                        RequireCmd(o, a, Command.ToV4);
+                        string kv = Next(args, ref i, a);
+                        int eq = kv.IndexOf('=');
+                        if (eq <= 0) throw new ArgumentException("--set-meta needs KEY=VALUE, e.g. \"Patient ID=QA001\" (an empty VALUE removes the line)");
+                        string v = kv.Substring(eq + 1);
+                        o.MetaEdits.Add(new KeyValuePair<string, string>(kv.Substring(0, eq).Trim(), v.Length == 0 ? null : v));
+                        break;
+                    }
+                    case "--subbeam-name":
+                    {
+                        RequireCmd(o, a, Command.ToV4);
+                        string kv = Next(args, ref i, a);
+                        int eq = kv.IndexOf('=');
+                        int n;
+                        if (eq <= 0 || !int.TryParse(kv.Substring(0, eq), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) || n < 1)
+                            throw new ArgumentException("--subbeam-name needs N=NAME, with N the subbeam number from 1");
+                        o.SubbeamNames[n] = kv.Substring(eq + 1);
+                        break;
+                    }
                     case "--add-couch-rotations": RequireCmd(o, a, Command.ToV5); o.AddCouchRotations = true; break;
                     case "--axis-scale":
                         RequireCmd(o, a, Command.ToV4, Command.ToV5);
@@ -87,7 +121,7 @@ namespace TrajectoryLogTools.Core
                         o.StartTime = ParseClock(Next(args, ref i, a));
                         break;
                     case "--serial":
-                        RequireCmd(o, a, Command.ToV5);
+                        RequireCmd(o, a, Command.ToV4, Command.ToV5);
                         o.Serial = Next(args, ref i, a);
                         if (o.Serial.Length > 6 || o.Serial.Any(c => c < 32 || c > 126))
                             throw new ArgumentException("--serial must be up to 6 ASCII characters");
@@ -145,6 +179,17 @@ namespace TrajectoryLogTools.Core
                 case Command.Version: return "version";
                 case Command.Dump: return "dump";
                 default: return "compare";
+            }
+        }
+
+        /// <summary>"truebeam" / "0" -> 0, "halcyon" / "ethos" / "1" -> 1.</summary>
+        public static int ParseMachine(string v)
+        {
+            switch (v.Trim().ToLowerInvariant())
+            {
+                case "truebeam": case "0": return 0;
+                case "halcyon": case "ethos": case "1": return 1;
+                default: throw new ArgumentException("--machine must be truebeam (0) or halcyon (1)");
             }
         }
 

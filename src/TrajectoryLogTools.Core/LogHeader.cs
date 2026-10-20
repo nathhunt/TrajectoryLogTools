@@ -40,10 +40,15 @@ namespace TrajectoryLogTools.Core
         }
 
         /// <summary>Plan name from the metadata, else null.</summary>
-        public string PlanName
-        {
-            get { return Meta("Plan Name") ?? Meta("PlanName") ?? Meta("Plan Label") ?? Meta("Plan"); }
-        }
+        public string PlanName { get { return First(MetaData.PlanNameKeys); } }
+
+        /// <summary>Patient ID from the metadata, else null.</summary>
+        public string PatientId { get { return First(MetaData.PatientIdKeys); } }
+
+        /// <summary>Plan UID from the metadata, else null.</summary>
+        public string PlanUid { get { return First(MetaData.PlanUidKeys); } }
+
+        string First(string[] keys) { return keys.Select(Meta).FirstOrDefault(v => v != null); }
 
         /// <summary>The subbeam (field) names, e.g. "Arc 1 + Arc 2", or "3 fields" when there are many.</summary>
         public string FieldsText

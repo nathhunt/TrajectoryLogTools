@@ -82,6 +82,7 @@ namespace TrajectoryLogTools.App.ViewModels
             OnPropertyChanged(nameof(SelectionText));
             CompareCheckedCommand.NotifyCanExecuteChanged();
             ExportCommand.NotifyCanExecuteChanged();
+            RebuildCommand.NotifyCanExecuteChanged();
             CloseCommand.NotifyCanExecuteChanged();
         }
 
@@ -89,7 +90,7 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             string f = (Filter ?? "").Trim();
             if (f.Length == 0) return true;
-            return new[] { l.DisplayName, l.FieldsText, l.DateText, l.Version, l.Path }
+            return new[] { l.PatientId, l.DisplayName, l.FieldsText, l.DateText, l.Version, l.Path }
                 .Any(s => s != null && s.IndexOf(f, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
@@ -118,9 +119,15 @@ namespace TrajectoryLogTools.App.ViewModels
             CurrentPage = new ComparePageViewModel(a, b, this);
         }
 
-        public void ShowRebuild(LogItem item)
+        public void ShowRebuild(IEnumerable<LogItem> items)
         {
-            CurrentPage = new RebuildPageViewModel(item, this);
+            CurrentPage = new RebuildPageViewModel(items, this);
+        }
+
+        /// <summary>The ticked logs if <paramref name="item"/> is one of them, else just it.</summary>
+        public List<LogItem> WithChecked(LogItem item)
+        {
+            return item.IsChecked ? Logs.Where(l => l.IsChecked).ToList() : new List<LogItem> { item };
         }
 
         // =========================================================================================
@@ -230,6 +237,13 @@ namespace TrajectoryLogTools.App.ViewModels
             Dialogs.ShowDialog(new Views.ExportWindow { DataContext = vm });
         }
 
+        [RelayCommand(CanExecute = nameof(CanExport))]
+        void Rebuild()
+        {
+            var logs = Targets();
+            if (logs.Count > 0) ShowRebuild(logs);
+        }
+
         [RelayCommand]
         void ToggleList() { ListCollapsed = !ListCollapsed; }
 
@@ -255,6 +269,7 @@ namespace TrajectoryLogTools.App.ViewModels
         void ToggleTheme()
         {
             AppSettings.Current.Theme = Theme.IsDark ? "Light" : "Dark";
+            AppSettings.Current.ThemeChosen = true;
             AppSettings.Current.Save();
             Theme.Apply(AppSettings.Current.Theme);
         }

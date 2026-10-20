@@ -1,0 +1,74 @@
+<Window x:Class="TrajectoryLogTools.App.Views.HeaderEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
+        Title="Header details" Width="720" Height="640" MinWidth="560" MinHeight="420"
+        Background="{DynamicResource ApplicationBackgroundBrush}" ShowInTaskbar="False" ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <!-- One row: label, value as in the log, value to write, reset -->
+        <DataTemplate x:Key="ValueRow" DataType="{x:Type vm:HeaderValueRow}">
+            <Grid Margin="0,0,0,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding OriginalText}" Style="{StaticResource Secondary}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" ToolTip="{Binding OriginalText}" Margin="0,0,12,0" />
+                <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding Label}" />
+                <Button Grid.Column="3" Command="{Binding ResetCommand}" ToolTip="Keep as in the log" AutomationProperties.Name="Keep as in the log"
+                        Padding="8,4" Margin="6,0,0,0" IsEnabled="{Binding IsChanged}">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7A7;" FontSize="12" />
+                </Button>
+                <TextBlock Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding Note}" Style="{StaticResource Hint}" Margin="0,3,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding Note, Converter={StaticResource NotEmptyToVisibility}}" />
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+    <DockPanel Margin="24,18,24,16">
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Right" Content="Cancel" Click="Cancel_Click" Padding="16,6" Margin="8,0,0,0" IsCancel="True" />
+            <Button DockPanel.Dock="Right" Content="OK" Click="Ok_Click" Style="{DynamicResource AccentButtonStyle}" Padding="20,6" IsDefault="True" />
+            <Button DockPanel.Dock="Left" Content="Keep all as in the log" Command="{Binding ResetAllCommand}" Style="{StaticResource LinkButton}" VerticalAlignment="Center" />
+            <TextBlock />
+        </DockPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <!-- right margin: room for the scroll bar, which the Fluent theme draws over the content -->
+            <StackPanel Margin="0,0,18,0">
+                <TextBlock Text="Header details" Style="{StaticResource PageTitle}" />
+                <TextBlock Style="{StaticResource Secondary}" Text="{Binding FileName}" Margin="0,2,0,6" />
+                <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,14" TextWrapping="Wrap"
+                           Text="Change what the exported v4.0 file says; the original log is not changed. Anything left as in the log is copied exactly. The CSV and dump exports are written from the original." />
+
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="34" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="1" Text="In the log" Style="{StaticResource Secondary}" />
+                    <TextBlock Grid.Column="2" Text="In the export" Style="{StaticResource Secondary}" />
+                </Grid>
+
+                <TextBlock Text="Patient and plan" Style="{StaticResource SectionTitle}" />
+                <ItemsControl ItemsSource="{Binding Details}" ItemTemplate="{StaticResource ValueRow}" Focusable="False" />
+
+                <TextBlock Text="Field (beam / subbeam) names" Style="{StaticResource SectionTitle}" Margin="0,10,0,6" />
+                <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource ValueRow}" Focusable="False" />
+
+                <Expander Header="Other header metadata (copied as it is)" Margin="0,10,0,0"
+                          Visibility="{Binding OtherMetadata, Converter={StaticResource NotEmptyToVisibility}}">
+                    <TextBox Text="{Binding OtherMetadata, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource Mono}" Margin="0,6,0,0" />
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

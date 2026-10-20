@@ -126,6 +126,28 @@ namespace TrajectoryLogTools.Analysis
         public string DeliveredMaxAt { get; set; }
         /// <summary>With a template: reconstruction from expected positions vs the template, max |difference| mm.</summary>
         public double MethodCheckMaxMm { get; set; } = double.NaN;
+
+        // The numbers of the report, for showing without the text.
+        /// <summary>"actual" / "expected", "mu" / "cp", and where the gantry came from ("plan", "actual", "template").</summary>
+        public string Positions { get; set; }
+        public string Axis { get; set; }
+        public string GantrySource { get; set; }
+        public int Leaves { get; set; }
+        public double DeliveredMu { get; set; }
+        public int SnapshotsUsed { get; set; }
+        public int HoldSnapshotsExcluded { get; set; }
+        public int SetupSnapshotsSkipped { get; set; }
+        public double MinGapMm { get; set; }
+        /// <summary>Largest leaf move made by the gap rules and by pinning closed runs, mm.</summary>
+        public double MaxGapShiftMm { get; set; }
+        public double MaxPinShiftMm { get; set; }
+        public int ClosedRunsPinned { get; set; }
+        public double CollimatorDeg { get; set; }
+        /// <summary>Largest actual - expected gantry at the control points, degrees.</summary>
+        public double GantryActualVsExpectedMaxDeg { get; set; }
+        /// <summary>With a template: largest gantry and meterset weight difference between the log and the template (NaN without).</summary>
+        public double TemplateGantryMaxDeg { get; set; } = double.NaN;
+        public double TemplateMetersetMax { get; set; } = double.NaN;
     }
 
     public enum RebuildStatus { Ready, CheckFirst, Failed }
@@ -553,6 +575,8 @@ namespace TrajectoryLogTools.Analysis
                     mwMax = Math.Max(mwMax, Math.Abs(muKnots[cp] / muTotal - template.Cps[cp][0]));
                 }
                 rep.AppendLine(Fmt("Log vs template consistency: max gantry diff {0:F3} deg, max meterset weight diff {1:F5}", gMax, mwMax));
+                res.TemplateGantryMaxDeg = gMax;
+                res.TemplateMetersetMax = mwMax;
                 if (gMax > 0.5 || mwMax > 0.002)
                     rep.AppendLine("WARNING: the template does not look like the beam that was delivered in this log!");
                 double collT = template.Cps[0][6];
@@ -567,6 +591,20 @@ namespace TrajectoryLogTools.Analysis
             say("Report: " + reportPath);
             res.OutputPath = outPath; res.ReportPath = reportPath; res.Report = rep.ToString();
             res.Mu = muTotal;
+            res.Positions = positions;
+            res.Axis = axis;
+            res.GantrySource = template != null ? "template" : gantryMode;
+            res.Leaves = nLeaf;
+            res.DeliveredMu = rows.Max(r => r[cMuA]);
+            res.SnapshotsUsed = rows.Count;
+            res.HoldSnapshotsExcluded = nHoldDropped;
+            res.SetupSnapshotsSkipped = nSetup;
+            res.MinGapMm = minGap;
+            res.MaxGapShiftMm = gapShift;
+            res.MaxPinShiftMm = pinShift;
+            res.ClosedRunsPinned = nRuns;
+            res.CollimatorDeg = coll;
+            res.GantryActualVsExpectedMaxDeg = gActMax;
             res.GantryStartIec = template != null ? template.Cps[0][5] : gantryOut[0];
             res.GantryNote = template != null ? "from the template" : gantryHow;
             for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0) res.EmptyIntervals.Add(k);

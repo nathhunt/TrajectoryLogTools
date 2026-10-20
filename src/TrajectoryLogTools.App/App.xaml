@@ -12,6 +12,7 @@
             <services:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
             <services:NotConverter x:Key="Not" />
             <services:NotEmptyToVisibilityConverter x:Key="NotEmptyToVisibility" />
+            <services:NotEmptyToSeparatorConverter x:Key="NotEmptyToSeparator" />
             <services:FractionToWidthConverter x:Key="FractionToWidth" />
 
             <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>

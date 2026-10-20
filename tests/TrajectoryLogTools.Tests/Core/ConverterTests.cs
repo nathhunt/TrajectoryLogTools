@@ -91,7 +91,67 @@ namespace TrajectoryLogTools.Tests
             var v4 = ToV4(LogBuilder.V51(), new Options(), out notes);
             Assert.Equal(0, v4.MachineSpecifier);
             Assert.Equal("", v4.MachineSerial);
-            Assert.Contains(notes, n => n.Contains("Machine specifier 1 / serial 'H12345' removed"));
+            Assert.Contains(notes, n => n.Contains("Machine specifier 1 -> 0 (TrueBeam)"));
+            Assert.Contains(notes, n => n.Contains("Serial number 'H12345' removed"));
+        }
+
+        [Fact]
+        public void MachineSpecifier_Halcyon_SerialKept()
+        {
+            var v4 = ToV4(LogBuilder.V51(), new Options { MachineSpecifier = 1, KeepSerial = true });
+            Assert.Equal(1, v4.MachineSpecifier);
+            Assert.Equal("H12345", v4.MachineSerial);
+        }
+
+        [Fact]
+        public void Serial_Changed()
+        {
+            List<string> notes;
+            var v4 = ToV4(LogBuilder.V51(), new Options { Serial = "QA1" }, out notes);
+            Assert.Equal(0, v4.MachineSpecifier);
+            Assert.Equal("QA1", v4.MachineSerial);
+            Assert.Contains(notes, n => n.Contains("'H12345' -> 'QA1'"));
+            Assert.Throws<ArgumentException>(() => ToV4(LogBuilder.V51(), new Options { Serial = "TOOLONG" }));
+        }
+
+        [Fact]
+        public void KeepMachineInfo_OverriddenBySpecifier()
+        {
+            var v4 = ToV4(LogBuilder.V51(), new Options { KeepMachineInfo = true, MachineSpecifier = 0 });
+            Assert.Equal(0, v4.MachineSpecifier);
+            Assert.Equal("H12345", v4.MachineSerial);
+        }
+
+        [Fact]
+        public void MetaEdits_ChangeAddAndRemoveLines()
+        {
+            var opt = new Options();
+            opt.MetaEdits.Add(new KeyValuePair<string, string>("patient id", "QA001"));
+            opt.MetaEdits.Add(new KeyValuePair<string, string>("Plan UID", "1.2.3"));
+            opt.MetaEdits.Add(new KeyValuePair<string, string>("Plan Name", null));
+            var v4 = ToV4(LogBuilder.V51(), opt);
+            Assert.Equal("Patient ID:\tQA001\r\nPlan UID:\t1.2.3\r\n", v4.MetaDataText);
+        }
+
+        [Fact]
+        public void MetaEdits_TooLong_Throws()
+        {
+            var opt = new Options();
+            opt.MetaEdits.Add(new KeyValuePair<string, string>("Patient ID", new string('x', 800)));
+            Assert.Throws<ArgumentException>(() => ToV4(LogBuilder.V51(), opt));
+        }
+
+        [Fact]
+        public void SubbeamNames_Renamed_OthersKept()
+        {
+            var opt = new Options();
+            opt.SubbeamNames[2] = "Arc B";
+            var v4 = ToV4(LogBuilder.V51(), opt);
+            Assert.Equal("Arc 1", v4.Subbeams[0].Name);
+            Assert.Equal("Arc B", v4.Subbeams[1].Name);
+            opt.SubbeamNames.Clear();
+            opt.SubbeamNames[3] = "x";
+            Assert.Throws<ArgumentException>(() => ToV4(LogBuilder.V51(), opt));
         }
 
         [Fact]

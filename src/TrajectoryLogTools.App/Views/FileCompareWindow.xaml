@@ -1,0 +1,170 @@
+<Window x:Class="TrajectoryLogTools.App.Views.FileCompareWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
+        xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
+        Title="File comparison" Width="1180" Height="900" MinWidth="760" MinHeight="560"
+        Background="{DynamicResource ApplicationBackgroundBrush}" ResizeMode="CanResizeWithGrip">
+    <!--
+        Layout: a compact header that doesn't scroll (what is compared, the verdict, one row of
+        counts), then tabs that fill the rest of the window. Each table fills its space and is the
+        only thing that scrolls under the mouse, so there is never a page and a table competing
+        for the wheel. Shift + wheel scrolls a wide table sideways.
+    -->
+    <Window.Resources>
+        <Style x:Key="Table" TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        </Style>
+        <Style x:Key="Wrap" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+    <DockPanel Margin="24,16,24,14">
+        <!-- ======== Header (fixed) ======== -->
+        <DockPanel DockPanel.Dock="Top">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <Button Content="Copy as text" Command="{Binding CopyTextCommand}" Padding="12,6" Margin="0,0,8,0" ToolTip="The comparison as the command line prints it" />
+                <Button Content="Close" Click="Close_Click" Padding="16,6" />
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="File comparison" Style="{StaticResource PageTitle}" Margin="0,0,0,6" />
+                <DockPanel Margin="0,0,0,3">
+                    <Border DockPanel.Dock="Left" Width="20" Height="20" CornerRadius="10" Background="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,8,0">
+                        <TextBlock Text="A" Foreground="{DynamicResource SolidBackgroundFillColorBaseBrush}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding NameA}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding A.Path}" />
+                </DockPanel>
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="20" Height="20" CornerRadius="10" BorderThickness="1.5" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,8,0">
+                        <TextBlock Text="B" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="{Binding NameB}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding B.Path}" />
+                </DockPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <CheckBox DockPanel.Dock="Top" Content="Ignore what differs between v4.0 and v5.1 by design (version, time axis, axis order, machine and serial)"
+                  IsChecked="{Binding IgnoreVersion}" Margin="0,10,0,0" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+        <Border DockPanel.Dock="Top" Padding="12,8" CornerRadius="6" Margin="0,10,0,0" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Verdict, and the counts in one compact row -->
+        <Border DockPanel.Dock="Top" Padding="12,8" CornerRadius="6" Margin="0,10,0,0" Visibility="{Binding Verdict, Converter={StaticResource NotEmptyToVisibility}}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding VerdictKind}" Value="caution">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <TextBlock Text="{Binding Verdict}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding Cards}" Focusable="False" Margin="0,6,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:Fact}">
+                            <StackPanel Orientation="Horizontal" Margin="0,2,22,2" ToolTip="{Binding Detail}">
+                                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}" Style="{StaticResource Secondary}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Value}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Detail, StringFormat=' ({0})'}" Style="{StaticResource Secondary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <DockPanel Margin="0,4,0,0" Visibility="{Binding HasNotes, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE946;" FontSize="12" Margin="0,2,6,0" VerticalAlignment="Top"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding NotesText}" Style="{StaticResource Secondary}" TextWrapping="Wrap" />
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ======== Tabs: each fills the rest of the window ======== -->
+        <TabControl Margin="0,10,0,0">
+            <!-- Axes first: that is where the differences of a conversion are -->
+            <TabItem Header="{Binding AxesTab}">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="3*" MinHeight="90" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2*" MinHeight="90" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,6">
+                        <CheckBox DockPanel.Dock="Right" Content="Only axes that differ" IsChecked="{Binding OnlyDiffering}" />
+                        <TextBlock Text="Pick an axis to see its values that differ below." Style="{StaticResource Secondary}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <DataGrid Grid.Row="1" Style="{StaticResource Table}" ItemsSource="{Binding Axes}" SelectedItem="{Binding SelectedAxis}" SelectionMode="Single"
+                              AutomationProperties.Name="Axes">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Axis" Binding="{Binding Axis}" />
+                            <DataGridTemplateColumn Header="">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:AxisCompareRow}">
+                                        <views:StatusChip Text="{Binding State}" Kind="{Binding StateKind}" Margin="2" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Samples" Binding="{Binding Samples}" />
+                            <DataGridTextColumn Header="Values differ" Binding="{Binding ValuesDiffer}" />
+                            <DataGridTextColumn Header="Expected / actual" Binding="{Binding ExpectedActual}" />
+                            <DataGridTextColumn Header="Snapshots" Binding="{Binding Snapshots}" />
+                            <DataGridTextColumn Header="Largest |A − B|" Binding="{Binding MaxDifference}" />
+                            <DataGridTextColumn Header="'No value' in one" Binding="{Binding NoValue}" />
+                            <DataGridTextColumn Header="First at snapshot" Binding="{Binding First}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <!-- drag to give either table more room -->
+                    <GridSplitter Grid.Row="2" Height="8" HorizontalAlignment="Stretch" Background="Transparent" ResizeDirection="Rows" ToolTip="Drag to resize"
+                                  Cursor="SizeNS" />
+                    <TextBlock Grid.Row="3" Text="{Binding ExamplesTitle}" Style="{StaticResource SectionTitle}" Margin="0,2,0,6" />
+                    <DataGrid Grid.Row="4" Style="{StaticResource Table}" ItemsSource="{Binding Examples}" AutomationProperties.Name="Values that differ">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Snapshot" Binding="{Binding Snapshot}" />
+                            <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" />
+                            <DataGridTextColumn Header="Record" Binding="{Binding Record}" />
+                            <DataGridTextColumn Header="A" Binding="{Binding A}" />
+                            <DataGridTextColumn Header="B" Binding="{Binding B}" />
+                            <DataGridTextColumn Header="|A − B|" Binding="{Binding DifferenceText}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="{Binding FieldsTab}">
+                <DockPanel Margin="0,10,0,0">
+                    <TextBlock DockPanel.Dock="Top" Text="The header, metadata and subbeam fields are all the same." Style="{StaticResource Hint}"
+                               Visibility="{Binding HasFields, Converter={StaticResource InverseBoolToVisibility}}" />
+                    <DataGrid Style="{StaticResource Table}" ItemsSource="{Binding Fields}" AutomationProperties.Name="Header and subbeam fields that differ"
+                              Visibility="{Binding HasFields, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Where" Binding="{Binding Section}" />
+                            <DataGridTextColumn Header="Field" Binding="{Binding Name}" />
+                            <DataGridTextColumn Header="A" Binding="{Binding A}" Width="*" ElementStyle="{StaticResource Wrap}" />
+                            <DataGridTextColumn Header="B" Binding="{Binding B}" Width="*" ElementStyle="{StaticResource Wrap}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="As text">
+                <TextBox Text="{Binding RawText, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,10,0,0" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

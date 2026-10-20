@@ -28,6 +28,17 @@ namespace TrajectoryLogTools.App.Services
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { throw new NotSupportedException(); }
     }
 
+    /// <summary>" · " after a value that is there, "" otherwise (for joining Runs).</summary>
+    public sealed class NotEmptyToSeparatorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return string.IsNullOrEmpty(value as string) ? "" : " · ";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { throw new NotSupportedException(); }
+    }
+
     /// <summary>Collapsed when true (the inverse of BooleanToVisibilityConverter).</summary>
     public sealed class InverseBoolToVisibilityConverter : IValueConverter
     {

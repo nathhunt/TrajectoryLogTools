@@ -20,10 +20,62 @@ namespace TrajectoryLogTools.Core
         public List<string> Differences = new List<string>();
         public List<string> Info = new List<string>();        // differences that were ignored, etc.
         public bool Same { get { return DifferenceCount == 0; } }
+
+        // The same differences, structured, for the app's file comparison window.
+        /// <summary>Header and subbeam fields that differ.</summary>
+        public List<FieldDifference> Fields = new List<FieldDifference>();
+        /// <summary>Every axis in either log, with how its stored values compare.</summary>
+        public List<AxisDifference> Axes = new List<AxisDifference>();
+        public int SnapshotsCompared;
+    }
+
+    public sealed class FieldDifference
+    {
+        /// <summary>"Header", "Metadata" (one row per line, Name = its key) or "Subbeam n".</summary>
+        public string Section { get; set; }
+        public string Name { get; set; }
+        public string A { get; set; }
+        public string B { get; set; }
+    }
+
+    public sealed class AxisDifference
+    {
+        public int AxisId { get; set; }
+        public string Axis { get; set; }
+        /// <summary>"same", "differs", "only in A", "only in B" or "samples differ".</summary>
+        public string State { get; set; }
+        public int Samples { get; set; }
+        public long ValuesDiffer { get; set; }
+        public long ExpectedDiffer { get; set; }
+        public long ActualDiffer { get; set; }
+        public int SnapshotsDiffer { get; set; }
+        /// <summary>Largest |A - B| of the values that differ, leaving out those with "no value" in one log only.</summary>
+        public double MaxDifference { get; set; }
+        /// <summary>Values that are "no value" (the float.MaxValue marker) in one log and a number in the other.</summary>
+        public long NoValueDiffer { get; set; }
+        /// <summary>First snapshot (1-based) with a difference; 0 for none.</summary>
+        public int FirstSnapshot { get; set; }
+        public List<ValueDifference> Examples { get; set; } = new List<ValueDifference>();
+    }
+
+    public sealed class ValueDifference
+    {
+        public int Snapshot { get; set; }
+        public string Sample { get; set; }
+        /// <summary>"expected" or "actual".</summary>
+        public string Record { get; set; }
+        public string A { get; set; }
+        public string B { get; set; }
+        public double Difference { get; set; }
+        /// <summary>|A - B| to 6 significant digits; empty when one is "no value".</summary>
+        public string DifferenceText { get { return double.IsNaN(Difference) ? "" : Difference.ToString("G6", CultureInfo.InvariantCulture); } }
     }
 
     public static class LogComparer
     {
+        /// <summary>Value differences kept per axis in <see cref="AxisDifference.Examples"/>.</summary>
+        public const int ExamplesPerAxis = 200;
+
         /// <summary>
         /// Compares header fields, subbeams and every expected / actual snapshot value. Axes are matched
         /// by axis id, so a v4.0 and a v5.1 log can be compared; with <paramref name="ignoreVersion"/>
@@ -36,11 +88,13 @@ namespace TrajectoryLogTools.Core
             var r = new CompareResult();
             if (a.Raw.Length == b.Raw.Length && a.Raw.SequenceEqual(b.Raw)) { r.ByteIdentical = true; return r; }
 
+            string section = "Header";
             Action<string, object, object> field = (name, x, y) =>
             {
                 if (Equals(x, y)) return;
                 r.DifferenceCount++;
                 r.Differences.Add(name + ": " + x + " vs " + y);
+                r.Fields.Add(new FieldDifference { Section = section, Name = name, A = Convert.ToString(x, CultureInfo.InvariantCulture), B = Convert.ToString(y, CultureInfo.InvariantCulture) });
             };
 
             // ---- header ----
@@ -52,7 +106,14 @@ namespace TrajectoryLogTools.Core
             field("Truncated", a.Truncated, b.Truncated);
             field("Number of snapshots", a.NumSnapshots, b.NumSnapshots);
             field("MLC model", a.MlcModel, b.MlcModel);
+            int fieldsBefore = r.Fields.Count;
             field("Metadata", Quote(a.MetaDataText), Quote(b.MetaDataText));
+            if (r.Fields.Count > fieldsBefore)
+            {
+                // Structured: one row per metadata line that differs, rather than the whole text.
+                r.Fields.RemoveAt(r.Fields.Count - 1);
+                r.Fields.AddRange(MetadataLines(a.MetaDataText, b.MetaDataText));
+            }
             if (!ignoreVersion)
             {
                 field("Machine specifier", a.MachineSpecifier, b.MachineSpecifier);
@@ -77,6 +138,7 @@ namespace TrajectoryLogTools.Core
             {
                 Subbeam x = a.Subbeams[k], y = b.Subbeams[k];
                 string p = "Subbeam " + (k + 1) + " ";
+                section = "Subbeam " + (k + 1);
                 field(p + "control point", x.ControlPoint, y.ControlPoint);
                 if (!Same(x.MU, y.MU, tolerance)) field(p + "MU", Fmt.Exact(x.MU), Fmt.Exact(y.MU));
                 if (!Same(x.RadTime, y.RadTime, tolerance)) field(p + "radiation time", Fmt.Exact(x.RadTime), Fmt.Exact(y.RadTime));
@@ -85,17 +147,26 @@ namespace TrajectoryLogTools.Core
             }
 
             // ---- snapshots (axes matched by id) ----
+            section = "Header";
             int snaps = Math.Min(a.NumSnapshots, b.NumSnapshots);
+            r.SnapshotsCompared = snaps;
             int listed = 0;
+            foreach (int id in axesA.Where(id => !axesB.Contains(id)))
+                r.Axes.Add(new AxisDifference { AxisId = id, Axis = TrajectoryLog.AxisName(id), State = "only in A", Samples = a.SamplesPerAxis[Array.IndexOf(a.AxisIds, id)] });
+            foreach (int id in axesB.Where(id => !axesA.Contains(id)))
+                r.Axes.Add(new AxisDifference { AxisId = id, Axis = TrajectoryLog.AxisName(id), State = "only in B", Samples = b.SamplesPerAxis[Array.IndexOf(b.AxisIds, id)] });
             foreach (int id in axesA.Distinct())
             {
                 int ia = Array.IndexOf(a.AxisIds, id), ib = Array.IndexOf(b.AxisIds, id);
                 if (ib < 0) continue; // already reported in the axis list
                 string axis = TrajectoryLog.AxisName(id);
                 int n = a.SamplesPerAxis[ia];
+                var ad = new AxisDifference { AxisId = id, Axis = axis, Samples = n, State = "same" };
+                r.Axes.Add(ad);
                 if (n != b.SamplesPerAxis[ib])
                 {
                     field(axis + " samples per snapshot", n, b.SamplesPerAxis[ib]);
+                    ad.State = "samples differ";
                     continue;
                 }
 
@@ -114,6 +185,15 @@ namespace TrajectoryLogTools.Core
                             diffSnapshots.Add(s);
                             double d = Math.Abs((double)x - y);
                             if (!double.IsNaN(d) && d > maxDiff) maxDiff = d;
+                            if (act == 0) ad.ExpectedDiffer++; else ad.ActualDiffer++;
+                            bool noValue = IsNoValue(x) != IsNoValue(y);
+                            if (noValue) ad.NoValueDiffer++;
+                            else if (!double.IsNaN(d) && d > ad.MaxDifference) ad.MaxDifference = d;
+                            if (ad.FirstSnapshot == 0) ad.FirstSnapshot = s + 1;
+                            if (ad.Examples.Count < ExamplesPerAxis)
+                                ad.Examples.Add(new ValueDifference { Snapshot = s + 1, Sample = SampleName(id, k, n), Record = act == 0 ? "expected" : "actual",
+                                                                      A = IsNoValue(x) ? "no value" : Fmt.Exact(x), B = IsNoValue(y) ? "no value" : Fmt.Exact(y),
+                                                                      Difference = noValue ? double.NaN : d });
                             if (listed < maxValueDiffs)
                             {
                                 listed++;
@@ -122,6 +202,9 @@ namespace TrajectoryLogTools.Core
                             }
                         }
                 if (count == 0) continue;
+                ad.State = "differs";
+                ad.ValuesDiffer = count;
+                ad.SnapshotsDiffer = diffSnapshots.Count;
                 r.DifferenceCount += count;
                 r.Differences.Add(string.Format(CultureInfo.InvariantCulture,
                     "{0}: {1:N0} value(s) differ in {2:N0} snapshot(s), max |difference| {3}",
@@ -133,6 +216,27 @@ namespace TrajectoryLogTools.Core
             if (r.Same && a.CrcVariant != b.CrcVariant)
                 r.Info.Add("CRC variant " + a.CrcVariant.Name + " vs " + b.CrcVariant.Name);
             return r;
+        }
+
+        static bool IsNoValue(float v) { return Math.Abs(v) >= CsvExporter.NoValue; }
+
+        /// <summary>The metadata lines that differ, matched by key (lines without a key by position).</summary>
+        static List<FieldDifference> MetadataLines(string a, string b)
+        {
+            var result = new List<FieldDifference>();
+            var ea = MetaData.Entries(a);
+            var eb = MetaData.Entries(b);
+            var keys = ea.Select(e => e.Key).Concat(eb.Select(e => e.Key)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (string k in keys)
+            {
+                string va = ea.Where(e => string.Equals(e.Key, k, StringComparison.OrdinalIgnoreCase)).Select(e => e.Value).FirstOrDefault();
+                string vb = eb.Where(e => string.Equals(e.Key, k, StringComparison.OrdinalIgnoreCase)).Select(e => e.Value).FirstOrDefault();
+                if (va == vb) continue;
+                result.Add(new FieldDifference { Section = "Metadata", Name = k, A = va ?? "(no line)", B = vb ?? "(no line)" });
+            }
+            // Text without "Key: value" lines (or only spacing differs): show it whole.
+            if (result.Count == 0) result.Add(new FieldDifference { Section = "Metadata", Name = "(whole text)", A = Quote(a), B = Quote(b) });
+            return result;
         }
 
         /// <summary>Equal bit pattern, both NaN, or within the tolerance.</summary>

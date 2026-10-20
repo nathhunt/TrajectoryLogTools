@@ -14,6 +14,7 @@ namespace TrajectoryLogTools.App
             base.OnStartup(e);
             DispatcherUnhandledException += OnUnhandledException;
             Theme.Apply(AppSettings.Current.Theme);
+            WheelScrolling.Register();
             var window = new MainWindow();
             MainWindow = window;
             window.Show();   // before the view model: it may open a dialog owned by the window

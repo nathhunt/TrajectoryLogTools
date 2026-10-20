@@ -19,7 +19,8 @@
         </DockPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">
+            <!-- right margin: room for the scroll bar, which the Fluent theme draws over the content -->
+            <StackPanel IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" Margin="0,0,16,0">
                 <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" Margin="0,0,0,10" />
 
                 <!-- What to write -->
@@ -30,8 +31,38 @@
                             <CheckBox IsChecked="{Binding ToV4}" Content="v4.0 log (.bin)" FontWeight="SemiBold" />
                             <TextBlock Text="{Binding V4Note}" Style="{StaticResource Hint}" Margin="28,2,0,6" />
                             <StackPanel Margin="28,0,0,0" IsEnabled="{Binding ToV4}">
-                                <CheckBox Content="Keep machine specifier and serial" IsChecked="{Binding KeepMachineInfo}" />
+                                <!-- Header options as labelled dropdowns, so they fit the card -->
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Machine" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding MachineChoices}" SelectedIndex="{Binding MachineIndex}" HorizontalAlignment="Stretch"
+                                              AutomationProperties.Name="Machine" ToolTip="Machine specifier written to the header" />
+                                    <TextBlock Grid.Row="1" Text="Serial number" VerticalAlignment="Center" Margin="0,6,12,0" />
+                                    <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding SerialChoices}" SelectedIndex="{Binding SerialIndex}" HorizontalAlignment="Stretch" Margin="0,6,0,0"
+                                              AutomationProperties.Name="Serial number" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding NewSerial, UpdateSourceTrigger=PropertyChanged}" MaxLength="6" Margin="0,4,0,0"
+                                             AutomationProperties.Name="New serial number" ToolTip="Up to 6 characters"
+                                             Visibility="{Binding ChangeSerial, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock Grid.Row="3" Text="Couch axes" VerticalAlignment="Center" Margin="0,6,12,0" ToolTip="Couch rotation, pitch and roll" />
+                                    <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding CouchChoices}" SelectedIndex="{Binding CouchIndex}" HorizontalAlignment="Stretch" Margin="0,6,0,0"
+                                              AutomationProperties.Name="Couch rotation, pitch and roll" ToolTip="Couch rotation, pitch and roll" />
+                                </Grid>
                                 <CheckBox Content="Save the removed time axis (_time.csv)" IsChecked="{Binding TimeCsv}" />
+                                <!-- One log: patient, plan and field names -->
+                                <StackPanel Margin="0,8,0,0" Visibility="{Binding CanEditHeader, Converter={StaticResource BoolToVisibility}}">
+                                    <Button Content="Header details…" Command="{Binding EditHeaderCommand}" HorizontalAlignment="Left" Padding="10,4"
+                                            ToolTip="Change the patient ID, plan name, plan UID or field names written to the v4.0 file" />
+                                    <TextBlock Text="{Binding HeaderEditsText}" Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Border>

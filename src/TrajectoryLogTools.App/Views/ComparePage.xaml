@@ -11,6 +11,9 @@
                 <Button Content="Save report…" Command="{Binding SaveReportCommand}" Padding="12,6" Style="{DynamicResource AccentButtonStyle}"
                         IsEnabled="{Binding HasResult}" ToolTip="Report, tables and figure to a folder" />
             </StackPanel>
+            <Button DockPanel.Dock="Left" Command="{Binding BackCommand}" ToolTip="Back to the log" AutomationProperties.Name="Back to the log" Padding="8,6" Margin="0,0,12,0" VerticalAlignment="Top">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE72B;" />
+            </Button>
             <StackPanel Margin="0,0,16,0">
                 <TextBlock Text="Compare deliveries" Style="{StaticResource PageTitle}" Margin="0,0,0,8" />
                 <Border x:Name="DropA" AllowDrop="True" Drop="DropA_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2"
@@ -21,7 +24,7 @@
                         </Border>
                         <Button DockPanel.Dock="Right" Content="Change…" Command="{Binding BrowseACommand}" Style="{StaticResource LinkButton}" FontSize="12" />
                         <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PathA}">
-                            <Run Text="{Binding DateA, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathA, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            <Run Text="{Binding A.PatientId, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding A.PatientId, Mode=OneWay, Converter={StaticResource NotEmptyToSeparator}}" /><Run Text="{Binding DateA, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathA, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                         </TextBlock>
                     </DockPanel>
                 </Border>
@@ -33,7 +36,7 @@
                         </Border>
                         <Button DockPanel.Dock="Right" Content="Change…" Command="{Binding BrowseBCommand}" Style="{StaticResource LinkButton}" FontSize="12" />
                         <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PathB}">
-                            <Run Text="{Binding DateB, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathB, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            <Run Text="{Binding B.PatientId, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding B.PatientId, Mode=OneWay, Converter={StaticResource NotEmptyToSeparator}}" /><Run Text="{Binding DateB, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathB, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
                         </TextBlock>
                     </DockPanel>
                 </Border>
@@ -48,6 +51,13 @@
                 <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
                         Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
                     <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+                </Border>
+                <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                        Visibility="{Binding PatientWarning, Converter={StaticResource NotEmptyToVisibility}}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE7BA;" Margin="0,2,8,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding PatientWarning}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                    </DockPanel>
                 </Border>
 
                 <!-- Verdict -->
@@ -83,15 +93,23 @@
                     <Border Grid.Column="1" Style="{StaticResource Box}" Padding="4">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <sp:WpfPlot x:Name="GantryPlot" />
-                            <sp:WpfPlot Grid.Row="1" x:Name="MuPlot" />
+                            <!-- One legend for the gantry and MU charts (same colours as ChartStyle.Actual / Expected) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,2">
+                                <Rectangle Width="18" Height="3" Fill="#eb6834" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="Actual A − Actual B" Style="{StaticResource Secondary}" Margin="0,0,18,0" />
+                                <Rectangle Width="18" Height="3" Fill="#2a78d6" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="Expected A − Expected B" Style="{StaticResource Secondary}" />
+                            </StackPanel>
+                            <sp:WpfPlot Grid.Row="1" x:Name="GantryPlot" />
+                            <sp:WpfPlot Grid.Row="2" x:Name="MuPlot" />
                         </Grid>
                     </Border>
                 </Grid>
-                <TextBlock Text="Matched by control point using beam-on samples only, so timing, beam holds and sampling don't affect the comparison. Scroll to zoom · drag to pan · double-click to reset."
+                <TextBlock Text="Matched by control point using beam-on samples only, so timing, beam holds and sampling don't affect the comparison. Ctrl + scroll to zoom · drag to pan · double-click to reset · right-click to open a chart in its own window."
                            Style="{StaticResource Hint}" Margin="0,6,0,12" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}" />
 
                 <!-- Details -->
@@ -152,15 +170,13 @@
                         <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8"
                                    Text="Header, subbeams and every stored value, e.g. to check a v4.0 conversion against its v5.1 original. Needs two .bin logs." />
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="Compare the files" Command="{Binding CompareFilesCommand}" IsEnabled="{Binding CanCompareFiles}" Padding="12,5" />
+                            <Button Content="Compare the files…" Command="{Binding CompareFilesCommand}" ToolTip="Opens a window summarising what differs" IsEnabled="{Binding CanCompareFiles}" Padding="12,5" />
                             <CheckBox Content="Ignore what differs between v4.0 and v5.1 by design" IsChecked="{Binding FileIgnoreVersion}" Margin="14,0,0,0" />
                         </StackPanel>
-                        <TextBox Text="{Binding FileComparison, Mode=OneWay}" Style="{StaticResource Mono}" MaxHeight="300"
-                                 Visibility="{Binding FileComparison, Converter={StaticResource NotEmptyToVisibility}}" />
                     </StackPanel>
                 </Expander>
                 <Expander Header="Full report" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
-                    <TextBox Text="{Binding Report, Mode=OneWay}" Style="{StaticResource Mono}" MaxHeight="400" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding Report, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
                 </Expander>
             </StackPanel>
         </ScrollViewer>

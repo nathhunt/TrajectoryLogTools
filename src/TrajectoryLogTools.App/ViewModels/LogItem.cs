@@ -23,6 +23,8 @@ namespace TrajectoryLogTools.App.ViewModels
         public bool IsCsv { get; }
 
         public string DisplayName { get; }
+        /// <summary>Patient ID from the header, or null (CSV exports, logs without one).</summary>
+        public string PatientId { get; }
         public string FieldsText { get; }
         public DateTime Date { get; }
         public string DateText { get { return Date.ToString("dd MMM yyyy HH:mm", Inv); } }
@@ -57,6 +59,7 @@ namespace TrajectoryLogTools.App.ViewModels
             if (header != null)
             {
                 DisplayName = header.PlanName ?? StripStamp(file);
+                PatientId = header.PatientId;
                 FieldsText = header.FieldsText;
                 Date = header.Date;
                 Version = "v" + header.Version;

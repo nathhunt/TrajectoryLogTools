@@ -1,0 +1,87 @@
+<Window x:Class="TrajectoryLogTools.App.Views.RebuildDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
+        xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+        Title="{Binding Title}" Width="1200" Height="900" MinWidth="820" MinHeight="600"
+        Background="{DynamicResource ApplicationBackgroundBrush}" ResizeMode="CanResizeWithGrip">
+    <DockPanel Margin="24,18,24,16">
+        <!-- Field, status, where it came from and went -->
+        <DockPanel DockPanel.Dock="Top">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal" Visibility="{Binding ShowNavigation, Converter={StaticResource BoolToVisibility}}" Margin="0,0,12,0">
+                    <Button Command="{Binding PreviousCommand}" ToolTip="Previous field" AutomationProperties.Name="Previous field" Padding="8,6">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE76B;" />
+                    </Button>
+                    <TextBlock Text="{Binding Position}" Style="{StaticResource Secondary}" VerticalAlignment="Center" Margin="10,0" />
+                    <Button Command="{Binding NextCommand}" ToolTip="Next field" AutomationProperties.Name="Next field" Padding="8,6">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE76C;" />
+                    </Button>
+                </StackPanel>
+                <Button Content="Open folder" Command="{Binding OpenFolderCommand}" Padding="12,6" Margin="0,0,8,0" />
+                <Button Content="Close" Click="Close_Click" Padding="16,6" />
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <DockPanel>
+                    <views:StatusChip DockPanel.Dock="Left" Text="{Binding Row.StatusText}" Kind="{Binding Row.StatusKind}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Row.Name}" Style="{StaticResource PageTitle}" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+                <views:PatientTag Id="{Binding PatientId}" Margin="0,4,0,0" />
+                <TextBlock Text="{Binding Row.Source}" Style="{StaticResource Secondary}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Row.Log.Path}" />
+                <TextBlock Style="{StaticResource Secondary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Output}"
+                           Visibility="{Binding Output, Converter={StaticResource NotEmptyToVisibility}}">
+                    <Run Text="Written to " /><Run Text="{Binding Output, Mode=OneWay}" />
+                </TextBlock>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- What to check -->
+        <Border DockPanel.Dock="Top" Padding="12,8" CornerRadius="6" Margin="0,12,0,0" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                Visibility="{Binding HasProblems, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <TextBlock Text="Check before importing" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <ItemsControl ItemsSource="{Binding Row.Problems}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,2">
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="12" Margin="0,2,6,0"
+                                           Foreground="{DynamicResource SystemFillColorCautionBrush}" VerticalAlignment="Top" />
+                                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- The report's numbers -->
+        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Cards}" ItemTemplate="{StaticResource FactCard}" Margin="0,12,-10,8" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="Scroll to zoom · drag to pan · double-click to reset" Style="{StaticResource Hint}" Margin="0,6,0,0" />
+        <TabControl>
+            <TabItem Header="Difference map">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Written minus planned leaf positions, every leaf and control point" Style="{StaticResource Secondary}" Margin="0,8,0,4" />
+                    <sp:WpfPlot x:Name="DiffPlot" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Leaf by leaf">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,4">
+                        <TextBlock Text="{Binding SelectedValueName}" Width="90" VerticalAlignment="Center" />
+                        <Slider Minimum="0" Maximum="{Binding MaxValue}" Value="{Binding SelectedValue}" IsSnapToTickEnabled="True" TickFrequency="1" Width="520"
+                                AutomationProperties.Name="Leaf" />
+                    </StackPanel>
+                    <sp:WpfPlot x:Name="LeafPlot" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Full report">
+                <TextBox Text="{Binding Report, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

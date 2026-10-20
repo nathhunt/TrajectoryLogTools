@@ -1,6 +1,9 @@
 // Program.cs - TrajectoryLogCli, the command-line tool.
 //
-//   Conversion / export (also in the GUI):
+//   As in the app (AppCommands, the app's options and defaults):
+//     export            Export: v4.0 / CSV / full CSV / dump of any number of logs
+//     compare-deliveries, compare-files, rebuild-mlc
+//   Single conversions (used by scripts and the tests):
 //     to-v4             v5.1 -> v4.0
 //     to-csv            data CSV, or with --full the whole file as CSV
 //     dump              the whole file as readable text (<name>.txt)
@@ -28,6 +31,7 @@ namespace TrajectoryLogTools.Cli
     {
         public static int Main(string[] args)
         {
+            if (args.Length > 0 && AppCommands.Handles(args[0])) return AppCommands.Run(args);
             if (args.Length > 0 && AnalysisCommands.Handles(args[0])) return AnalysisCommands.Run(args);
 
             Options opt;

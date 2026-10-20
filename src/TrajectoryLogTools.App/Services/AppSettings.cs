@@ -14,8 +14,14 @@ namespace TrajectoryLogTools.App.Services
     {
         public const int MaxRecent = 12;
 
-        /// <summary>"System", "Light" or "Dark".</summary>
-        public string Theme { get; set; } = "System";
+        /// <summary>"System", "Light" or "Dark". Light unless chosen in Settings or with the theme button.</summary>
+        public string Theme { get; set; } = "Light";
+
+        /// <summary>
+        /// True once the theme was chosen (Settings or the theme button). Settings saved by earlier
+        /// versions hold "System" without having been chosen; those start in Light.
+        /// </summary>
+        public bool ThemeChosen { get; set; }
 
         /// <summary>Compare tolerances; null = show the numbers without a within / over marker.</summary>
         public double? MlcToleranceMm { get; set; }
@@ -36,7 +42,11 @@ namespace TrajectoryLogTools.App.Services
             try
             {
                 if (File.Exists(FilePath))
-                    return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+                {
+                    AppSettings s = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+                    if (!s.ThemeChosen) s.Theme = "Light";
+                    return s;
+                }
             }
             catch (Exception) { }   // unreadable settings: start fresh
             return new AppSettings();

@@ -142,10 +142,29 @@ namespace TrajectoryLogTools.Core
         /// <summary>Compares two logs. The first line starts with SAME or DIFF; <paramref name="same"/> gives the outcome.</summary>
         public static List<string> RunCompare(string fileA, string fileB, Options opt, out bool same)
         {
+            FileComparison c = CompareFiles(fileA, fileB, opt);
+            same = c.Result.Same;
+            return c.Lines;
+        }
+
+        /// <summary>Two logs compared: the result (structured and as the lines RunCompare prints) and the parsed logs.</summary>
+        public sealed class FileComparison
+        {
+            public TrajectoryLog A, B;
+            public CompareResult Result;
+            public List<string> Lines;
+        }
+
+        public static FileComparison CompareFiles(string fileA, string fileB, Options opt)
+        {
             var a = TrajectoryLog.Parse(File.ReadAllBytes(fileA), opt.IgnoreCrc);
             var b = TrajectoryLog.Parse(File.ReadAllBytes(fileB), opt.IgnoreCrc);
             CompareResult r = LogComparer.Compare(a, b, opt.Tolerance, opt.IgnoreVersion, opt.MaxDiffs);
-            same = r.Same;
+            return new FileComparison { A = a, B = b, Result = r, Lines = CompareLines(fileA, fileB, a, b, r) };
+        }
+
+        static List<string> CompareLines(string fileA, string fileB, TrajectoryLog a, TrajectoryLog b, CompareResult r)
+        {
 
             string pair = Path.GetFileName(fileA) + " (v" + a.Version + ") vs " + Path.GetFileName(fileB) + " (v" + b.Version + ")";
             var notes = new List<string>();

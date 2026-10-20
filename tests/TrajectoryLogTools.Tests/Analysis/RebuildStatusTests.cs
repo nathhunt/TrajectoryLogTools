@@ -31,6 +31,15 @@ namespace TrajectoryLogTools.Tests
                     Assert.True(s.DeliveredMaxMm > 0 && s.DeliveredRmsMm > 0 && s.DeliveredRmsMm < s.DeliveredMaxMm);
                     Assert.StartsWith("CP ", s.DeliveredMaxAt);
                     Assert.True(double.IsNaN(s.MethodCheckMaxMm));
+                    // the report's numbers, structured
+                    Assert.Equal("actual", s.Positions);
+                    Assert.Equal("mu", s.Axis);
+                    Assert.Equal("plan", s.GantrySource);
+                    Assert.Equal(114, s.Leaves);
+                    Assert.True(s.SnapshotsUsed > s.ControlPoints);
+                    Assert.True(s.DeliveredMu > 0 && System.Math.Abs(s.DeliveredMu - s.Mu) < 0.05 * s.Mu);
+                    Assert.Equal(0.5, s.MinGapMm, 6);
+                    Assert.True(double.IsNaN(s.TemplateGantryMaxDeg));
                 });
                 Assert.StartsWith("evenly spaced arc", r.Subbeams[0].GantryNote.Replace("static gantry", "evenly spaced arc"));
             }
@@ -107,6 +116,8 @@ namespace TrajectoryLogTools.Tests
                 Assert.Equal("5.1", h.Version);
                 Assert.Equal(20, h.NumSnapshots);
                 Assert.Equal("VMAT PlanQA", h.PlanName);
+                Assert.Equal("X", h.PatientId);
+                Assert.Null(h.PlanUid);
                 Assert.Equal("Arc 1 + Arc 2", h.FieldsText);
                 Assert.True(h.DateFromName);
                 Assert.Equal(new System.DateTime(2026, 10, 16, 14, 23, 18), h.Date);

@@ -1,5 +1,6 @@
 // ExportViewModel.cs - Export the selected logs, wherever they are, to any of: v4.0 .bin, CSV,
-// full dump CSV, raw dump text. Output goes to one folder, or next to each log in a "converted"
+// full dump CSV, raw dump text. The v4.0 header options (machine, serial number, couch axes)
+// apply to every log; one log's patient, plan and field names can also be changed (Header details). Output goes to one folder, or next to each log in a "converted"
 // subfolder. The work is done by TrajectoryLogTools.Core.Commands, the same code as the CLI.
 
 using System;
@@ -21,7 +22,7 @@ namespace TrajectoryLogTools.App.ViewModels
     public partial class ExportRow : ObservableObject
     {
         public LogItem Log { get; set; }
-        public string Name { get { return Log.DisplayName + " · " + Log.DateText; } }
+        public string Name { get { return (Log.PatientId != null ? Log.PatientId + " · " : "") + Log.DisplayName + " · " + Log.DateText; } }
         public string Folder { get { return Log.FolderShort; } }
         [ObservableProperty] private string _status = "";
         /// <summary>"neutral", "ok", "caution" or "critical".</summary>
@@ -31,12 +32,23 @@ namespace TrajectoryLogTools.App.ViewModels
 
     public partial class ExportViewModel : ObservableObject
     {
-        public const string ConvertedFolder = "converted";
+        public const string ConvertedFolder = ExportOptions.ConvertedFolder;
 
         public ObservableCollection<ExportRow> Rows { get; } = new ObservableCollection<ExportRow>();
 
         [ObservableProperty] private bool _toV4 = true;
-        [ObservableProperty] private bool _keepMachineInfo;
+        // v4.0 header
+        /// <summary>0 TrueBeam (0), 1 Halcyon (1).</summary>
+        [ObservableProperty] private int _machineIndex;
+        /// <summary>0 Remove, 1 Keep, 2 Change to.</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ChangeSerial))]
+        private int _serialIndex;
+        [ObservableProperty] private string _newSerial = "";
+        /// <summary>0 Remove, 1 Keep.</summary>
+        [ObservableProperty] private int _couchIndex;
+        /// <summary>Single log only: header details changed in the Header details window.</summary>
+        [ObservableProperty] private HeaderEditViewModel _headerEdits;
         [ObservableProperty] private bool _timeCsv;
         [ObservableProperty] private bool _toCsv;
         [ObservableProperty] private bool _noMlc;
@@ -56,6 +68,20 @@ namespace TrajectoryLogTools.App.ViewModels
         public string V4Note { get; }
         public bool AnyCrcFailed { get; }
         public bool ShowProgress { get { return IsBusy || IsDone; } }
+        public bool ChangeSerial { get { return SerialIndex == 2; } }
+        public string[] MachineChoices { get; } = { "TrueBeam (0)", "Halcyon (1)" };
+        public string[] SerialChoices { get; } = { "Remove", "Keep", "Change to…" };
+        public string[] CouchChoices { get; } = { "Remove", "Keep" };
+        /// <summary>Header details (patient, plan, field names) can be changed when exporting one v5.1 log.</summary>
+        public bool CanEditHeader { get { return Rows.Count == 1 && Rows[0].Log.Header != null && Rows[0].Log.Header.Version == "5.1"; } }
+        public string HeaderEditsText
+        {
+            get
+            {
+                var changes = HeaderEdits?.Changes() ?? new List<string>();
+                return changes.Count == 0 ? "Patient, plan and field names as in the log." : "Changed: " + string.Join("; ", changes) + ".";
+            }
+        }
 
         CancellationTokenSource _cts;
 
@@ -69,6 +95,16 @@ namespace TrajectoryLogTools.App.ViewModels
                       : v51 + " of " + logs.Count + " are v5.1; the others are skipped (" + (csv > 0 ? "already v4.0 or CSV" : "already v4.0") + ").");
             AnyCrcFailed = logs.Any(l => l.CrcFailed);
             IgnoreCrc = false;
+        }
+
+        partial void OnHeaderEditsChanged(HeaderEditViewModel value) { OnPropertyChanged(nameof(HeaderEditsText)); }
+
+        [RelayCommand]
+        void EditHeader()
+        {
+            if (!CanEditHeader) return;
+            var vm = HeaderEdits?.Copy() ?? new HeaderEditViewModel(Rows[0].Log.Header);
+            if (Dialogs.ShowDialog(new Views.HeaderEditWindow { DataContext = vm }) == true) HeaderEdits = vm;
         }
 
         partial void OnIsBusyChanged(bool value) { OnPropertyChanged(nameof(ShowProgress)); }
@@ -94,7 +130,13 @@ namespace TrajectoryLogTools.App.ViewModels
         /// <summary>Checks the choices; returns an error message, or null when OK to start.</summary>
         public string Validate()
         {
-            if (!ToV4 && !ToCsv && !FullCsv && !Dump) return "Choose at least one thing to write.";
+            string e0 = Jobs().Validate();
+            if (e0 != null) return e0;
+            if (ToV4 && HeaderEdits != null)
+            {
+                string e = HeaderEdits.Validate();
+                if (e != null) return e;
+            }
             if (OneFolder)
             {
                 string f = Folder.Trim().Trim('"');
@@ -113,8 +155,7 @@ namespace TrajectoryLogTools.App.ViewModels
             IsBusy = true;
             IsDone = false;
             _cts = new CancellationTokenSource();
-            var jobs = new Jobs { ToV4 = ToV4, ToCsv = ToCsv, FullCsv = FullCsv, Dump = Dump, KeepMachineInfo = KeepMachineInfo, TimeCsv = TimeCsv,
-                                  NoMlc = NoMlc, ActualOnly = ActualOnly, Overwrite = Overwrite, IgnoreCrc = IgnoreCrc };
+            ExportOptions jobs = Jobs();
             string folder = OneFolder ? Folder.Trim().Trim('"') : null;
             int ok = 0, failed = 0, skipped = 0;
             var runLog = new StringBuilder();
@@ -125,16 +166,18 @@ namespace TrajectoryLogTools.App.ViewModels
                 if (_cts.IsCancellationRequested) { Rows[i].Status = "Cancelled"; continue; }
                 ExportRow row = Rows[i];
                 row.Status = "Working…";
-                string outDir = folder ?? Path.Combine(row.Log.Folder, ConvertedFolder);
-                var lines = await Task.Run(() => Work(row.Log.Path, outDir, jobs));
+                string outDir = Exporter.OutputFolder(row.Log.Path, folder);
+                var lines = new List<string>();
+                string path = row.Log.Path;
+                ExportOutcome outcome = await Task.Run(() => Exporter.Run(path, outDir, jobs, lines));
                 runLog.AppendLine(row.Log.Path);
-                foreach (string l in lines.Item2) runLog.AppendLine("  " + l);
-                row.Detail = string.Join("  ", lines.Item2.Where(l => l.StartsWith("OK") || l.StartsWith("SKIP") || l.StartsWith("FAIL"))
-                                                        .Select(Short));
-                switch (lines.Item1)
+                foreach (string l in lines) runLog.AppendLine("  " + l);
+                row.Detail = string.Join("  ", lines.Where(l => l.StartsWith("OK") || l.StartsWith("SKIP") || l.StartsWith("FAIL"))
+                                                    .Select(Short));
+                switch (outcome)
                 {
-                    case 0: row.Status = "Done"; row.StatusKind = "ok"; ok++; break;
-                    case 1: row.Status = "Skipped"; row.StatusKind = "neutral"; skipped++; break;
+                    case ExportOutcome.Done: row.Status = "Done"; row.StatusKind = "ok"; ok++; break;
+                    case ExportOutcome.Skipped: row.Status = "Skipped"; row.StatusKind = "neutral"; skipped++; break;
                     default: row.Status = "Failed"; row.StatusKind = "critical"; failed++; break;
                 }
                 Progress = 100.0 * (i + 1) / Rows.Count;
@@ -158,38 +201,27 @@ namespace TrajectoryLogTools.App.ViewModels
 
         static string Short(string line)
         {
-            // "OK   a.bin -> C:\x\a.csv" -> "a.csv"
+            // "OK   a.bin -> C:\x\a.csv" -> "a.csv"; "SKIP a.bin: already version 4.0" -> "SKIP already version 4.0"
             int arrow = line.IndexOf("->", StringComparison.Ordinal);
             if (line.StartsWith("OK", StringComparison.Ordinal) && arrow > 0) return Path.GetFileName(line.Substring(arrow + 2).Trim());
+            int colon = line.IndexOf(": ", StringComparison.Ordinal);
+            if ((line.StartsWith("SKIP", StringComparison.Ordinal) || line.StartsWith("FAIL", StringComparison.Ordinal)) && colon > 0)
+                return line.Substring(0, 4) + " " + line.Substring(colon + 2);
             return line.Trim();
         }
 
-        sealed class Jobs { public bool ToV4, ToCsv, FullCsv, Dump, KeepMachineInfo, TimeCsv, NoMlc, ActualOnly, Overwrite, IgnoreCrc; }
-
-        /// <summary>(0 = all OK, 1 = nothing to do, 2 = something failed, lines).</summary>
-        static Tuple<int, List<string>> Work(string path, string outDir, Jobs j)
+        /// <summary>The choices made, for the exporter shared with the CLI.</summary>
+        ExportOptions Jobs()
         {
-            var lines = new List<string>();
-            bool anyOk = false, anyFail = false;
-            Action<Func<List<string>>> run = f =>
+            return new ExportOptions
             {
-                try { lines.AddRange(f()); anyOk = true; }
-                catch (SkipException ex) { lines.Add("SKIP " + ex.Message); }
-                catch (Exception ex) { lines.Add("FAIL " + ex.Message); anyFail = true; }
+                ToV4 = ToV4, ToCsv = ToCsv, FullCsv = FullCsv, Dump = Dump, TimeCsv = TimeCsv,
+                NoMlc = NoMlc, ActualOnly = ActualOnly, Overwrite = Overwrite, IgnoreCrc = IgnoreCrc,
+                Machine = MachineIndex == 1 ? 1 : 0, KeepSerial = SerialIndex == 1, NewSerial = SerialIndex == 2 ? NewSerial : null,
+                KeepCouch = CouchIndex == 1,
+                MetaEdits = HeaderEdits?.MetaEdits() ?? new List<KeyValuePair<string, string>>(),
+                SubbeamNames = HeaderEdits?.SubbeamNames() ?? new Dictionary<int, string>(),
             };
-            bool csvInput = string.Equals(Path.GetExtension(path), ".csv", StringComparison.OrdinalIgnoreCase);
-            if (csvInput) { lines.Add("SKIP a CSV export can't be converted (open the .bin log)"); return Tuple.Create(1, lines); }
-            Func<Command, Options> opt = c => new Options
-            {
-                Command = c, Output = outDir, Overwrite = j.Overwrite, IgnoreCrc = j.IgnoreCrc,
-                KeepMachineInfo = c == Command.ToV4 && j.KeepMachineInfo, TimeCsv = c == Command.ToV4 && j.TimeCsv,
-                NoMlc = c == Command.ToCsv && j.NoMlc, ActualOnly = c == Command.ToCsv && j.ActualOnly,
-            };
-            if (j.ToV4) run(() => Commands.RunToV4(path, true, opt(Command.ToV4)));
-            if (j.ToCsv) run(() => Commands.RunToCsv(path, opt(Command.ToCsv)));
-            if (j.FullCsv) { var o = opt(Command.ToCsv); o.Full = true; o.NoMlc = false; o.ActualOnly = false; run(() => Commands.RunToCsv(path, o)); }
-            if (j.Dump) run(() => Commands.RunDump(path, opt(Command.Dump)));
-            return Tuple.Create(anyFail ? 2 : anyOk ? 0 : 1, lines);
         }
     }
 }

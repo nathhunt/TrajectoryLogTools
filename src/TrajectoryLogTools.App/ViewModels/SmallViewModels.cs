@@ -117,6 +117,7 @@ namespace TrajectoryLogTools.App.ViewModels
                     return false;
                 }
             var s = AppSettings.Current;
+            if (s.Theme != Theme) s.ThemeChosen = true;
             s.Theme = Theme;
             s.MlcToleranceMm = Parse(MlcTolerance);
             s.GantryToleranceDeg = Parse(GantryTolerance);
