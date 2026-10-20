@@ -137,7 +137,7 @@ namespace TrajectoryLogTools.Analysis
         }
 
         /// <summary>Beam-on rows with strictly increasing ControlPoint (needed for interpolation).</summary>
-        static DeliveryRecord BeamOnByCp(DeliveryRecord d)
+        internal static DeliveryRecord BeamOnByCp(DeliveryRecord d)
         {
             double[] cp = d.Column("ControlPoint");
             var on = Enumerable.Range(0, d.RowCount).Where(d.IsBeamOn).ToList();
@@ -158,7 +158,7 @@ namespace TrajectoryLogTools.Analysis
         /// beams, or the collimator turning between arcs) have no beam-on samples; interpolating
         /// across them would compare made-up values, so they are excluded.
         /// </summary>
-        static bool[] Covered(DeliveryRecord d, double[] x)
+        internal static bool[] Covered(DeliveryRecord d, double[] x)
         {
             double[] cp = d.Column("ControlPoint");
             var ok = new bool[x.Length];

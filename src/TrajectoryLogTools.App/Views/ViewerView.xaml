@@ -98,6 +98,8 @@
                         <TextBlock Text="Axis" VerticalAlignment="Center" Margin="0,0,8,0" />
                         <ComboBox ItemsSource="{Binding Axes}" SelectedItem="{Binding SelectedAxis}" DisplayMemberPath="Value" MinWidth="220" />
                         <CheckBox Content="Plot against control point (instead of time)" IsChecked="{Binding VsControlPoint}" Margin="16,0,0,0" VerticalAlignment="Center" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="16,0,0,0" VerticalAlignment="Center"
+                                   Text="Scroll to zoom, drag to pan, double-click to reset." />
                     </StackPanel>
                     <sp:WpfPlot Grid.Row="1" x:Name="AxisPlot" />
                     <sp:WpfPlot Grid.Row="2" x:Name="ErrorPlot" />
@@ -110,8 +112,11 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Style="{StaticResource Hint}" Margin="4"
-                               Text="Actual minus expected leaf position for every leaf and snapshot, beam on only. Scroll to zoom, drag to pan, double-click to reset." />
+                    <StackPanel Orientation="Horizontal" Margin="4">
+                        <CheckBox Content="Plot against control point (instead of time)" IsChecked="{Binding VsControlPoint}" VerticalAlignment="Center" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="16,0,0,0" VerticalAlignment="Center"
+                                   Text="Actual minus expected leaf position, beam on only. Scroll to zoom, drag to pan, double-click to reset." />
+                    </StackPanel>
                     <sp:WpfPlot Grid.Row="1" x:Name="MlcPlot" />
                 </Grid>
             </TabItem>

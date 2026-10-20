@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.App.ViewModels;
 using TrajectoryLogTools.Charts;
 
@@ -13,6 +14,7 @@ namespace TrajectoryLogTools.App.Views
         public ViewerView()
         {
             InitializeComponent();
+            PlotSetup.Configure(AxisPlot, ErrorPlot, MlcPlot);
             DataContextChanged += OnDataContextChanged;
         }
 
@@ -43,8 +45,6 @@ namespace TrajectoryLogTools.App.Views
                 else LogCharts.MlcError(MlcPlot.Plot, d, _vm.VsControlPoint);
             }
             catch (Exception ex) { ChartStyle.Empty(AxisPlot.Plot, "Chart error: " + ex.Message); }
-            AxisPlot.Plot.Axes.AutoScale();
-            ErrorPlot.Plot.Axes.AutoScale();
             AxisPlot.Refresh();
             ErrorPlot.Refresh();
             MlcPlot.Refresh();

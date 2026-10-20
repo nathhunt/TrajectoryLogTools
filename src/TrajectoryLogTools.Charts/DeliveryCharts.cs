@@ -13,7 +13,7 @@ namespace TrajectoryLogTools.Charts
         /// <summary>A - B of the gantry ("Gantry") or MU ("MU") along the control points.</summary>
         public static void AxisDifference(Plot plt, DeliveryComparisonResult r, string axis)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             bool gantry = axis == "Gantry";
             ChartStyle.BrokenLine(plt, r.Grid, gantry ? r.GantryDiffActual : r.MuDiffActual, ChartStyle.Actual, "Actual A − Actual B", 1.1f);
             ChartStyle.BrokenLine(plt, r.Grid, gantry ? r.GantryDiffExpected : r.MuDiffExpected, ChartStyle.Expected, "Expected A − Expected B", 1.4f);
@@ -22,12 +22,13 @@ namespace TrajectoryLogTools.Charts
             plt.XLabel("Control point");
             plt.YLabel(gantry ? "deg" : "MU");
             plt.ShowLegend(Alignment.UpperRight);
+            ChartStyle.Finish(plt);
         }
 
         /// <summary>Expected or actual leaf positions, A - B (mm), leaf by control point.</summary>
         public static void LeafDifference(Plot plt, DeliveryComparisonResult r, bool actual)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             double[,] m = actual ? r.LeafDiffActual : r.LeafDiffExpected;
             int leaves = m.GetLength(0);
             if (leaves == 0 || r.Grid.Length == 0) { ChartStyle.Empty(plt, "No leaf data"); return; }
@@ -36,7 +37,7 @@ namespace TrajectoryLogTools.Charts
             // Leaf 1 at the top, as in the Python figure.
             ChartStyle.DiffHeatmap(plt, ChartStyle.Clip(m, 0.2),
                 new CoordinateRect(r.Grid[0], r.Grid[r.Grid.Length - 1], leaves + 0.5, 0.5), 0.2, "mm (clipped at ±0.2)");
-            plt.Axes.SetLimitsY(leaves + 0.5, 0.5);
+            ChartStyle.Finish(plt, new AxisLimits(r.Grid[0], r.Grid[r.Grid.Length - 1], leaves + 0.5, 0.5));
             ChartStyle.Title(plt, string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 "{0} leaf positions, A − B   (RMS {1:F3} mm, max {2:F2} mm)", actual ? "Actual" : "Expected",
                 n > 0 ? Math.Sqrt(sum2 / n) : double.NaN, max));

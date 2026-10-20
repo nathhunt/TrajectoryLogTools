@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.App.ViewModels;
 using TrajectoryLogTools.Charts;
 
@@ -13,6 +14,7 @@ namespace TrajectoryLogTools.App.Views
         public CompareView()
         {
             InitializeComponent();
+            PlotSetup.Configure(GantryPlot, MuPlot, ExpectedPlot, ActualPlot);
             DataContextChanged += OnDataContextChanged;
         }
 
@@ -37,8 +39,6 @@ namespace TrajectoryLogTools.App.Views
                 DeliveryCharts.AxisDifference(MuPlot.Plot, r, "MU");
                 DeliveryCharts.LeafDifference(ExpectedPlot.Plot, r, false);
                 DeliveryCharts.LeafDifference(ActualPlot.Plot, r, true);
-                GantryPlot.Plot.Axes.AutoScale();
-                MuPlot.Plot.Axes.AutoScale();
             }
             foreach (var p in new[] { GantryPlot, MuPlot, ExpectedPlot, ActualPlot }) p.Refresh();
         }

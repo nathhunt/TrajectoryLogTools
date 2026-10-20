@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\src\TrajectoryLogTools.Core\TrajectoryLogTools.Core.csproj" />
     <ProjectReference Include="..\..\src\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
     <ProjectReference Include="..\..\src\TrajectoryLogTools.Cli\TrajectoryLogTools.Cli.csproj" />
+    <ProjectReference Include="..\..\src\TrajectoryLogTools.Charts\TrajectoryLogTools.Charts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Outputs of the original tools for the simulated logs (see reference/README.md). -->

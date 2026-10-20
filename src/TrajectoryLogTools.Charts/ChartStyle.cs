@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScottPlot;
 
 namespace TrajectoryLogTools.Charts
@@ -45,6 +46,53 @@ namespace TrajectoryLogTools.Charts
             }
         }
 
+        /// <summary>
+        /// Clears everything a chart function adds: plottables, colour bars (panels, which Clear()
+        /// leaves in place) and the pan / zoom boundary.
+        /// </summary>
+        public static void ClearAll(Plot plt)
+        {
+            plt.Clear();
+            foreach (var p in plt.Axes.GetPanels())
+                if (p is ScottPlot.Panels.ColorBar) plt.Axes.Remove(p);
+            plt.Axes.Rules.RemoveAll(r => r is DataBoundary);
+            plt.Axes.Title.Label.Text = "";
+            plt.Axes.Bottom.Label.Text = "";
+            plt.Axes.Left.Label.Text = "";
+            plt.HideLegend();
+        }
+
+        /// <summary>
+        /// Shows <paramref name="home"/> (default: the data, auto-scaled) and keeps pan / zoom inside
+        /// it. <see cref="Home"/> returns to it (double-click in the GUI).
+        /// </summary>
+        public static void Finish(Plot plt, AxisLimits? home = null)
+        {
+            if (home == null)
+            {
+                plt.Axes.AutoScale();
+                home = plt.Axes.GetLimits();
+            }
+            AxisLimits h = home.Value;
+            if (!h.IsReal || h.Left == h.Right || h.Bottom == h.Top) return;
+            plt.Axes.SetLimits(h);
+            plt.Axes.Rules.Add(new DataBoundary(plt.Axes.Bottom, plt.Axes.Left, h));
+        }
+
+        /// <summary>Back to the view set by <see cref="Finish"/>.</summary>
+        public static void Home(Plot plt)
+        {
+            var b = plt.Axes.Rules.OfType<DataBoundary>().FirstOrDefault();
+            if (b != null) plt.Axes.SetLimits(b.HomeLimits);
+            else plt.Axes.AutoScale();
+        }
+
+        /// <summary>Symmetric colour range: +/- the largest |value|, at least <paramref name="floor"/>.</summary>
+        public static double SymmetricRange(double maxAbs, double floor = 0.001)
+        {
+            return double.IsNaN(maxAbs) || maxAbs < floor ? floor : maxAbs;
+        }
+
         /// <summary>Signed difference heatmap clipped at +/- <paramref name="clip"/>, with a colour bar.</summary>
         public static ScottPlot.Plottables.Heatmap DiffHeatmap(Plot plt, double[,] values, CoordinateRect extent, double clip, string barLabel)
         {
@@ -66,7 +114,7 @@ namespace TrajectoryLogTools.Charts
 
         public static void Empty(Plot plt, string message)
         {
-            plt.Clear();
+            ClearAll(plt);
             plt.Title(message, 13);
         }
 
@@ -81,5 +129,39 @@ namespace TrajectoryLogTools.Charts
         }
 
         public static IEnumerable<int> Range(int n) { for (int i = 0; i < n; i++) yield return i; }
+    }
+
+    /// <summary>
+    /// Keeps the view inside the home limits: zooming out stops at them and panning slides along
+    /// them. Works for inverted axes (min > max) too.
+    /// </summary>
+    public sealed class DataBoundary : IAxisRule
+    {
+        readonly IXAxis _x;
+        readonly IYAxis _y;
+        public AxisLimits HomeLimits { get; private set; }
+
+        public DataBoundary(IXAxis x, IYAxis y, AxisLimits home) { _x = x; _y = y; HomeLimits = home; }
+
+        public void Apply(RenderPack rp, bool beforeLayout)
+        {
+            Clamp(_x, HomeLimits.Left, HomeLimits.Right);
+            Clamp(_y, HomeLimits.Bottom, HomeLimits.Top);
+        }
+
+        static void Clamp(IAxis axis, double a, double b)
+        {
+            double lo = Math.Min(a, b), hi = Math.Max(a, b);
+            bool inverted = axis.Min > axis.Max;
+            double min = Math.Min(axis.Min, axis.Max), max = Math.Max(axis.Min, axis.Max);
+            if (max - min >= hi - lo) { min = lo; max = hi; }
+            else
+            {
+                if (min < lo) { max += lo - min; min = lo; }
+                if (max > hi) { min -= max - hi; max = hi; }
+            }
+            if (inverted) axis.Range.Set(max, min);
+            else axis.Range.Set(min, max);
+        }
     }
 }

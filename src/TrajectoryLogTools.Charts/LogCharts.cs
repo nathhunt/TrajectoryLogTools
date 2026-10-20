@@ -33,7 +33,7 @@ namespace TrajectoryLogTools.Charts
         /// <summary>Expected and actual values of an axis (e.g. "GantryRtn_deg"); beam holds shaded.</summary>
         public static void AxisTrace(Plot plt, DeliveryRecord d, string axis, bool vsControlPoint)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             double[] x = XValues(d, vsControlPoint);
             ShadeHolds(plt, d, x);
             ChartStyle.BrokenLine(plt, x, d.Column(axis + "_Expected"), ChartStyle.Expected, "Expected", 1.4f);
@@ -41,12 +41,13 @@ namespace TrajectoryLogTools.Charts
             ChartStyle.Title(plt, axis.Replace("_", " "));
             plt.XLabel(vsControlPoint ? "Control point" : "Time (s)");
             plt.ShowLegend(Alignment.UpperRight);
+            ChartStyle.Finish(plt);
         }
 
         /// <summary>Actual - expected of an axis.</summary>
         public static void AxisError(Plot plt, DeliveryRecord d, string axis, bool vsControlPoint)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             double[] x = XValues(d, vsControlPoint);
             ShadeHolds(plt, d, x);
             double[] e = d.Column(axis + "_Expected"), a = d.Column(axis + "_Actual");
@@ -54,40 +55,25 @@ namespace TrajectoryLogTools.Charts
             plt.Add.HorizontalLine(0, 0.6f, ChartStyle.Zero);
             ChartStyle.Title(plt, axis.Replace("_", " ") + ": actual − expected");
             plt.XLabel(vsControlPoint ? "Control point" : "Time (s)");
+            ChartStyle.Finish(plt);
         }
 
-        /// <summary>MLC actual - expected (mm), leaf by snapshot; beam-hold snapshots blank.</summary>
-        public static void MlcError(Plot plt, DeliveryRecord d, bool vsControlPoint, double clipMm = 1.0)
+        /// <summary>
+        /// MLC actual - expected (mm) for every leaf, beam on only, against time or control point.
+        /// The colour scale is symmetric, +/- the largest |error|.
+        /// </summary>
+        public static void MlcError(Plot plt, DeliveryRecord d, bool vsControlPoint)
         {
-            plt.Clear();
-            int leaves = d.LeafCount;
-            if (leaves == 0 || d.RowCount == 0) { ChartStyle.Empty(plt, "No MLC data"); return; }
-            var m = new double[leaves, d.RowCount];
-            double sum2 = 0, max = 0; long n = 0;
-            for (int l = 0; l < leaves; l++)
-            {
-                double[] a = d.Column(DeliveryRecord.LeafColumn(l + 1, "Actual")), e = d.Column(DeliveryRecord.LeafColumn(l + 1, "Expected"));
-                for (int s = 0; s < d.RowCount; s++)
-                {
-                    double v = d.IsBeamOn(s) ? (a[s] - e[s]) * 10 : double.NaN;
-                    m[l, s] = v;
-                    if (!double.IsNaN(v)) { sum2 += v * v; n++; max = Math.Max(max, Math.Abs(v)); }
-                }
-            }
-            double x0 = 0.5, x1 = d.RowCount + 0.5;
-            string xl = "Snapshot (blank = beam hold)";
-            if (!vsControlPoint)
-            {
-                double[] t = d.Column("ElapsedTime_s");
-                x0 = t[0]; x1 = t[t.Length - 1];
-                xl = "Time (s), snapshot order (blank = beam hold)";
-            }
-            ChartStyle.DiffHeatmap(plt, ChartStyle.Clip(m, clipMm), new CoordinateRect(x0, x1, leaves + 0.5, 0.5), clipMm,
-                                   "mm (clipped at ±" + clipMm.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
-            plt.Axes.SetLimitsY(leaves + 0.5, 0.5);
+            ChartStyle.ClearAll(plt);
+            if (d == null || d.LeafCount == 0 || d.RowCount == 0) { ChartStyle.Empty(plt, "No MLC data"); return; }
+            LeafErrorMap map = vsControlPoint ? LeafErrorMap.ByControlPoint(d) : LeafErrorMap.ByTime(d);
+            if (map.Columns == 0 || double.IsNaN(map.MaxAbs)) { ChartStyle.Empty(plt, "No beam-on MLC data"); return; }
+            double range = ChartStyle.SymmetricRange(map.MaxAbs);
+            ChartStyle.DiffHeatmap(plt, map.Values, new CoordinateRect(map.X0, map.X1, map.Leaves + 0.5, 0.5), range, "mm");
+            ChartStyle.Finish(plt, new AxisLimits(map.X0, map.X1, map.Leaves + 0.5, 0.5));
             ChartStyle.Title(plt, string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                "MLC actual − expected, beam on   (RMS {0:F3} mm, max {1:F2} mm)", n > 0 ? Math.Sqrt(sum2 / n) : double.NaN, max));
-            plt.XLabel(xl);
+                "MLC actual − expected, beam on   (RMS {0:F3} mm, max {1:F3} mm)", map.Rms, map.MaxAbs));
+            plt.XLabel(vsControlPoint ? "Control point (blank = no beam-on data)" : "Time (s) (blank = beam hold or pause)");
             plt.YLabel("Leaf number");
         }
 

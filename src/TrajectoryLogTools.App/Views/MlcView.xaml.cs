@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.App.ViewModels;
 using TrajectoryLogTools.Charts;
 
@@ -13,6 +14,7 @@ namespace TrajectoryLogTools.App.Views
         public MlcView()
         {
             InitializeComponent();
+            PlotSetup.Configure(DiffPlot, LeafPlot);
             DataContextChanged += OnDataContextChanged;
         }
 
@@ -31,7 +33,6 @@ namespace TrajectoryLogTools.App.Views
             {
                 int k = Math.Max(0, Math.Min(_vm.SelectedValue, r.Reconstructed.GetLength(1) - 1));
                 MlcCharts.Leaf(LeafPlot.Plot, r, k);
-                LeafPlot.Plot.Axes.AutoScale();
             }
             else ChartStyle.Empty(LeafPlot.Plot, "No reconstruction");
             DiffPlot.Refresh();

@@ -14,16 +14,20 @@ namespace TrajectoryLogTools.Charts
         /// </summary>
         public static void Difference(Plot plt, SubbeamResult r)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             if (r == null || r.Reconstructed == null) { ChartStyle.Empty(plt, "No reconstruction"); return; }
             double[,] reference = r.TemplatePlan ?? r.ReconstructedExpected;
             int cps = r.Reconstructed.GetLength(0), values = r.Reconstructed.GetLength(1);
             var m = new double[values, cps];
             for (int cp = 0; cp < cps; cp++)
                 for (int k = 0; k < values; k++) m[k, cp] = r.Reconstructed[cp, k] - reference[cp, k];
-            ChartStyle.DiffHeatmap(plt, ChartStyle.Clip(m, 0.5), new CoordinateRect(-0.5, cps - 0.5, values - 0.5, -0.5), 0.5, "mm (clipped at ±0.5)");
-            plt.Axes.SetLimitsY(values - 0.5, -0.5);
-            ChartStyle.Title(plt, "Written leaf positions − " + (r.TemplatePlan != null ? "template plan" : "reconstruction from expected positions"));
+            double maxAbs = 0;
+            foreach (double v in m) if (!double.IsNaN(v)) maxAbs = Math.Max(maxAbs, Math.Abs(v));
+            double range = ChartStyle.SymmetricRange(maxAbs);
+            ChartStyle.DiffHeatmap(plt, m, new CoordinateRect(-0.5, cps - 0.5, values - 0.5, -0.5), range, "mm");
+            ChartStyle.Finish(plt, new AxisLimits(-0.5, cps - 0.5, values - 0.5, -0.5));
+            ChartStyle.Title(plt, string.Format(System.Globalization.CultureInfo.InvariantCulture, "Written leaf positions − {0}   (max {1:F3} mm)",
+                r.TemplatePlan != null ? "template plan" : "reconstruction from expected positions", maxAbs));
             plt.XLabel("Control point");
             plt.YLabel("Value index (X1, X2 of pair 1, 2, ...)");
         }
@@ -31,7 +35,7 @@ namespace TrajectoryLogTools.Charts
         /// <summary>One leaf's position by control point: written, from expected positions, and template.</summary>
         public static void Leaf(Plot plt, SubbeamResult r, int valueIndex)
         {
-            plt.Clear();
+            ChartStyle.ClearAll(plt);
             if (r == null || r.Reconstructed == null) { ChartStyle.Empty(plt, "No reconstruction"); return; }
             int cps = r.Reconstructed.GetLength(0);
             var x = new double[cps];
@@ -52,6 +56,7 @@ namespace TrajectoryLogTools.Charts
             plt.XLabel("Control point");
             plt.YLabel("mm (IEC 61217)");
             plt.ShowLegend(Alignment.UpperRight);
+            ChartStyle.Finish(plt);
         }
     }
 }
