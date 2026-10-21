@@ -83,6 +83,9 @@ namespace TrajectoryLogTools.App.ViewModels
         public string[] Themes { get; } = { "System", "Light", "Dark" };
 
         [ObservableProperty] private string _theme;
+        /// <summary>0 IEC 61217, 1 Varian Standard.</summary>
+        [ObservableProperty] private int _angleIndex;
+        public string[] AngleChoices { get; } = { "IEC 61217 (default)", "Varian Standard" };
         [ObservableProperty] private string _mlcTolerance;
         [ObservableProperty] private string _gantryTolerance;
         [ObservableProperty] private string _muTolerance;
@@ -92,6 +95,7 @@ namespace TrajectoryLogTools.App.ViewModels
             _main = main;
             var s = AppSettings.Current;
             _theme = s.Theme;
+            _angleIndex = Display.Angles == TrajectoryLogTools.Analysis.AngleScale.Varian ? 1 : 0;
             _mlcTolerance = Text(s.MlcToleranceMm);
             _gantryTolerance = Text(s.GantryToleranceDeg);
             _muTolerance = Text(s.MuTolerance);
@@ -105,7 +109,6 @@ namespace TrajectoryLogTools.App.ViewModels
             return double.TryParse((s ?? "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v) && v > 0 ? v : (double?)null;
         }
 
-        partial void OnThemeChanged(string value) { Services.Theme.Apply(value); }
 
         /// <summary>Saves; returns false (with a message) if a tolerance isn't a number.</summary>
         public bool Save()
@@ -119,6 +122,7 @@ namespace TrajectoryLogTools.App.ViewModels
             var s = AppSettings.Current;
             if (s.Theme != Theme) s.ThemeChosen = true;
             s.Theme = Theme;
+            Display.SetAngles(AngleIndex == 1 ? TrajectoryLogTools.Analysis.AngleScale.Varian : TrajectoryLogTools.Analysis.AngleScale.Iec);
             s.MlcToleranceMm = Parse(MlcTolerance);
             s.GantryToleranceDeg = Parse(GantryTolerance);
             s.MuTolerance = Parse(MuTolerance);

@@ -16,11 +16,12 @@ namespace TrajectoryLogTools.App.Views
             InitializeComponent();
             PlotSetup.Configure(ActualPlot, GantryPlot, MuPlot, ExpectedPlot);
             DataContextChanged += OnDataContextChanged;
-            Loaded += (s, e) => Theme.Changed += OnThemeChanged;
-            Unloaded += (s, e) => Theme.Changed -= OnThemeChanged;
+            Loaded += (s, e) => { Theme.Changed += OnThemeChanged; Display.AnglesChanged += OnAnglesChanged; };
+            Unloaded += (s, e) => { Theme.Changed -= OnThemeChanged; Display.AnglesChanged -= OnAnglesChanged; };
         }
 
         void OnThemeChanged(object sender, EventArgs e) { Redraw(null, EventArgs.Empty); }
+        void OnAnglesChanged(object sender, EventArgs e) { _vm?.RefreshAngles(); }
 
         void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -33,14 +34,22 @@ namespace TrajectoryLogTools.App.Views
         void Redraw(object sender, EventArgs e)
         {
             var r = _vm?.Result;
-            if (r == null)
-                foreach (var p in new[] { ActualPlot, GantryPlot, MuPlot, ExpectedPlot }) ChartStyle.Empty(p.Plot, "");
-            else
+            try
             {
-                DeliveryCharts.LeafDifference(ActualPlot.Plot, r, true);
-                DeliveryCharts.LeafDifference(ExpectedPlot.Plot, r, false);
-                DeliveryCharts.AxisDifference(GantryPlot.Plot, r, "Gantry", legend: false);   // one legend for both, above them
-                DeliveryCharts.AxisDifference(MuPlot.Plot, r, "MU", legend: false);
+                if (r == null)
+                    foreach (var p in new[] { ActualPlot, GantryPlot, MuPlot, ExpectedPlot }) ChartStyle.Empty(p.Plot, "");
+                else
+                {
+                    DeliveryCharts.LeafDifference(ActualPlot.Plot, r, true);
+                    DeliveryCharts.LeafDifference(ExpectedPlot.Plot, r, false);
+                    DeliveryCharts.AxisDifference(GantryPlot.Plot, r, "Gantry", legend: false, scale: Display.Angles);   // one legend for both, above them
+                    DeliveryCharts.AxisDifference(MuPlot.Plot, r, "MU", legend: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLog.Write("Compare charts", ex);
+                ChartStyle.Empty(ActualPlot.Plot, "Chart error: " + ex.Message);
             }
             foreach (var p in new[] { ActualPlot, GantryPlot, MuPlot, ExpectedPlot }) p.Refresh();
         }

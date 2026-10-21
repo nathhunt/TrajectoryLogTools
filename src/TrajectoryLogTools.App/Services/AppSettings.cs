@@ -23,6 +23,9 @@ namespace TrajectoryLogTools.App.Services
         /// </summary>
         public bool ThemeChosen { get; set; }
 
+        /// <summary>Angles shown in "IEC" (IEC 61217, the default) or "Varian" (Varian Standard).</summary>
+        public string Angles { get; set; } = "IEC";
+
         /// <summary>Compare tolerances; null = show the numbers without a within / over marker.</summary>
         public double? MlcToleranceMm { get; set; }
         public double? GantryToleranceDeg { get; set; }

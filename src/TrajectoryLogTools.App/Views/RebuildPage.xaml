@@ -45,6 +45,7 @@
                             <TextBlock Text="1  Fields" Style="{StaticResource SectionTitle}" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10" Text="{Binding FieldsHint}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,-6,0,10" Text="{Binding AnglesNote}" />
 
                         <!-- One box per delivery (plan and day); its fields in the order delivered, whether each had its own log or they shared one -->
                         <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">

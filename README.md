@@ -123,7 +123,21 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
   back to the full view. Right-click → *Open in New Window* shows a chart in a window of its own,
   where the wheel alone zooms (as in the Rebuild details window).
 
-**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), optional Compare
+**Angles: IEC 61217 or Varian Standard.** The **Angles** drop-down at the top of the window (also
+in Settings) sets how gantry and collimator angles are shown: in the axis charts, the field and
+beam-hold tables, the Compare charts and tables, the Rebuild page and the details windows.
+**IEC 61217 is the default.** A log stores its angles in the scale its header names (Halcyon:
+machine scale, i.e. Varian Standard), and the two are related by IEC = (180 − Varian) mod 360,
+the direction reversed, so a difference only changes sign. This is the relation the MLC rebuild
+has always used, checked against Eclipse exports. Couch rotation, pitch, roll and couch / jaw
+positions are shown as recorded (labelled so). Nothing written to files changes: exports keep
+the log's values, Eclipse MLC files are always IEC 61217, and Compare's report text is in the
+log's own scale (its header says which); Save report…'s figure follows the setting.
+
+**Errors** are logged in full to `%LocalAppData%\TrajectoryLogTools\errors.log`; the message
+shown names the file.
+
+**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), applied when you press Save, optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in
 `%AppData%\TrajectoryLogTools\settings.json`.
 

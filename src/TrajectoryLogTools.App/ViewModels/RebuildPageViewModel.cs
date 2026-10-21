@@ -253,9 +253,10 @@ namespace TrajectoryLogTools.App.ViewModels
                         Name = name,
                         ControlPoints = f.Info.ControlPoints,
                         GantryIec = f.Info.GantryIec,
-                        Info = string.Format(Inv, "{0} control points · gantry {1:F1}° · {2:F1} MU", f.Info.ControlPoints, f.Info.GantryIec, f.Info.Mu),
+                        Mu = f.Info.Mu,
                         Source = (f.InLog == 1 ? "Own log" : "Field " + f.Index + " of " + f.InLog + " in one log") + " · " + time + " · " + file,
                     };
+                    row.Describe();
                     if (f.Log.Badge == "Interrupted") row.Note = "This log has an interruption.";
                     row.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MlcSubbeamRow.Include)) OnPropertyChanged(nameof(RebuildText)); };
                     group.Add(row);
@@ -271,6 +272,15 @@ namespace TrajectoryLogTools.App.ViewModels
                 Groups.Add(group);
             }
         }
+
+        /// <summary>The angle scale changed: the field lines show the gantry in it.</summary>
+        public void RefreshAngles()
+        {
+            foreach (MlcSubbeamRow f in Fields) f.Describe();
+            OnPropertyChanged(nameof(AnglesNote));
+        }
+
+        public string AnglesNote { get { return "Gantry angles in " + Display.AnglesName + ". The Eclipse MLC files are always IEC 61217."; } }
 
         static string Patient(LogItem l) { return l.PatientId ?? ""; }
 

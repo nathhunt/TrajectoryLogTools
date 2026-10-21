@@ -50,6 +50,9 @@ namespace TrajectoryLogTools.App.ViewModels
         }
 
         partial void OnIndexChanged(int value) { Fill(); }
+
+        /// <summary>The angle scale changed: the cards show the gantry in it.</summary>
+        public void RefreshAngles() { Fill(); }
         partial void OnSelectedValueChanged(int value) { OnPropertyChanged(nameof(SelectedValueName)); Raise(); }
 
         void Raise() { var h = ChartsChanged; if (h != null) h(this, EventArgs.Empty); }
@@ -86,7 +89,9 @@ namespace TrajectoryLogTools.App.ViewModels
                                      Detail = string.Format(Inv, "min gap {0:0.0##} mm · {1} closed, {2} opened · largest leaf move {3:F3} mm",
                                                             s.MinGapMm, s.GapsClosed, s.GapsOpened, Math.Max(s.MaxGapShiftMm, s.MaxPinShiftMm)) });
                 Cards.Add(new Fact { Label = "Gantry", Value = Row.Gantry,
-                                     Detail = string.Format(Inv, "from the {0} · start {1:F1}° IEC · actual vs planned up to {2:F2}°", Source(s.GantrySource), s.GantryStartIec, s.GantryActualVsExpectedMaxDeg) });
+                                     Detail = string.Format(Inv, "from the {0} · start {1:F1}° {2} · actual vs planned up to {3:F2}°", Source(s.GantrySource),
+                                                            Angles.Convert(s.GantryStartIec, AngleScale.Iec, Display.Angles), Display.AnglesName, s.GantryActualVsExpectedMaxDeg) });
+                // the Eclipse MLC file itself is always IEC 61217
                 Cards.Add(new Fact { Label = "Control points", Value = s.ControlPoints.ToString(Inv),
                                      Detail = "log CP " + s.FirstLogControlPoint + "–" + (s.FirstLogControlPoint + s.ControlPoints - 1) +
                                               (s.EmptyIntervals.Count == 0 ? " · every interval had data" : " · " + s.EmptyIntervals.Count + " interval(s) without data"),

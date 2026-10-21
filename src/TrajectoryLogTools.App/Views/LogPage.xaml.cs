@@ -21,11 +21,12 @@ namespace TrajectoryLogTools.App.Views
             MlcPlot.Plot.Axes.Link(RmsPlot, false, true);
             RmsPlot.Plot.Axes.Link(MlcPlot, false, true);
             DataContextChanged += OnDataContextChanged;
-            Loaded += (s, e) => Theme.Changed += OnThemeChanged;
-            Unloaded += (s, e) => Theme.Changed -= OnThemeChanged;
+            Loaded += (s, e) => { Theme.Changed += OnThemeChanged; Display.AnglesChanged += OnAnglesChanged; };
+            Unloaded += (s, e) => { Theme.Changed -= OnThemeChanged; Display.AnglesChanged -= OnAnglesChanged; };
         }
 
         void OnThemeChanged(object sender, EventArgs e) { Redraw(null, EventArgs.Empty); }
+        void OnAnglesChanged(object sender, EventArgs e) { _vm?.RefreshAngles(); }
 
         void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -49,8 +50,8 @@ namespace TrajectoryLogTools.App.Views
                     if (d == null || axis == null) { ChartStyle.Empty(AxisPlot.Plot, ""); ChartStyle.Empty(ErrorPlot.Plot, ""); }
                     else
                     {
-                        LogCharts.AxisTrace(AxisPlot.Plot, d, axis, _vm.VsControlPoint);
-                        LogCharts.AxisError(ErrorPlot.Plot, d, axis, _vm.VsControlPoint);
+                        LogCharts.AxisTrace(AxisPlot.Plot, d, axis, _vm.VsControlPoint, Display.Angles);
+                        LogCharts.AxisError(ErrorPlot.Plot, d, axis, _vm.VsControlPoint, Display.Angles);
                     }
                     AxisPlot.Refresh();
                     ErrorPlot.Refresh();

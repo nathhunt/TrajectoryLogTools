@@ -104,12 +104,12 @@
                             </StackPanel>
                         </WrapPanel>
 
-                        <TextBlock Text="Fields" Style="{StaticResource SectionTitle}" Margin="0,22,0,8" />
+                        <TextBlock Text="{Binding FieldsTitle}" Style="{StaticResource SectionTitle}" Margin="0,22,0,8" />
                         <DataGrid ItemsSource="{Binding Fields}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                                   CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Field" Binding="{Binding Name}" FontWeight="SemiBold" />
-                                <DataGridTextColumn Header="Gantry (IEC)" Binding="{Binding Gantry}" />
+                                <DataGridTextColumn Header="Gantry" Binding="{Binding Gantry}" />
                                 <DataGridTextColumn Header="Collimator" Binding="{Binding Collimator}" />
                                 <DataGridTextColumn Header="Control points" Binding="{Binding ControlPoints}" />
                                 <DataGridTextColumn Header="MU planned" Binding="{Binding MuPlanned}" />
@@ -120,7 +120,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Expander Header="Beam holds" Margin="0,18,0,0">
+                        <Expander Header="{Binding HoldsTitle}" Margin="0,18,0,0">
                             <DataGrid ItemsSource="{Binding Holds}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,8,0,0"
                                       CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
