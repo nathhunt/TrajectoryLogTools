@@ -49,9 +49,12 @@ namespace TrajectoryLogTools.Analysis
                     .Where(i => (sub == null || (!double.IsNaN(sub[i]) && (int)Math.Round(sub[i]) == sb)) && !double.IsNaN(cp[i]) && !double.IsNaN(muA[i]))
                     .ToList();
                 if (rows.Count == 0) continue;
+                // as MlcReconstructor: set-up until the delivered MU rises and the field's first control point is reached
                 double mu0 = muA[rows[0]];
+                double fieldStart = muE == null ? double.NaN : FieldSpan.FirstControlPoint(rows.Select(i => cp[i]).ToList(), rows.Select(i => muE[i]).ToList());
                 int nSetup = 0;
-                while (nSetup < rows.Count && muA[rows[nSetup]] - mu0 < MlcReconstructor.SetupMuTol) nSetup++;
+                while (nSetup < rows.Count && (muA[rows[nSetup]] - mu0 < MlcReconstructor.SetupMuTol ||
+                                               (!double.IsNaN(fieldStart) && cp[rows[nSetup]] < fieldStart - 1e-6))) nSetup++;
                 var delivery = rows.Skip(nSetup).ToList();
                 if (delivery.Count == 0) { result.Add(new SubbeamInfo { Subbeam = sb }); continue; }
                 int cp0 = (int)Math.Floor(delivery.Min(i => cp[i]) + 1e-6);

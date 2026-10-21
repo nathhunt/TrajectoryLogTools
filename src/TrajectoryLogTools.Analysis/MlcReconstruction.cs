@@ -395,9 +395,14 @@ namespace TrajectoryLogTools.Analysis
             // ControlPoint slides from the previous field's last CP to this field's first.
             // So: skip everything before MU_Actual starts rising, take the field's first CP
             // as the integer just below the first dose snapshot, and make CP and MU local.
+            // The set-up also includes the transition step at the start of every field after the
+            // first (see FieldSpan): it lasts until the PLANNED MU starts rising, which the
+            // delivered MU does not show reliably (it creeps up during the set-up beam hold).
             double mu0E = subRows[0][cMuE], mu0A = subRows[0][cMuA];
+            double fieldStart = FieldSpan.FirstControlPoint(subRows.Select(r => r[cCp]).ToList(), subRows.Select(r => r[cMuE]).ToList());
             int nSetup = 0;
-            while (nSetup < subRows.Count && subRows[nSetup][cMuA] - mu0A < SetupMuTol) nSetup++;
+            while (nSetup < subRows.Count && (subRows[nSetup][cMuA] - mu0A < SetupMuTol ||
+                                               (!double.IsNaN(fieldStart) && subRows[nSetup][cCp] < fieldStart - 1e-6))) nSetup++;
             if (nSetup >= subRows.Count) throw new InvalidDataException("Subbeam " + subbeam + " delivered no MU.");
             double cpFirst = double.PositiveInfinity;
             for (int s = nSetup; s < subRows.Count; s++) cpFirst = Math.Min(cpFirst, subRows[s][cCp]);

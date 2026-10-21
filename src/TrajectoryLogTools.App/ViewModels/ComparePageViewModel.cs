@@ -194,7 +194,8 @@ namespace TrajectoryLogTools.App.ViewModels
 
             foreach (var x in new[] { Tuple.Create("A", r.A), Tuple.Create("B", r.B) })
             {
-                foreach (var bm in x.Item2.Beams) Beams.Add(BeamRow.From(bm, x.Item1, r.AxisScale));
+                DeliveryRecord rec = x.Item1 == "A" ? A.Record : B.Record;
+                foreach (var bm in x.Item2.Beams) Beams.Add(BeamRow.From(bm, x.Item1, r.AxisScale, rec));
                 foreach (var h in x.Item2.Holds) Holds.Add(HoldRow.From(h, x.Item1, r.AxisScale));
             }
             foreach (var s in r.Summary) Axes.Add(AxisRow.From(s, r.AxisScale));

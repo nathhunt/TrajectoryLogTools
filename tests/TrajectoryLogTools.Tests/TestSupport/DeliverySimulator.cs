@@ -149,6 +149,13 @@ namespace TrajectoryLogTools.Tests
         /// <summary>v5.1 only: first snapshot recorded 2.48 s before the rest.</summary>
         public bool StrayFirstSnapshot;
         public double LeafLagCp = 0.05;
+        /// <summary>
+        /// Fields after the first open as Halcyon logs them: the subbeam header gives the previous
+        /// field's last control point, the counter holds there through the set-up beam hold (the
+        /// delivered MU creeping up by a few 0.0001 MU), then steps on by one with the beam on and
+        /// no planned MU; the field's own control point 0 is the next one.
+        /// </summary>
+        public bool HalcyonTransition;
     }
 
     /// <summary>Builds a Halcyon-style trajectory log (.bin) of a simulated delivery.</summary>
@@ -187,16 +194,30 @@ namespace TrajectoryLogTools.Tests
                 // ---- set-up: beam hold while gantry / collimator / leaves move to the field ----
                 Snap start = State(fl, off, 0, muStartE);
                 int setup = f == 0 ? 8 : 10;
+                bool halcyon = d.HalcyonTransition && f > 0;
+                double creep = 0;
                 for (int i = 0; i < setup; i++)
                 {
                     double t = f == 0 ? 1 : (i + 1.0) / 6;
                     Snap s = prev == null || t >= 1 ? Clone(start) : Blend(prev, start, t);
                     if (prev != null && t < 1) s.Cp = (off - 1) + t;   // CP slides from the previous field's last
+                    if (halcyon) { s.Cp = off - 1; s.MuE = muStartE; creep += 0.0002; }   // holds on the previous field's last
                     s.Hold = true;
-                    s.MuA = muA;
+                    s.MuA = muA + creep;
                     Actualise(s, noise, 0.02);
                     snaps.Add(s);
                 }
+                if (halcyon)
+                    for (int i = 1; i <= 4; i++)   // the step to the field's control point 0: beam on, no planned MU
+                    {
+                        Snap s = Clone(start);
+                        s.Cp = off - 1 + i / 4.0;
+                        s.MuE = muStartE;
+                        creep += 0.0002;
+                        s.MuA = muA + creep;
+                        Actualise(s, noise, 0.02);
+                        snaps.Add(s);
+                    }
                 // ---- delivery ----
                 var holds = d.Interruptions.Where(h => h.Item1 == f).ToList();
                 int steps = (fl.Cps - 1) * d.SnapshotsPerCp;
@@ -216,7 +237,7 @@ namespace TrajectoryLogTools.Tests
                     e.GA = State(fl, off, Math.Max(0, lc - 0.1), muStartE).GE + noise(0.02);
                     e.CA = e.CE + noise(0.01);
                     double muLocal = fl.Mu * SimPlan.Lerp(fl.Mw, Math.Max(0, lc - 0.03));
-                    e.MuA = muA + muLocal;
+                    e.MuA = muA + creep + muLocal;
                     for (int k = 0; k < Leaves; k++) e.LeafA[k] = lag.LeafE[k] + noise(0.002);
                     snaps.Add(e);
                     last = e;
@@ -277,7 +298,7 @@ namespace TrajectoryLogTools.Tests
             for (int f = 0; f < plan.Fields.Count; f++)
             {
                 var fl = plan.Fields[f];
-                b.Subbeams.Add(new Subbeam { ControlPoint = off, MU = (float)fl.Mu, RadTime = 60f, Seq = f, Name = fl.Name });
+                b.Subbeams.Add(new Subbeam { ControlPoint = d.HalcyonTransition && f > 0 ? off - 1 : off, MU = (float)fl.Mu, RadTime = 60f, Seq = f, Name = fl.Name });
                 off += fl.Cps;
             }
             b.Metadata = "Patient ID:\tSIM001\r\nPlan Name:\tSimulated\r\n";

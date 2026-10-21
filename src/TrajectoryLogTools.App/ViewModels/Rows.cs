@@ -44,12 +44,15 @@ namespace TrajectoryLogTools.App.ViewModels
         public string MlcMax { get; set; }
 
         /// <param name="axisScale">Axis scale of the log; gantry and collimator are shown in the chosen scale (Display).</param>
-        public static BeamRow From(BeamStat b, string log, int axisScale)
+        /// <param name="record">The log, for the field's own control points (FieldSpan); null = as the comparison counted them.</param>
+        public static BeamRow From(BeamStat b, string log, int axisScale, TrajectoryLogTools.Analysis.DeliveryRecord record = null)
         {
+            int first, last;
+            string cps = record != null && TrajectoryLogTools.Analysis.FieldSpan.Of(record, b.Beam, out first, out last) ? first + "-" + last : b.ControlPoints;
             return new BeamRow
             {
                 Log = log, Beam = b.Beam, Gantry = Services.Display.AngleText(b.Gantry, axisScale),
-                Coll = Fmt.N(Services.Display.Angle(b.CollDeg, axisScale), 2), ControlPoints = b.ControlPoints,
+                Coll = Fmt.N(Services.Display.Angle(b.CollDeg, axisScale), 2), ControlPoints = cps,
                 MuPlanned = Fmt.N(b.MuPlanned, 3), MuDelivered = Fmt.N(b.MuDelivered, 3), BeamOnS = Fmt.N(b.BeamOnS, 2),
                 HoldS = Fmt.N(b.HoldS, 2), MlcRms = Fmt.N(b.MlcRmsErrMm, 3), MlcMax = Fmt.N(b.MlcMaxErrMm, 3)
             };

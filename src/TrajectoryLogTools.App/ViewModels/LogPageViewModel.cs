@@ -253,7 +253,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 double[] sub = d.TryColumn("Subbeam"), ge = d.TryColumn("GantryRtn_deg_Expected"), ce = d.TryColumn("CollRtn_deg_Expected");
                 foreach (BeamStat b in s.Beams)
                 {
-                    var on = Enumerable.Range(0, d.RowCount).Where(i => (sub == null || (int)sub[i] == b.Beam) && d.IsBeamOn(i)).ToList();
+                    // From the field's own first control point: the transition before it (previous field's
+                    // last control point, collimator still turning) is not part of the field (FieldSpan).
+                    var on = FieldSpan.BeamOnRows(d, b.Beam);
+                    int firstCp, lastCp;
+                    string cps = FieldSpan.Of(d, b.Beam, out firstCp, out lastCp) ? firstCp + "-" + lastCp : b.ControlPoints;
                     string gantry = "", coll = "";
                     if (on.Count > 0 && ge != null)
                     {
@@ -263,7 +267,7 @@ namespace TrajectoryLogTools.App.ViewModels
                     if (on.Count > 0 && ce != null) coll = angle(ce[on[0]]).ToString("F1", Inv) + "°";
                     Fields.Add(new FieldRow
                     {
-                        Name = fieldName(b.Beam), Gantry = gantry, Collimator = coll, ControlPoints = b.ControlPoints,
+                        Name = fieldName(b.Beam), Gantry = gantry, Collimator = coll, ControlPoints = cps,
                         MuPlanned = b.MuPlanned.ToString("F2", Inv), MuDelivered = b.MuDelivered.ToString("F2", Inv),
                         BeamOn = b.BeamOnS.ToString("F2", Inv) + " s",
                         MlcRms = double.IsNaN(b.MlcRmsErrMm) ? "" : b.MlcRmsErrMm.ToString("F3", Inv) + " mm",
