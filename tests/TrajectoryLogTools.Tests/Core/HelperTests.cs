@@ -388,5 +388,30 @@ namespace TrajectoryLogTools.Tests
                 Assert.Equal(2, found.Count);
             }
         }
+
+        [Fact]
+        public void Find_ByPeriodOfDateAndTime_AndWithTimeOfDay()
+        {
+            using (var dir = new TempDir())
+            {
+                foreach (string stamp in new[] { "20261019230000", "20261020081500", "20261020113000", "20261020143000", "20261021090000", "20261021153000" })
+                    dir.Write("Field_" + stamp + ".bin", LogBuilder.V51().Build());
+                System.Func<FindSettings, string[]> names = fs =>
+                    LogFinder.Find(fs).Select(f => System.IO.Path.GetFileNameWithoutExtension(f.FullPath).Substring(6)).OrderBy(x => x).ToArray();
+                // 20/10/2026 11:00 to 21/10/2026 14:30 (that minute included)
+                var period = new FindSettings
+                {
+                    FolderMode = true, Input = dir.Path, UseDateRange = true,
+                    From = new System.DateTime(2026, 10, 20, 11, 0, 0),
+                    To = new System.DateTime(2026, 10, 21, 14, 30, 0).AddMinutes(1).AddTicks(-1),
+                };
+                Assert.Equal(new[] { "20261020113000", "20261020143000", "20261021090000" }, names(period));
+                // and only in the mornings
+                period.UseTimeOfDay = true;
+                period.TimeFrom = new System.TimeSpan(6, 0, 0);
+                period.TimeTo = new System.TimeSpan(12, 0, 0);
+                Assert.Equal(new[] { "20261020113000", "20261021090000" }, names(period));
+            }
+        }
     }
 }

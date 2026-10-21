@@ -22,9 +22,12 @@ with it) on the right.
 different folders or drives sit side by side. No folder is remembered as a default.
 * **Ways to open:**
   * **Open** (Ctrl+O) picks one or more files;
-  * the **▾** menu has **Add from folder…** (optionally with subfolders, a treatment date
-    range and a time-of-day window, e.g. 08:00 to 12:00 on each day; a window such as 22:00 to
-    02:00 runs past midnight) and **Recent logs**;
+  * the **▾** menu has **Add from folder…** and **Recent logs**. Add from folder can include
+    subfolders and filter by when the log was treated:
+    * a **period**: from a start date and time to an end date and time (e.g. 20/10/2026 11:00 to
+      21/10/2026 14:30; the end minute is included);
+    * **times of day**, on every day (within the period when both are ticked), e.g. 08:00 to
+      12:00 for the morning sessions; 22:00 to 02:00 runs past midnight;
   * you can drag files or folders anywhere onto the window;
   * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
 * **Each entry** shows the plan name and **patient ID** (from the log's metadata), fields,
