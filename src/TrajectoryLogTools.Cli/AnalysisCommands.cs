@@ -84,7 +84,9 @@ namespace TrajectoryLogTools.Cli
         // ---------------------------------------------------------------------------------------
         static int ReconstructMlc(string[] args)
         {
-            var o = new MlcReconstructionOptions();
+            // Report files are written only when asked (--save-report, or --report <file>); the report
+            // text is printed either way.
+            var o = new MlcReconstructionOptions { WriteReport = false };
             string log = null;
             bool ignoreCrc = false;
             for (int i = 1; i < args.Length; i++)
@@ -103,7 +105,8 @@ namespace TrajectoryLogTools.Cli
                     case "--subbeam": o.Subbeams = Next(args, ref i); break;
                     case "--mlc-model": o.MlcModel = Next(args, ref i); break;
                     case "--scale": o.Scale = Next(args, ref i); break;
-                    case "--report": o.ReportPath = Next(args, ref i); break;
+                    case "--report": o.ReportPath = Next(args, ref i); o.WriteReport = true; break;
+                    case "--save-report": o.WriteReport = true; break;
                     case "--ignore-crc": ignoreCrc = true; break;
                     case "--min-gap":
                         double g;

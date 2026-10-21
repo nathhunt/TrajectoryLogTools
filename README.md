@@ -240,7 +240,8 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
   each log or in one folder; Eclipse exports are matched to the fields by control points and
   gantry angle, so their order doesn't matter. It prints each field's status. Defaults as the
   app: expected positions, control-point axis, no report files (`--report` saves them).
-  `reconstruct-mlc` keeps LogToEclipseMlc's defaults (actual, MU axis, a report per field).
+  `reconstruct-mlc` keeps LogToEclipseMlc's method defaults (actual, MU axis); like every command
+  it writes report files only when asked (`--save-report` or `--report <file>`).
 
 The original commands do one kind of output per run and are kept for scripts:
 
@@ -252,7 +253,7 @@ TrajectoryLogCli dump    <input.bin | folder> [-o <folder>]
 TrajectoryLogCli compare-delivery <logA> <logB> [-o <folder>] [--no-plot] [--keep-first-snapshot]
 TrajectoryLogCli reconstruct-mlc  <log.bin | log.csv> [-o out.csv] [-t template.csv ...] [--positions actual|expected]
                                   [--axis mu|cp] [--gantry plan|actual] [--include-hold] [--subbeam all|n|n,m]
-                                  [--mlc-model SX2] [--scale auto|varian|iec] [--min-gap 0.5] [--report file]
+                                  [--mlc-model SX2] [--scale auto|varian|iec] [--min-gap 0.5] [--save-report | --report file]
 TrajectoryLogCli to-v5   <input.bin | folder> [-o <file|folder>] [--time-from <csv>] [--start-time hh:mm:ss] [--serial <text>] [--add-couch-rotations]
 TrajectoryLogCli version <input.bin | folder> [--expect 4.0|5.1]
 TrajectoryLogCli compare <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]

@@ -133,6 +133,9 @@ namespace TrajectoryLogTools.Tests
                 ConsoleCapture c;
                 Assert.Equal(0, RunMain(out c, "reconstruct-mlc", dir.File("vmat_A.bin")));
                 Assert.True(File.Exists(dir.File("vmat_A_sub1_reconstructed_MLC.csv")));
+                Assert.False(File.Exists(dir.File("vmat_A_sub2_reconstructed_MLC_report.txt")));   // only when asked
+                Assert.Contains("Reconstructed vs reconstructed-expected", c.Out);                  // printed either way
+                Assert.Equal(0, RunMain(out c, "reconstruct-mlc", dir.File("vmat_A.bin"), "--save-report"));
                 Assert.True(File.Exists(dir.File("vmat_A_sub2_reconstructed_MLC_report.txt")));
                 Assert.Contains("angle scale: varian", c.Out);
             }

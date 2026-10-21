@@ -94,7 +94,8 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine("      --mlc-model <name>      MLC model written without template (default: from the log's MLC)");
             Console.WriteLine("      --scale auto|varian|iec angle scale of the log (default auto: from the .bin header)");
             Console.WriteLine("      --min-gap <mm>          minimum dynamic leaf gap (default: from the MLC, 0.5 for SX2)");
-            Console.WriteLine("      --report <file>         QA report (default <out>_report.txt)");
+            Console.WriteLine("      --save-report           also save the QA report as <out>_report.txt (printed either way)");
+            Console.WriteLine("      --report <file>         also save the QA report, to this file");
             Console.WriteLine();
             Console.WriteLine("Validation and testing");
             Console.WriteLine();
