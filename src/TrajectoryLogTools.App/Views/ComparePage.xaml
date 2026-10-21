@@ -118,7 +118,7 @@
                         <sp:WpfPlot x:Name="ExpectedPlot" />
                     </Border>
                 </Expander>
-                <Expander Header="{Binding AnglesNote}" HeaderStringFormat="Per field, A and B · {0}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                <Expander Header="{Binding BeamsHeader}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
                     <DataGrid ItemsSource="{Binding Beams}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,8,0,0"
                               CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
@@ -135,7 +135,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Expander>
-                <Expander Header="{Binding AnglesNote}" HeaderStringFormat="Beam holds, A and B · {0}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                <Expander Header="{Binding HoldsHeader}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
                     <DataGrid ItemsSource="{Binding Holds}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,8,0,0"
                               CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
@@ -150,7 +150,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Expander>
-                <Expander Header="{Binding AnglesNote}" HeaderStringFormat="By axis (all statistics) · {0}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                <Expander Header="{Binding AxesHeader}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
                     <DataGrid ItemsSource="{Binding Axes}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Margin="0,8,0,0"
                               CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
@@ -175,7 +175,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Expander>
-                <Expander Header="{Binding ReportNote}" HeaderStringFormat="Full report · {0}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                <Expander Header="{Binding ReportHeader}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
                     <TextBox Text="{Binding Report, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
                 </Expander>
             </StackPanel>

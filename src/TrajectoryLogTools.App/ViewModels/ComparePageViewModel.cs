@@ -58,9 +58,13 @@ namespace TrajectoryLogTools.App.ViewModels
         public ObservableCollection<AxisRow> Axes { get; } = new ObservableCollection<AxisRow>();
 
         public DeliveryComparisonResult Result { get; private set; }
-        public string AnglesNote { get { return "angles " + Display.AnglesName; } }
+        // Section headings, with the angle scale their tables are in. Built here in full: the
+        // Fluent Expander template ignores HeaderStringFormat, so a format in the XAML would be lost.
+        public string BeamsHeader { get { return "Per field, A and B · angles " + Display.AnglesName; } }
+        public string HoldsHeader { get { return "Beam holds, A and B · angles " + Display.AnglesName; } }
+        public string AxesHeader { get { return "By axis (all statistics) · angles " + Display.AnglesName; } }
         /// <summary>The report text is the comparison's own output, in the log's scale.</summary>
-        public string ReportNote { get { return Result == null ? "" : "angles as recorded, " + Angles.Name(Angles.ScaleOf(Result.AxisScale)); } }
+        public string ReportHeader { get { return "Full report" + (Result == null ? "" : " · angles as recorded, " + Angles.Name(Angles.ScaleOf(Result.AxisScale))); } }
 
         /// <summary>The angle scale changed: rebuild the tables and redraw.</summary>
         public void RefreshAngles()
@@ -199,8 +203,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 foreach (var h in x.Item2.Holds) Holds.Add(HoldRow.From(h, x.Item1, r.AxisScale));
             }
             foreach (var s in r.Summary) Axes.Add(AxisRow.From(s, r.AxisScale));
-            OnPropertyChanged(nameof(AnglesNote));
-            OnPropertyChanged(nameof(ReportNote));
+            foreach (string n in new[] { nameof(BeamsHeader), nameof(HoldsHeader), nameof(AxesHeader), nameof(ReportHeader) }) OnPropertyChanged(n);
             Report = DeliveryComparison.Report(r);
         }
 
