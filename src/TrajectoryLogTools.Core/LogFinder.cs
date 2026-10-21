@@ -31,12 +31,43 @@ namespace TrajectoryLogTools.Core
         public bool UseDateRange;
         public DateTime From;        // inclusive, start of day
         public DateTime To;          // inclusive, end of day
+        /// <summary>Only logs treated between these times of day (inclusive), on any day; a window past midnight (22:00 - 02:00) works too.</summary>
+        public bool UseTimeOfDay;
+        public TimeSpan TimeFrom, TimeTo;
         /// <summary>Export folder; logs inside it are skipped so earlier output is not picked up.</summary>
         public string Output;
     }
 
     public static class LogFinder
     {
+        /// <summary>True when <paramref name="t"/> is in [from, to]; when from is after to the window runs past midnight.</summary>
+        public static bool InTimeWindow(TimeSpan t, TimeSpan from, TimeSpan to)
+        {
+            return from <= to ? t >= from && t <= to : t >= from || t <= to;
+        }
+
+        /// <summary>"8:30", "08:30", "0830" or "8" -> time of day; false otherwise.</summary>
+        public static bool TryParseTimeOfDay(string text, out TimeSpan time)
+        {
+            time = TimeSpan.Zero;
+            string s = (text ?? "").Trim().Replace('.', ':');
+            if (s.Length == 0) return false;
+            int h, m = 0;
+            if (s.Contains(":"))
+            {
+                string[] p = s.Split(':');
+                if (p.Length != 2 || !int.TryParse(p[0], NumberStyles.None, CultureInfo.InvariantCulture, out h) ||
+                    !int.TryParse(p[1], NumberStyles.None, CultureInfo.InvariantCulture, out m) || p[1].Length != 2) return false;
+            }
+            else if (s.Length <= 2) { if (!int.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out h)) return false; }
+            else if (s.Length == 4 && int.TryParse(s.Substring(0, 2), NumberStyles.None, CultureInfo.InvariantCulture, out h) &&
+                     int.TryParse(s.Substring(2), NumberStyles.None, CultureInfo.InvariantCulture, out m)) { }
+            else return false;
+            if (h > 23 || m > 59) { if (!(h == 24 && m == 0)) return false; }
+            time = h == 24 ? new TimeSpan(23, 59, 59) : new TimeSpan(h, m, 0);
+            return true;
+        }
+
         static readonly Regex StampRx = new Regex(@"(?<!\d)\d{14}(?!\d)");
 
         /// <summary>Treatment date/time from a "yyyyMMddHHmmss" stamp in the file name (last one wins).</summary>
@@ -79,6 +110,7 @@ namespace TrajectoryLogTools.Core
                 if (outRoot != null && !PathEquals(outRoot, root) && IsUnder(path, outRoot)) continue;
                 LogFile f = Describe(path, root);
                 if (s.UseDateRange && (f.Date < s.From || f.Date > s.To)) continue;
+                if (s.UseTimeOfDay && !InTimeWindow(f.Date.TimeOfDay, s.TimeFrom, s.TimeTo)) continue;
                 result.Add(f);
             }
             return result.OrderBy(f => f.RelativeDir, StringComparer.OrdinalIgnoreCase)

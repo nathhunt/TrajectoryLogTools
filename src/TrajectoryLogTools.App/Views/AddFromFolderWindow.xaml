@@ -16,8 +16,17 @@
             <TextBlock Text="to" VerticalAlignment="Center" />
             <DatePicker SelectedDate="{Binding ToDate}" Width="150" Margin="8,0" IsEnabled="{Binding UseDateRange}" AutomationProperties.Name="To" />
         </StackPanel>
-        <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0"
-                   Text="The treatment date is the _yyyyMMddHHmmss time stamp in the file name, or the file's modified date when the name has none." />
+        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <CheckBox Content="Only logs treated between" IsChecked="{Binding UseTimeOfDay}" VerticalAlignment="Center" />
+            <TextBox Text="{Binding FromTime, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="70" Margin="8,0" IsEnabled="{Binding UseTimeOfDay}"
+                     AutomationProperties.Name="From time" ToolTip="24-hour time, hh:mm" />
+            <TextBlock Text="and" VerticalAlignment="Center" />
+            <TextBox Text="{Binding ToTime, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="70" Margin="8,0" IsEnabled="{Binding UseTimeOfDay}"
+                     AutomationProperties.Name="To time" ToolTip="24-hour time, hh:mm (included)" />
+            <TextBlock Text="(any day in the range)" Style="{StaticResource Secondary}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                   Text="Dates are dd/mm/yyyy; times are 24-hour. The treatment date and time are the _yyyyMMddHHmmss time stamp in the file name, or the file's modified time when the name has none. A window such as 22:00 to 02:00 runs past midnight." />
         <TextBlock Text="{Binding Result}" FontWeight="SemiBold" Margin="0,12,0,0" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Add" Click="Add_Click" IsEnabled="{Binding CanAdd}" Style="{DynamicResource AccentButtonStyle}" Padding="18,6" IsDefault="True" />

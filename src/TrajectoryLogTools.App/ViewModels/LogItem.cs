@@ -27,7 +27,8 @@ namespace TrajectoryLogTools.App.ViewModels
         public string PatientId { get; }
         public string FieldsText { get; }
         public DateTime Date { get; }
-        public string DateText { get { return Date.ToString("dd MMM yyyy HH:mm", Inv); } }
+        /// <summary>"20/10/2026 14:23" (New Zealand format).</summary>
+        public string DateText { get { return Core.Fmt.DateTimeMinutes(Date); } }
         public string Version { get; }
         public string SubtitleText { get { return string.Join(" · ", new[] { FieldsText, DateText, Version }.Where(s => !string.IsNullOrEmpty(s))); } }
         public string Folder { get { return System.IO.Path.GetDirectoryName(Path); } }

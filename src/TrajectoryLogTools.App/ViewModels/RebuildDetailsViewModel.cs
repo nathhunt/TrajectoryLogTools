@@ -84,7 +84,7 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             if (s != null && s.Ok)
             {
-                Cards.Add(new Fact { Label = "Delivered vs planned", Value = Row.Delivered, Detail = Row.DeliveredDetail + " · actual minus the plan's (expected) positions" });
+                Cards.Add(new Fact { Label = "Leaf positions written", Value = Row.Delivered, Detail = Row.DeliveredDetail });
                 Cards.Add(new Fact { Label = "Eclipse leaf-gap rules", Value = Row.GapRules, Kind = s.RemainingGapProblems == 0 ? "ok" : "caution",
                                      Detail = string.Format(Inv, "min gap {0:0.0##} mm · {1} closed, {2} opened · largest leaf move {3:F3} mm",
                                                             s.MinGapMm, s.GapsClosed, s.GapsOpened, Math.Max(s.MaxGapShiftMm, s.MaxPinShiftMm)) });

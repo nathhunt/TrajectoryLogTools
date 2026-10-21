@@ -130,7 +130,9 @@
                         </RadioButton>
                         <TextBox Text="{Binding OtherFolder, UpdateSourceTrigger=PropertyChanged}" Margin="28,6,0,0" AutomationProperties.Name="Other folder"
                                  Visibility="{Binding SaveNextToLog, Converter={StaticResource InverseBoolToVisibility}}" />
-                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files are named after their log: &lt;log&gt;[_subN]_reconstructed_MLC.csv and a _report.txt for each field." />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files are named after their log: &lt;log&gt;[_subN]_reconstructed_MLC.csv." />
+                        <CheckBox Content="Also save each field's QA report (_report.txt)" IsChecked="{Binding SaveReports}" Margin="0,8,0,0"
+                                  ToolTip="The report is in Details either way; this also writes it beside the MLC file" />
 
                         <Expander Margin="0,16,0,0">
                             <Expander.Header>
@@ -142,13 +144,13 @@
                             <StackPanel Margin="4,10,0,0">
                                 <TextBlock Text="Leaf positions" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
-                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Pos" Margin="0,0,16,0" />
-                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Pos" />
+                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Pos" Margin="0,0,16,0" />
+                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Pos" />
                                 </StackPanel>
                                 <TextBlock Text="Where each sample sits between control points" FontWeight="SemiBold" />
                                 <StackPanel Margin="0,4,0,10">
-                                    <RadioButton Content="From the delivered MU (recommended)" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Axis" />
                                     <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Axis" />
+                                    <RadioButton Content="From the delivered MU" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Axis" />
                                 </StackPanel>
                                 <TextBlock Text="Gantry angles" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
@@ -202,7 +204,7 @@
                                                    Visibility="{Binding FileName, Converter={StaticResource NotEmptyToVisibility}}" />
                                         <UniformGrid Rows="1" Visibility="{Binding Ok, Converter={StaticResource BoolToVisibility}}">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Text="Delivered vs planned" Style="{StaticResource Secondary}" />
+                                                <TextBlock Text="Leaf positions written" Style="{StaticResource Secondary}" />
                                                 <TextBlock Text="{Binding Delivered}" FontWeight="SemiBold" />
                                                 <TextBlock Text="{Binding DeliveredDetail}" Style="{StaticResource Secondary}" TextWrapping="Wrap" TextTrimming="None" />
                                             </StackPanel>

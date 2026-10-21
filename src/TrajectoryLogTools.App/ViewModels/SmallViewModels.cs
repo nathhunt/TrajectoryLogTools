@@ -28,6 +28,9 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private bool _useDateRange;
         [ObservableProperty] private DateTime? _fromDate = DateTime.Today.AddDays(-7);
         [ObservableProperty] private DateTime? _toDate = DateTime.Today;
+        [ObservableProperty] private bool _useTimeOfDay;
+        [ObservableProperty] private string _fromTime = "08:00";
+        [ObservableProperty] private string _toTime = "17:00";
         [ObservableProperty] private string _result = "";
 
         public List<LogFile> Found { get; private set; } = new List<LogFile>();
@@ -42,6 +45,9 @@ namespace TrajectoryLogTools.App.ViewModels
         partial void OnUseDateRangeChanged(bool value) { Search(); }
         partial void OnFromDateChanged(DateTime? value) { Search(); }
         partial void OnToDateChanged(DateTime? value) { Search(); }
+        partial void OnUseTimeOfDayChanged(bool value) { Search(); }
+        partial void OnFromTimeChanged(string value) { Search(); }
+        partial void OnToTimeChanged(string value) { Search(); }
 
         [RelayCommand]
         void Browse()
@@ -56,6 +62,13 @@ namespace TrajectoryLogTools.App.ViewModels
             string f = (Folder ?? "").Trim().Trim('"');
             if (f.Length == 0) { Result = ""; return; }
             if (!Directory.Exists(f)) { Result = "Folder not found."; return; }
+            TimeSpan t0 = TimeSpan.Zero, t1 = TimeSpan.Zero;
+            if (UseTimeOfDay && (!LogFinder.TryParseTimeOfDay(FromTime, out t0) || !LogFinder.TryParseTimeOfDay(ToTime, out t1)))
+            {
+                Result = "Enter the times as hh:mm, 24-hour (e.g. 08:00 and 13:30).";
+                OnPropertyChanged(nameof(CanAdd));
+                return;
+            }
             try
             {
                 Found = LogFinder.Find(new FindSettings
@@ -66,6 +79,9 @@ namespace TrajectoryLogTools.App.ViewModels
                     UseDateRange = UseDateRange,
                     From = (FromDate ?? DateTime.Today).Date,
                     To = (ToDate ?? DateTime.Today).Date.AddDays(1).AddTicks(-1),
+                    UseTimeOfDay = UseTimeOfDay,
+                    TimeFrom = t0,
+                    TimeTo = t1.Add(TimeSpan.FromMinutes(1)).Subtract(TimeSpan.FromTicks(1)),   // to the end of that minute
                 });
                 Result = Found.Count == 0 ? "No logs found." : Found.Count + (Found.Count == 1 ? " log found." : " logs found.");
                 if (Found.Count > 200) Result += " That's a lot to open at once; consider a date range.";

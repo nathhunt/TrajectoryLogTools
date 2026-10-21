@@ -21,7 +21,7 @@ namespace TrajectoryLogTools.App.Services
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
                 var sb = new StringBuilder();
-                sb.AppendLine("==== " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + where + "  (" +
+                sb.AppendLine("==== " + TrajectoryLogTools.Core.Fmt.DateTimeSeconds(DateTime.Now) + "  " + where + "  (" +
                               typeof(ErrorLog).Assembly.GetName().Version + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
                               System.Runtime.InteropServices.RuntimeInformation.OSDescription + ")");
                 sb.AppendLine(ex == null ? "(no details)" : ex.ToString());

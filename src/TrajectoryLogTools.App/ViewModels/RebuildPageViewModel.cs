@@ -59,8 +59,11 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private bool _saveNextToLog = true;
         [ObservableProperty] private string _otherFolder = "";
         // advanced
-        [ObservableProperty] private bool _useActual = true;
-        [ObservableProperty] private bool _axisMu = true;
+        // Defaults: the planned (expected) leaf positions, placed by the log's control point.
+        [ObservableProperty] private bool _useActual;
+        [ObservableProperty] private bool _axisMu;
+        /// <summary>Also save each field's QA report (_report.txt) beside its MLC file. Off by default; the report is in Details either way.</summary>
+        [ObservableProperty] private bool _saveReports;
         [ObservableProperty] private bool _gantryFromPlan = true;
         [ObservableProperty] private string _minGap = "";
         [ObservableProperty] private bool _includeHold;
@@ -98,9 +101,9 @@ namespace TrajectoryLogTools.App.ViewModels
             get
             {
                 return Items.Count == 1
-                    ? "Found in the log. Each ticked field gets its own Eclipse MLC file, built from the leaf positions the machine delivered."
+                    ? "Found in the log. Each ticked field gets its own Eclipse MLC file, built from the log's leaf positions (Advanced: planned or as delivered)."
                     : "Found in the " + Items.Count + " logs and listed by delivery (plan and day), in the order delivered. " +
-                      "Each ticked field gets its own Eclipse MLC file, built from the leaf positions the machine delivered.";
+                      "Each ticked field gets its own Eclipse MLC file, built from the log's leaf positions (Advanced: planned or as delivered).";
             }
         }
         public string NextToLogText
@@ -120,7 +123,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 double gapDefault = Usable.Select(l => l.Record?.Mlc?.MinDynamicGapMm).FirstOrDefault(g => g.HasValue) ?? 0.5;
                 var parts = new List<string>
                 {
-                    UseActual ? "actual positions" : "expected positions",
+                    UseActual ? "actual (delivered) positions" : "expected (planned) positions",
                     AxisMu ? "delivered-MU axis" : "control-point axis",
                     "gap " + (string.IsNullOrWhiteSpace(MinGap) ? gapDefault.ToString("0.0##", Inv) : MinGap.Trim()) + " mm",
                 };
@@ -238,7 +241,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 {
                     PatientId = first.PatientId,
                     Title = first.DisplayName,
-                    Detail = first.Date.ToString("dd MMM yyyy", Inv) + " · " + Count(fields.Count, "field") + " in " + Count(logs, "log"),
+                    Detail = Core.Fmt.Date(first.Date) + " · " + Count(fields.Count, "field") + " in " + Count(logs, "log"),
                 };
                 int unnamed = 0;
                 foreach (Found f in fields)
@@ -425,6 +428,7 @@ namespace TrajectoryLogTools.App.ViewModels
                         MinGap = MinGap.Trim().Length > 0 ? gap : (double?)null,
                         Subbeams = string.Join(",", rows.Select(f => f.Subbeam)),
                         OutputFolder = folder,
+                        WriteReport = SaveReports,
                     };
                     if (UseExports) o.Templates.AddRange(rows.Select(f => f.Template));
                     DeliveryRecord record = log.Record;
@@ -473,8 +477,17 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             if (!s.Ok) { row.Problems.Add(s.Error); return row; }
             row.FileName = Path.GetFileName(s.OutputPath);
-            row.Delivered = "RMS " + s.DeliveredRmsMm.ToString("F3", Inv) + " mm";
-            row.DeliveredDetail = "max " + s.DeliveredMaxMm.ToString("F2", Inv) + " mm at " + s.DeliveredMaxAt;
+            if (s.Positions == "expected")
+            {
+                // Built from the plan's positions: the written file is the plan, so there is no delivered difference to show.
+                row.Delivered = "Planned positions";
+                row.DeliveredDetail = "the log's expected leaf positions (max " + s.DeliveredMaxMm.ToString("F3", Inv) + " mm from them after the gap rules)";
+            }
+            else
+            {
+                row.Delivered = "As delivered: RMS " + s.DeliveredRmsMm.ToString("F3", Inv) + " mm from plan";
+                row.DeliveredDetail = "max " + s.DeliveredMaxMm.ToString("F2", Inv) + " mm at " + s.DeliveredMaxAt + " (actual minus the plan's expected positions)";
+            }
             row.GapRules = s.RemainingGapProblems == 0 ? "All pass" : s.RemainingGapProblems + " problem(s)";
             row.GapDetail = s.GapsClosed + " closed exactly, " + s.GapsOpened + " opened to the minimum";
             row.Gantry = s.GantryNote == "from the template" ? "From the export" : s.GantryNote.StartsWith("not evenly", StringComparison.Ordinal) ? "Rounded to 0.01°" : "Rebuilt exactly";

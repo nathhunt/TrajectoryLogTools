@@ -48,6 +48,8 @@ namespace TrajectoryLogTools.Analysis
         public string OutPath;
         /// <summary>QA report; null = &lt;out&gt;_report.txt.</summary>
         public string ReportPath;
+        /// <summary>Write the QA report file (the text is in the result either way). On by default, as reconstruct-mlc; the app and rebuild-mlc leave it off unless asked.</summary>
+        public bool WriteReport = true;
         /// <summary>Eclipse MLC exports of the same beams, one per processed subbeam, in subbeam order.</summary>
         public List<string> Templates = new List<string>();
         /// <summary>"actual" or "expected" leaf positions.</summary>
@@ -537,14 +539,14 @@ namespace TrajectoryLogTools.Analysis
                 outLines.Add("# EOF");
             }
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(outPath)));
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(reportPath)));
+            if (o.WriteReport) Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(reportPath)));
             File.WriteAllText(outPath, string.Join("\r\n", outLines) + "\r\n", new UTF8Encoding(true));
             say("Wrote " + outPath);
 
             // ---------------- QA report ----------------
             var rep = new StringBuilder();
             rep.AppendLine("Log -> Eclipse MLC reconstruction report");
-            rep.AppendLine("Generated     : " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", Inv));
+            rep.AppendLine("Generated     : " + Core.Fmt.DateTimeSeconds(DateTime.Now));
             rep.AppendLine("Log file      : " + System.IO.Path.GetFullPath(logPath));
             rep.AppendLine("Output file   : " + System.IO.Path.GetFullPath(outPath));
             rep.AppendLine("Template      : " + (templatePath ?? "(none - header/MW/gantry derived from log)"));
@@ -591,10 +593,10 @@ namespace TrajectoryLogTools.Analysis
             double gActMax = 0;
             for (int cp = 0; cp < nCp; cp++) gActMax = Math.Max(gActMax, Math.Abs(fitSel[nLeaf][cp] - fitExp[nLeaf][cp]));
             rep.AppendLine(Fmt("Max actual-vs-expected gantry at control points: {0:F3} deg", gActMax));
-            File.WriteAllText(reportPath, rep.ToString(), new UTF8Encoding(false));
+            if (o.WriteReport) File.WriteAllText(reportPath, rep.ToString(), new UTF8Encoding(false));
             say(rep.ToString().TrimEnd());
-            say("Report: " + reportPath);
-            res.OutputPath = outPath; res.ReportPath = reportPath; res.Report = rep.ToString();
+            if (o.WriteReport) say("Report: " + reportPath);
+            res.OutputPath = outPath; res.ReportPath = o.WriteReport ? reportPath : null; res.Report = rep.ToString();
             res.Mu = muTotal;
             res.Positions = positions;
             res.Axis = axis;
@@ -1017,7 +1019,8 @@ namespace TrajectoryLogTools.Analysis
 
         static string ExportDate()
         {
-            return DateTime.Now.ToString("dddd, d MMMM yyyy h:mm:ss tt", CultureInfo.GetCultureInfo("en-US"));
+            // as Eclipse writes it on a New Zealand workstation (a comment line; not read on import)
+            return DateTime.Now.ToString("dddd, d MMMM yyyy h:mm:ss tt", CultureInfo.InvariantCulture);
         }
     }
 }

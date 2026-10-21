@@ -47,12 +47,50 @@ namespace TrajectoryLogTools.Core
 
     public enum ExportOutcome { Done, Skipped, Failed }
 
+    /// <summary>What one log's export printed, for the run log.</summary>
+    public sealed class ExportRecord
+    {
+        public string Log;
+        public string OutputFolder;
+        public List<string> Lines = new List<string>();
+    }
+
     public static class Exporter
     {
         /// <summary>The output folder for a log: <paramref name="folder"/>, or the "converted" subfolder next to the log.</summary>
         public static string OutputFolder(string log, string folder)
         {
             return folder ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(log)), ExportOptions.ConvertedFolder);
+        }
+
+        /// <summary>
+        /// Writes the run log (optional, off by default in the app and the CLI): one
+        /// TrajectoryLogConversion_&lt;yyyyMMdd_HHmmss&gt;.log in each output folder, listing the logs
+        /// exported to it and what was written. Returns the files written; a folder that can't be
+        /// written to is reported in <paramref name="errors"/>.
+        /// </summary>
+        public static List<string> WriteRunLogs(IEnumerable<ExportRecord> records, DateTime started, List<string> errors)
+        {
+            var written = new List<string>();
+            foreach (var g in records.GroupBy(r => Path.GetFullPath(r.OutputFolder), StringComparer.OrdinalIgnoreCase))
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine(Fmt.DateTimeSeconds(started) + "  Export of " + g.Count() + " log(s)");
+                foreach (ExportRecord r in g)
+                {
+                    sb.AppendLine(r.Log);
+                    foreach (string l in r.Lines) sb.AppendLine("  " + l);
+                }
+                string file = Path.Combine(g.Key, "TrajectoryLogConversion_" + started.ToString("yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".log");
+                try
+                {
+                    Directory.CreateDirectory(g.Key);
+                    File.WriteAllText(file, sb.ToString(), System.Text.Encoding.UTF8);
+                    written.Add(file);
+                }
+                catch (Exception ex) { errors.Add(g.Key + ": " + ex.Message); }
+            }
+            return written;
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine();
             Console.WriteLine("  TrajectoryLogCli export <log.bin | folder> ... [-o <folder>] [options]");
             Console.WriteLine("      Export logs, as the Export window. Default: v4.0 only, next to each log in a");
-            Console.WriteLine("      'converted' subfolder; with -o, all to one folder (with a run log).");
+            Console.WriteLine("      'converted' subfolder; with -o, all to one folder.");
             Console.WriteLine("      --v4 --csv --full-csv --dump   what to write (any of them)");
             Console.WriteLine("      v4.0:  --machine truebeam|halcyon   machine specifier (default truebeam, 0)");
             Console.WriteLine("             --serial remove|keep         serial number (default remove)");
@@ -27,6 +27,7 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine("             --patient-id <text>  --plan-name <text>  --plan-uid <text>");
             Console.WriteLine("             --field-name N=NAME          rename field (subbeam) N; field 1 also sets BeamName");
             Console.WriteLine("      CSV:   --no-mlc  --actual-only");
+            Console.WriteLine("      --run-log             also save a run log (.log) in each output folder");
             Console.WriteLine();
             Console.WriteLine("  TrajectoryLogCli compare-deliveries <logA> <logB> [-o <folder>] [--no-plot]");
             Console.WriteLine("      Compare two deliveries, as the Compare page; writes what Save report... writes.");
@@ -40,11 +41,12 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine("      print each field's status (Ready to import / Check first / Failed). Default: next");
             Console.WriteLine("      to each log; with -o, all to one folder.");
             Console.WriteLine("      --positions actual|expected  --axis mu|cp  --gantry plan|actual  --min-gap <mm>");
-            Console.WriteLine("      --include-hold               (defaults: actual, mu, plan, the MLC's own gap)");
+            Console.WriteLine("      --include-hold               (defaults: expected, cp, plan, the MLC's own gap)");
             Console.WriteLine("      -e, --export <file>          Eclipse MLC exports; matched to the fields by control");
             Console.WriteLine("                                   points and gantry angle (every field then needs one)");
             Console.WriteLine("      --field n[,m]                only these fields (one log)");
             Console.WriteLine("      --verbose                    print each field's full QA report");
+            Console.WriteLine("      --report                     also save each field's QA report (_report.txt)");
             Console.WriteLine();
             Console.WriteLine("Single conversions (one kind of output per run; for scripts)");
             Console.WriteLine();

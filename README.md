@@ -22,8 +22,9 @@ with it) on the right.
 different folders or drives sit side by side. No folder is remembered as a default.
 * **Ways to open:**
   * **Open** (Ctrl+O) picks one or more files;
-  * the **▾** menu has **Add from folder…** (optionally with subfolders and a treatment date
-    range) and **Recent logs**;
+  * the **▾** menu has **Add from folder…** (optionally with subfolders, a treatment date
+    range and a time-of-day window, e.g. 08:00 to 12:00 on each day; a window such as 22:00 to
+    02:00 runs past midnight) and **Recent logs**;
   * you can drag files or folders anywhere onto the window;
   * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
 * **Each entry** shows the plan name and **patient ID** (from the log's metadata), fields,
@@ -82,9 +83,13 @@ delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or o
    want, or a whole delivery with its box's tick.
 2. Choose where to save: next to each log, or one other folder (refused if two logs have the same
    file name, since their files would overwrite each other).
-3. **Advanced** (folded) holds the method options with their defaults. **Use Eclipse exports**,
+3. **Advanced** (folded) holds the method options. The defaults are the log's **expected
+   (planned)** leaf positions, placed between control points by the **log's control point**;
+   actual (as delivered) positions and the delivered-MU axis are the alternatives. **Use Eclipse exports**,
    off by default, makes the file keep an Eclipse export's header, meterset weights, jaws and
    angles; the exports are matched to the fields by control points and gantry angle.
+4. **Also save each field's QA report** (off by default) writes `_report.txt` beside each MLC
+   file; the report is in **Details…** either way.
 
 Each field gets a status:
 * **Ready to import:** no leaf-gap problem left, gantry rebuilt cleanly, every control point had
@@ -109,7 +114,8 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
   BeamName line, which holds the first field's name. The original log is never changed, and the
   CSV and dump exports are written from it.
 * **Where:** one folder for all, or next to each log in a `converted` subfolder.
-* Progress is shown per log. A run log is saved in the export folder.
+* Progress is shown per log. **Also save a run log** (off by default) writes
+  `TrajectoryLogConversion_<date_time>.log` in each output folder.
 
 **Scrolling and zooming.** Wherever the mouse is, exactly one thing scrolls:
 * on a page (log, compare, rebuild) and in the Export and Header details windows, tables and
@@ -133,6 +139,9 @@ has always used, checked against Eclipse exports. Couch rotation, pitch, roll an
 positions are shown as recorded (labelled so). Nothing written to files changes: exports keep
 the log's values, Eclipse MLC files are always IEC 61217, and Compare's report text is in the
 log's own scale (its header says which); Save report…'s figure follows the setting.
+
+**Dates** are shown and written in the New Zealand format, dd/MM/yyyy with 24-hour times,
+whatever the PC's regional settings (the date pickers too).
 
 **Errors** are logged in full to `%LocalAppData%\TrajectoryLogTools\errors.log`; the message
 shown names the file.
@@ -224,11 +233,14 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
 ```
 
 * `export` defaults as the Export window: v4.0 only, next to each log in a `converted` subfolder
-  (with `-o`, one folder and a run log); machine TrueBeam, serial removed, couch axes removed.
+  (with `-o`, one folder); machine TrueBeam, serial removed, couch axes removed; `--run-log`
+  also saves a run log.
   The header details change one log at a time; renaming field 1 also sets the header's BeamName.
 * `rebuild-mlc` works as the Rebuild page: any number of logs, every field (or `--field`), next to
   each log or in one folder; Eclipse exports are matched to the fields by control points and
-  gantry angle, so their order doesn't matter. It prints each field's status.
+  gantry angle, so their order doesn't matter. It prints each field's status. Defaults as the
+  app: expected positions, control-point axis, no report files (`--report` saves them).
+  `reconstruct-mlc` keeps LogToEclipseMlc's defaults (actual, MU axis, a report per field).
 
 The original commands do one kind of output per run and are kept for scripts:
 

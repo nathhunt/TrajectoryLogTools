@@ -99,6 +99,8 @@
                 </DockPanel>
                 <RadioButton Content="Next to each log, in a &quot;converted&quot; subfolder" IsChecked="{Binding OneFolder, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Where" />
                 <CheckBox Content="Overwrite existing files" IsChecked="{Binding Overwrite}" Margin="0,10,0,0" />
+                <CheckBox Content="Also save a run log (.log) with the files" IsChecked="{Binding SaveRunLog}" Margin="0,4,0,0"
+                          ToolTip="TrajectoryLogConversion_&lt;date_time&gt;.log in each output folder: the logs exported there and what was written" />
                 <CheckBox Content="Also process logs whose CRC does not verify" IsChecked="{Binding IgnoreCrc}" Margin="0,4,0,0"
                           Visibility="{Binding AnyCrcFailed, Converter={StaticResource BoolToVisibility}}" />
 
