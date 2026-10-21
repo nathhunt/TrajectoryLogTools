@@ -101,7 +101,29 @@ namespace TrajectoryLogTools.App.ViewModels
             Load();
         }
 
-        public void Activate() { RaiseCharts(); }
+        /// <summary>The angle scale the tables were built in; when it has changed since, they are rebuilt.</summary>
+        AngleScale? _anglesShown;
+        public string FieldsTitle { get { return "Fields · angles " + Display.AnglesName; } }
+        public string HoldsTitle { get { return "Beam holds · angles " + Display.AnglesName; } }
+
+        public void Activate()
+        {
+            if (_anglesShown.HasValue && _anglesShown != Display.Angles) RefreshAngles();
+            else RaiseCharts();
+        }
+
+        /// <summary>The angle scale changed: rebuild the angle tables and timeline, redraw the charts.</summary>
+        public void RefreshAngles()
+        {
+            if (Item.Record != null && Item.Summary != null && _anglesShown.HasValue)
+            {
+                try { BuildAngleTables(); }
+                catch (Exception ex) { Error = "Could not analyse this log: " + ex.Message; }
+            }
+            OnPropertyChanged(nameof(FieldsTitle));
+            OnPropertyChanged(nameof(HoldsTitle));
+            RaiseCharts();
+        }
 
         void RaiseCharts() { var h = ChartsChanged; if (h != null) h(this, EventArgs.Empty); }
 
@@ -132,8 +154,6 @@ namespace TrajectoryLogTools.App.ViewModels
             List<Subbeam> subbeams = d.Log != null ? d.Log.Subbeams : (Item.Header != null ? Item.Header.Subbeams : new List<Subbeam>());
             Func<int, string> fieldName = b => b >= 1 && b <= subbeams.Count && !string.IsNullOrWhiteSpace(subbeams[b - 1].Name)
                 ? subbeams[b - 1].Name : "Field " + b;
-            bool varian = d.AxisScale != 2;   // CSV (0) and machine scales (1, 3) are Varian scale
-            Func<double, double> iec = g => { double a = (varian ? 180.0 - g : g) % 360.0; return a < 0 ? a + 360 : a; };
 
             // ---- facts ----
             if (s != null)
@@ -185,32 +205,8 @@ namespace TrajectoryLogTools.App.ViewModels
             else
                 Facts.Add(new Fact { Label = "File", Value = "CSV export", Detail = mlcText });
 
-            // ---- fields ----
-            if (s != null)
-            {
-                double[] sub = d.TryColumn("Subbeam"), ge = d.TryColumn("GantryRtn_deg_Expected"), ce = d.TryColumn("CollRtn_deg_Expected");
-                foreach (BeamStat b in s.Beams)
-                {
-                    var on = Enumerable.Range(0, d.RowCount).Where(i => (sub == null || (int)sub[i] == b.Beam) && d.IsBeamOn(i)).ToList();
-                    string gantry = "", coll = "";
-                    if (on.Count > 0 && ge != null)
-                    {
-                        double g1 = iec(ge[on[0]]), g2 = iec(ge[on[on.Count - 1]]);
-                        gantry = Math.Abs(((g1 - g2) % 360 + 540) % 360 - 180) < 0.5 ? g1.ToString("F1", Inv) + "°" : g1.ToString("F1", Inv) + "° → " + g2.ToString("F1", Inv) + "°";
-                    }
-                    if (on.Count > 0 && ce != null) coll = iec(ce[on[0]]).ToString("F1", Inv) + "°";
-                    Fields.Add(new FieldRow
-                    {
-                        Name = fieldName(b.Beam), Gantry = gantry, Collimator = coll, ControlPoints = b.ControlPoints,
-                        MuPlanned = b.MuPlanned.ToString("F2", Inv), MuDelivered = b.MuDelivered.ToString("F2", Inv),
-                        BeamOn = b.BeamOnS.ToString("F2", Inv) + " s",
-                        MlcRms = double.IsNaN(b.MlcRmsErrMm) ? "" : b.MlcRmsErrMm.ToString("F3", Inv) + " mm",
-                        MlcMax = double.IsNaN(b.MlcMaxErrMm) ? "" : b.MlcMaxErrMm.ToString("F2", Inv) + " mm",
-                    });
-                }
-                foreach (BeamHold h in s.Holds) Holds.Add(HoldRow.From(h, fieldName(h.Beam)));
-                BuildTimeline(d, s, fieldName);
-            }
+            _anglesShown = Display.Angles;
+            if (s != null) BuildAngleTables();
 
             // ---- header details ----
             var sb = new StringBuilder();
@@ -240,6 +236,47 @@ namespace TrajectoryLogTools.App.ViewModels
             var worst = LogCharts.WorstLeaves(d, 3);
             if (worst.Count > 0)
                 WorstLeaves = "Largest RMS: " + string.Join(", ", worst.Select(w => "leaf " + w.Key + " (" + w.Value.ToString("F3", Inv) + " mm)")) + ".";
+        }
+
+        /// <summary>The fields and beam holds tables and the timeline: they show gantry and collimator in the chosen scale.</summary>
+        void BuildAngleTables()
+        {
+            DeliveryRecord d = Item.Record;
+            LogSummary s = Item.Summary;
+            List<Subbeam> subbeams = d.Log != null ? d.Log.Subbeams : (Item.Header != null ? Item.Header.Subbeams : new List<Subbeam>());
+            Func<int, string> fieldName = b => b >= 1 && b <= subbeams.Count && !string.IsNullOrWhiteSpace(subbeams[b - 1].Name)
+                ? subbeams[b - 1].Name : "Field " + b;
+            Func<double, double> angle = g => Display.Angle(g, d.AxisScale);
+            Fields.Clear(); Holds.Clear(); Timeline.Clear(); TimelineTicks.Clear();
+            _anglesShown = Display.Angles;
+            {
+                double[] sub = d.TryColumn("Subbeam"), ge = d.TryColumn("GantryRtn_deg_Expected"), ce = d.TryColumn("CollRtn_deg_Expected");
+                foreach (BeamStat b in s.Beams)
+                {
+                    // From the field's own first control point: the transition before it (previous field's
+                    // last control point, collimator still turning) is not part of the field (FieldSpan).
+                    var on = FieldSpan.BeamOnRows(d, b.Beam);
+                    int firstCp, lastCp;
+                    string cps = FieldSpan.Of(d, b.Beam, out firstCp, out lastCp) ? firstCp + "-" + lastCp : b.ControlPoints;
+                    string gantry = "", coll = "";
+                    if (on.Count > 0 && ge != null)
+                    {
+                        double g1 = angle(ge[on[0]]), g2 = angle(ge[on[on.Count - 1]]);
+                        gantry = Math.Abs(((g1 - g2) % 360 + 540) % 360 - 180) < 0.5 ? g1.ToString("F1", Inv) + "°" : g1.ToString("F1", Inv) + "° → " + g2.ToString("F1", Inv) + "°";
+                    }
+                    if (on.Count > 0 && ce != null) coll = angle(ce[on[0]]).ToString("F1", Inv) + "°";
+                    Fields.Add(new FieldRow
+                    {
+                        Name = fieldName(b.Beam), Gantry = gantry, Collimator = coll, ControlPoints = cps,
+                        MuPlanned = b.MuPlanned.ToString("F2", Inv), MuDelivered = b.MuDelivered.ToString("F2", Inv),
+                        BeamOn = b.BeamOnS.ToString("F2", Inv) + " s",
+                        MlcRms = double.IsNaN(b.MlcRmsErrMm) ? "" : b.MlcRmsErrMm.ToString("F3", Inv) + " mm",
+                        MlcMax = double.IsNaN(b.MlcMaxErrMm) ? "" : b.MlcMaxErrMm.ToString("F2", Inv) + " mm",
+                    });
+                }
+                foreach (BeamHold h in s.Holds) Holds.Add(HoldRow.From(h, fieldName(h.Beam), d.AxisScale));
+                BuildTimeline(d, s, fieldName);
+            }
         }
 
         void BuildTimeline(DeliveryRecord d, LogSummary s, Func<int, string> fieldName)
@@ -288,7 +325,7 @@ namespace TrajectoryLogTools.App.ViewModels
                     string type = h == null ? "hold" : h.Type;
                     seg.Kind = type == "interruption" ? "interruption" : "hold";
                     string what = type == "interruption" ? "Interruption (nothing moved)"
-                                : type == "move" ? "Planned hold: gantry / collimator move" + (h != null ? " (gantry " + h.Gantry + ", coll " + h.Coll + ")" : "")
+                                : type == "move" ? "Planned hold: gantry / collimator move" + (h != null ? " (gantry " + Display.AngleText(h.Gantry, d.AxisScale) + ", coll " + Display.AngleText(h.Coll, d.AxisScale) + ")" : "")
                                 : type == "start" ? "Hold at the start" : type == "end" ? "Hold at the end" : "Hold";
                     seg.ToolTip = string.Format(Inv, "{0}, {1:F2}–{2:F2} s", what, begin - t0, end - t0);
                 }

@@ -42,13 +42,17 @@ namespace TrajectoryLogTools.Tests
                 string input = dir.Write("a.bin", LogBuilder.V51().Build());
                 string outDir = dir.File("out");
                 ConsoleCapture c;
-                Assert.Equal(0, RunMain(out c, "export", input, "-o", outDir, "--v4", "--csv", "--machine", "halcyon", "--serial", "keep", "--couch", "keep"));
+                Assert.Equal(0, RunMain(out c, "export", input, "-o", outDir, "--v4", "--csv", "--machine", "halcyon", "--serial", "keep", "--couch", "keep", "--run-log"));
                 var v4 = LogBuilder.Parse(File.ReadAllBytes(Path.Combine(outDir, "a.bin")));
                 Assert.Equal(1, v4.MachineSpecifier);
                 Assert.Equal("H12345", v4.MachineSerial);
                 Assert.Contains(9, v4.AxisIds);
                 Assert.True(File.Exists(Path.Combine(outDir, "a.csv")));
                 Assert.Single(Directory.GetFiles(outDir, "TrajectoryLogConversion_*.log"));
+                // no run log unless asked
+                string other = dir.File("out2");
+                Assert.Equal(0, RunMain(out c, "export", input, "-o", other));
+                Assert.Empty(Directory.GetFiles(other, "*.log"));
                 // the log's own folder is refused for v4.0
                 Assert.Equal(2, RunMain(out c, "export", input, "-o", dir.Path));
                 Assert.Equal(2, RunMain(out c, "export", input, "--serial", "maybe"));
@@ -113,7 +117,7 @@ namespace TrajectoryLogTools.Tests
                 GoldenCases.WriteInputs(dir.Path);
                 var exports = Enumerable.Range(1, 3).Select(f => GoldenCases.TemplatePath(dir.Path, "imrt", f)).Reverse().ToList();
                 ConsoleCapture c;
-                var args = new[] { "rebuild-mlc", dir.File("imrt_A.bin"), "-o", dir.File("new") }.Concat(exports.SelectMany(e => new[] { "-e", e })).ToArray();
+                var args = new[] { "rebuild-mlc", dir.File("imrt_A.bin"), "-o", dir.File("new"), "--positions", "actual", "--axis", "mu" }.Concat(exports.SelectMany(e => new[] { "-e", e })).ToArray();
                 Assert.Equal(0, RunMain(out c, args));
                 // the same as reconstruct-mlc with the exports given in field order
                 var old = new[] { "reconstruct-mlc", dir.File("imrt_A.bin") }.Concat(Enumerable.Range(1, 3).SelectMany(f => new[] { "-t", GoldenCases.TemplatePath(dir.Path, "imrt", f) })).ToArray();
@@ -137,5 +141,26 @@ namespace TrajectoryLogTools.Tests
                 Assert.True(File.Exists(Path.Combine(dir.File("cmp"), "report.txt")));
             }
         }
+
+        [Fact]
+        public void RebuildMlc_AppDefaults_PlannedPositionsByControlPoint_NoReports()
+        {
+            using (var dir = new TempDir())
+            {
+                GoldenCases.WriteInputs(dir.Path);
+                ConsoleCapture c;
+                Assert.Equal(0, RunMain(out c, "rebuild-mlc", dir.File("vmat_A.bin"), "-o", dir.File("a")));
+                Assert.Empty(Directory.GetFiles(dir.File("a"), "*_report.txt"));
+                // the same as reconstruct-mlc with expected positions and the control-point axis
+                Assert.Equal(0, RunMain(out c, "reconstruct-mlc", dir.File("vmat_A.bin"), "--positions", "expected", "--axis", "cp"));
+                foreach (int f in new[] { 1, 2 })
+                    Assert.Equal(Body(dir.File("vmat_A_sub" + f + "_reconstructed_MLC.csv")), Body(Path.Combine(dir.File("a"), "vmat_A_sub" + f + "_reconstructed_MLC.csv")));
+                Assert.Equal(0, RunMain(out c, "rebuild-mlc", dir.File("vmat_A.bin"), "-o", dir.File("b"), "--report"));
+                Assert.Equal(2, Directory.GetFiles(dir.File("b"), "*_report.txt").Length);
+            }
+        }
+
+        /// <summary>The MLC file without its "# Exported ..." time line.</summary>
+        static string Body(string path) { return string.Join("\n", File.ReadAllLines(path).Where(l => !l.StartsWith("# Exported"))); }
     }
 }

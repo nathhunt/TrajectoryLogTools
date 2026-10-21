@@ -25,6 +25,14 @@ namespace TrajectoryLogTools.Core
 
     public static class Fmt
     {
+        // Dates as used in New Zealand: day / month / year, 24-hour time, whatever the PC's settings.
+        /// <summary>"20/10/2026"</summary>
+        public static string Date(DateTime d) { return d.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture); }
+        /// <summary>"20/10/2026 14:23"</summary>
+        public static string DateTimeMinutes(DateTime d) { return d.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture); }
+        /// <summary>"20/10/2026 14:23:18"</summary>
+        public static string DateTimeSeconds(DateTime d) { return d.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture); }
+
         // 7 significant digits = full single-precision resolution, without float noise
         // (e.g. 101.9 rather than 101.899994).
         public static string Num(float v) { return v.ToString("G7", CultureInfo.InvariantCulture); }

@@ -58,6 +58,18 @@ namespace TrajectoryLogTools.App.ViewModels
         public ObservableCollection<AxisRow> Axes { get; } = new ObservableCollection<AxisRow>();
 
         public DeliveryComparisonResult Result { get; private set; }
+        public string AnglesNote { get { return "angles " + Display.AnglesName; } }
+        /// <summary>The report text is the comparison's own output, in the log's scale.</summary>
+        public string ReportNote { get { return Result == null ? "" : "angles as recorded, " + Angles.Name(Angles.ScaleOf(Result.AxisScale)); } }
+
+        /// <summary>The angle scale changed: rebuild the tables and redraw.</summary>
+        public void RefreshAngles()
+        {
+            if (Result == null) return;
+            Cards.Clear(); Beams.Clear(); Holds.Clear(); Axes.Clear();
+            Show(Result);
+            RaiseCharts();
+        }
         public bool HasResult { get { return Result != null; } }
         public bool CanCompareFiles { get { return A != null && B != null && !A.IsCsv && !B.IsCsv; } }
 
@@ -182,10 +194,13 @@ namespace TrajectoryLogTools.App.ViewModels
 
             foreach (var x in new[] { Tuple.Create("A", r.A), Tuple.Create("B", r.B) })
             {
-                foreach (var bm in x.Item2.Beams) Beams.Add(BeamRow.From(bm, x.Item1));
-                foreach (var h in x.Item2.Holds) Holds.Add(HoldRow.From(h, x.Item1));
+                DeliveryRecord rec = x.Item1 == "A" ? A.Record : B.Record;
+                foreach (var bm in x.Item2.Beams) Beams.Add(BeamRow.From(bm, x.Item1, r.AxisScale, rec));
+                foreach (var h in x.Item2.Holds) Holds.Add(HoldRow.From(h, x.Item1, r.AxisScale));
             }
-            foreach (var s in r.Summary) Axes.Add(AxisRow.From(s));
+            foreach (var s in r.Summary) Axes.Add(AxisRow.From(s, r.AxisScale));
+            OnPropertyChanged(nameof(AnglesNote));
+            OnPropertyChanged(nameof(ReportNote));
             Report = DeliveryComparison.Report(r);
         }
 
@@ -221,7 +236,7 @@ namespace TrajectoryLogTools.App.ViewModels
             {
                 List<string> files = DeliveryComparison.WriteResults(Result, folder);
                 string png = Path.Combine(folder, "expected_vs_actual_comparison.png");
-                DeliveryCharts.SaveFigure(Result, png);
+                DeliveryCharts.SaveFigure(Result, png, scale: Display.Angles);
                 files.Add(png);
                 _main.ShowNotice("Saved " + files.Count + " files (report, tables and figure) to " + folder, "info");
             }

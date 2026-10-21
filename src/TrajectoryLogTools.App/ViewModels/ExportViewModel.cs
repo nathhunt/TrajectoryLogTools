@@ -58,6 +58,8 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private bool _oneFolder = true;
         [ObservableProperty] private string _folder = "";
         [ObservableProperty] private bool _overwrite;
+        /// <summary>Also save a run log (.log) with the files. Off by default.</summary>
+        [ObservableProperty] private bool _saveRunLog;
         [ObservableProperty] private bool _ignoreCrc;
         [ObservableProperty] private bool _isBusy;
         [ObservableProperty] private bool _isDone;
@@ -158,8 +160,8 @@ namespace TrajectoryLogTools.App.ViewModels
             ExportOptions jobs = Jobs();
             string folder = OneFolder ? Folder.Trim().Trim('"') : null;
             int ok = 0, failed = 0, skipped = 0;
-            var runLog = new StringBuilder();
-            runLog.AppendLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture) + "  Export of " + Rows.Count + " log(s)");
+            DateTime started = DateTime.Now;
+            var records = new List<ExportRecord>();
             foreach (ExportRow r in Rows) { r.Status = "Waiting"; r.StatusKind = "neutral"; r.Detail = ""; }
             for (int i = 0; i < Rows.Count; i++)
             {
@@ -170,8 +172,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 var lines = new List<string>();
                 string path = row.Log.Path;
                 ExportOutcome outcome = await Task.Run(() => Exporter.Run(path, outDir, jobs, lines));
-                runLog.AppendLine(row.Log.Path);
-                foreach (string l in lines) runLog.AppendLine("  " + l);
+                records.Add(new ExportRecord { Log = path, OutputFolder = outDir, Lines = lines });
                 row.Detail = string.Join("  ", lines.Where(l => l.StartsWith("OK") || l.StartsWith("SKIP") || l.StartsWith("FAIL"))
                                                     .Select(Short));
                 switch (outcome)
@@ -183,15 +184,12 @@ namespace TrajectoryLogTools.App.ViewModels
                 Progress = 100.0 * (i + 1) / Rows.Count;
             }
             Summary = ok + " done, " + skipped + " skipped, " + failed + " failed" + (_cts.IsCancellationRequested ? " (cancelled)" : "") + ".";
-            if (folder != null)
+            if (SaveRunLog && records.Count > 0)
             {
-                try
-                {
-                    File.WriteAllText(Path.Combine(folder, "TrajectoryLogConversion_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".log"),
-                                      runLog.ToString(), Encoding.UTF8);
-                    Summary += " A run log was saved with the files.";
-                }
-                catch (Exception ex) { Summary += " (Run log not saved: " + ex.Message + ")"; }
+                var errors = new List<string>();
+                List<string> logs = Exporter.WriteRunLogs(records, started, errors);
+                if (logs.Count > 0) Summary += logs.Count == 1 ? " A run log was saved with the files." : " A run log was saved in each of the " + logs.Count + " folders.";
+                if (errors.Count > 0) Summary += " (Run log not saved: " + string.Join("; ", errors) + ")";
             }
             IsBusy = false;
             IsDone = true;

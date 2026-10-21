@@ -22,8 +22,12 @@ with it) on the right.
 different folders or drives sit side by side. No folder is remembered as a default.
 * **Ways to open:**
   * **Open** (Ctrl+O) picks one or more files;
-  * the **▾** menu has **Add from folder…** (optionally with subfolders and a treatment date
-    range) and **Recent logs**;
+  * the **▾** menu has **Add from folder…** and **Recent logs**. Add from folder can include
+    subfolders and filter by when the log was treated:
+    * a **period**: from a start date and time to an end date and time (e.g. 20/10/2026 11:00 to
+      21/10/2026 14:30; the end minute is included);
+    * **times of day**, on every day (within the period when both are ticked), e.g. 08:00 to
+      12:00 for the morning sessions; 22:00 to 02:00 runs past midnight;
   * you can drag files or folders anywhere onto the window;
   * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
 * **Each entry** shows the plan name and **patient ID** (from the log's metadata), fields,
@@ -82,9 +86,13 @@ delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or o
    want, or a whole delivery with its box's tick.
 2. Choose where to save: next to each log, or one other folder (refused if two logs have the same
    file name, since their files would overwrite each other).
-3. **Advanced** (folded) holds the method options with their defaults. **Use Eclipse exports**,
+3. **Advanced** (folded) holds the method options. The defaults are the log's **expected
+   (planned)** leaf positions, placed between control points by the **log's control point**;
+   actual (as delivered) positions and the delivered-MU axis are the alternatives. **Use Eclipse exports**,
    off by default, makes the file keep an Eclipse export's header, meterset weights, jaws and
    angles; the exports are matched to the fields by control points and gantry angle.
+4. **Also save each field's QA report** (off by default) writes `_report.txt` beside each MLC
+   file; the report is in **Details…** either way.
 
 Each field gets a status:
 * **Ready to import:** no leaf-gap problem left, gantry rebuilt cleanly, every control point had
@@ -109,7 +117,8 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
   BeamName line, which holds the first field's name. The original log is never changed, and the
   CSV and dump exports are written from it.
 * **Where:** one folder for all, or next to each log in a `converted` subfolder.
-* Progress is shown per log. A run log is saved in the export folder.
+* Progress is shown per log. **Also save a run log** (off by default) writes
+  `TrajectoryLogConversion_<date_time>.log` in each output folder.
 
 **Scrolling and zooming.** Wherever the mouse is, exactly one thing scrolls:
 * on a page (log, compare, rebuild) and in the Export and Header details windows, tables and
@@ -123,7 +132,24 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
   back to the full view. Right-click → *Open in New Window* shows a chart in a window of its own,
   where the wheel alone zooms (as in the Rebuild details window).
 
-**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), optional Compare
+**Angles: IEC 61217 or Varian Standard.** The **Angles** drop-down at the top of the window (also
+in Settings) sets how gantry and collimator angles are shown: in the axis charts, the field and
+beam-hold tables, the Compare charts and tables, the Rebuild page and the details windows.
+**IEC 61217 is the default.** A log stores its angles in the scale its header names (Halcyon:
+machine scale, i.e. Varian Standard), and the two are related by IEC = (180 − Varian) mod 360,
+the direction reversed, so a difference only changes sign. This is the relation the MLC rebuild
+has always used, checked against Eclipse exports. Couch rotation, pitch, roll and couch / jaw
+positions are shown as recorded (labelled so). Nothing written to files changes: exports keep
+the log's values, Eclipse MLC files are always IEC 61217, and Compare's report text is in the
+log's own scale (its header says which); Save report…'s figure follows the setting.
+
+**Dates** are shown and written in the New Zealand format, dd/MM/yyyy with 24-hour times,
+whatever the PC's regional settings (the date pickers too).
+
+**Errors** are logged in full to `%LocalAppData%\TrajectoryLogTools\errors.log`; the message
+shown names the file.
+
+**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), applied when you press Save, optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in
 `%AppData%\TrajectoryLogTools\settings.json`.
 
@@ -210,11 +236,15 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
 ```
 
 * `export` defaults as the Export window: v4.0 only, next to each log in a `converted` subfolder
-  (with `-o`, one folder and a run log); machine TrueBeam, serial removed, couch axes removed.
+  (with `-o`, one folder); machine TrueBeam, serial removed, couch axes removed; `--run-log`
+  also saves a run log.
   The header details change one log at a time; renaming field 1 also sets the header's BeamName.
 * `rebuild-mlc` works as the Rebuild page: any number of logs, every field (or `--field`), next to
   each log or in one folder; Eclipse exports are matched to the fields by control points and
-  gantry angle, so their order doesn't matter. It prints each field's status.
+  gantry angle, so their order doesn't matter. It prints each field's status. Defaults as the
+  app: expected positions, control-point axis, no report files (`--report` saves them).
+  `reconstruct-mlc` keeps LogToEclipseMlc's method defaults (actual, MU axis); like every command
+  it writes report files only when asked (`--save-report` or `--report <file>`).
 
 The original commands do one kind of output per run and are kept for scripts:
 
@@ -226,7 +256,7 @@ TrajectoryLogCli dump    <input.bin | folder> [-o <folder>]
 TrajectoryLogCli compare-delivery <logA> <logB> [-o <folder>] [--no-plot] [--keep-first-snapshot]
 TrajectoryLogCli reconstruct-mlc  <log.bin | log.csv> [-o out.csv] [-t template.csv ...] [--positions actual|expected]
                                   [--axis mu|cp] [--gantry plan|actual] [--include-hold] [--subbeam all|n|n,m]
-                                  [--mlc-model SX2] [--scale auto|varian|iec] [--min-gap 0.5] [--report file]
+                                  [--mlc-model SX2] [--scale auto|varian|iec] [--min-gap 0.5] [--save-report | --report file]
 TrajectoryLogCli to-v5   <input.bin | folder> [-o <file|folder>] [--time-from <csv>] [--start-time hh:mm:ss] [--serial <text>] [--add-couch-rotations]
 TrajectoryLogCli version <input.bin | folder> [--expect 4.0|5.1]
 TrajectoryLogCli compare <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]

@@ -45,6 +45,7 @@
                             <TextBlock Text="1  Fields" Style="{StaticResource SectionTitle}" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10" Text="{Binding FieldsHint}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,-6,0,10" Text="{Binding AnglesNote}" />
 
                         <!-- One box per delivery (plan and day); its fields in the order delivered, whether each had its own log or they shared one -->
                         <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
@@ -120,8 +121,8 @@
                         </Border>
 
                         <TextBlock Text="2  Save to" Style="{StaticResource SectionTitle}" Margin="0,14,0,6" />
-                        <RadioButton Content="{Binding NextToLogText}" IsChecked="{Binding SaveNextToLog}" GroupName="SaveTo" />
-                        <RadioButton IsChecked="{Binding SaveNextToLog, Converter={StaticResource Not}}" GroupName="SaveTo" Margin="0,4,0,0">
+                        <RadioButton Content="{Binding NextToLogText}" IsChecked="{Binding SaveNextToLog, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="SaveTo" />
+                        <RadioButton IsChecked="{Binding SaveNextToLog, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="SaveTo" Margin="0,4,0,0">
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseFolderCommand}" Padding="8,3" FontSize="12" Margin="8,0,0,0" />
                                 <TextBlock Text="Another folder" VerticalAlignment="Center" />
@@ -129,7 +130,9 @@
                         </RadioButton>
                         <TextBox Text="{Binding OtherFolder, UpdateSourceTrigger=PropertyChanged}" Margin="28,6,0,0" AutomationProperties.Name="Other folder"
                                  Visibility="{Binding SaveNextToLog, Converter={StaticResource InverseBoolToVisibility}}" />
-                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files are named after their log: &lt;log&gt;[_subN]_reconstructed_MLC.csv and a _report.txt for each field." />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files are named after their log: &lt;log&gt;[_subN]_reconstructed_MLC.csv." />
+                        <CheckBox Content="Also save each field's QA report (_report.txt)" IsChecked="{Binding SaveReports}" Margin="0,8,0,0"
+                                  ToolTip="The report is in Details either way; this also writes it beside the MLC file" />
 
                         <Expander Margin="0,16,0,0">
                             <Expander.Header>
@@ -141,18 +144,18 @@
                             <StackPanel Margin="4,10,0,0">
                                 <TextBlock Text="Leaf positions" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
-                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual}" GroupName="Pos" Margin="0,0,16,0" />
-                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource Not}}" GroupName="Pos" />
+                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Pos" Margin="0,0,16,0" />
+                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Pos" />
                                 </StackPanel>
                                 <TextBlock Text="Where each sample sits between control points" FontWeight="SemiBold" />
                                 <StackPanel Margin="0,4,0,10">
-                                    <RadioButton Content="From the delivered MU (recommended)" IsChecked="{Binding AxisMu}" GroupName="Axis" />
-                                    <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource Not}}" GroupName="Axis" />
+                                    <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Axis" />
+                                    <RadioButton Content="From the delivered MU" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Axis" />
                                 </StackPanel>
                                 <TextBlock Text="Gantry angles" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
-                                    <RadioButton Content="Plan (rebuilt exactly)" IsChecked="{Binding GantryFromPlan}" GroupName="Gantry" Margin="0,0,16,0" />
-                                    <RadioButton Content="Actual" IsChecked="{Binding GantryFromPlan, Converter={StaticResource Not}}" GroupName="Gantry" />
+                                    <RadioButton Content="Plan (rebuilt exactly)" IsChecked="{Binding GantryFromPlan, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Gantry" Margin="0,0,16,0" />
+                                    <RadioButton Content="Actual" IsChecked="{Binding GantryFromPlan, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Gantry" />
                                 </StackPanel>
                                 <DockPanel Margin="0,0,0,10">
                                     <TextBlock Text="Minimum leaf gap (mm)" FontWeight="SemiBold" VerticalAlignment="Center" Width="170" />
@@ -201,7 +204,7 @@
                                                    Visibility="{Binding FileName, Converter={StaticResource NotEmptyToVisibility}}" />
                                         <UniformGrid Rows="1" Visibility="{Binding Ok, Converter={StaticResource BoolToVisibility}}">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Text="Delivered vs planned" Style="{StaticResource Secondary}" />
+                                                <TextBlock Text="Leaf positions written" Style="{StaticResource Secondary}" />
                                                 <TextBlock Text="{Binding Delivered}" FontWeight="SemiBold" />
                                                 <TextBlock Text="{Binding DeliveredDetail}" Style="{StaticResource Secondary}" TextWrapping="Wrap" TextTrimming="None" />
                                             </StackPanel>

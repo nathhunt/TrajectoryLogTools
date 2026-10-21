@@ -1,6 +1,7 @@
 <Window x:Class="TrajectoryLogTools.App.Views.AddFromFolderWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:TrajectoryLogTools.App.Views"
         Title="Add logs from a folder" Width="600" SizeToContent="Height" ResizeMode="NoResize"
         Background="{DynamicResource ApplicationBackgroundBrush}" ShowInTaskbar="False">
     <StackPanel Margin="24,18,24,18">
@@ -10,14 +11,39 @@
             <TextBox Text="{Binding Folder, UpdateSourceTrigger=PropertyChanged, Delay=300}" AutomationProperties.Name="Folder" />
         </DockPanel>
         <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" Margin="0,10,0,0" />
-        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <CheckBox Content="Only logs treated from" IsChecked="{Binding UseDateRange}" VerticalAlignment="Center" />
-            <DatePicker SelectedDate="{Binding FromDate}" Width="150" Margin="8,0" IsEnabled="{Binding UseDateRange}" AutomationProperties.Name="From" />
-            <TextBlock Text="to" VerticalAlignment="Center" />
-            <DatePicker SelectedDate="{Binding ToDate}" Width="150" Margin="8,0" IsEnabled="{Binding UseDateRange}" AutomationProperties.Name="To" />
+        <!-- Period: start date and time to end date and time -->
+        <CheckBox Content="Only logs treated in this period" IsChecked="{Binding UseDateRange}" Margin="0,10,0,0" />
+        <Grid Margin="28,6,0,0" IsEnabled="{Binding UseDateRange}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="From" VerticalAlignment="Center" />
+            <DatePicker Grid.Column="1" SelectedDate="{Binding FromDate}" Width="150" AutomationProperties.Name="Period start date" />
+            <views:TimePicker Grid.Column="2" Time="{Binding FromTime}" Margin="8,0,0,0" AutomationProperties.Name="Period start time" />
+            <TextBlock Grid.Row="1" Text="To" VerticalAlignment="Center" Margin="0,6,0,0" />
+            <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding ToDate}" Width="150" Margin="0,6,0,0" AutomationProperties.Name="Period end date" />
+            <views:TimePicker Grid.Row="1" Grid.Column="2" Time="{Binding ToTime}" Margin="8,6,0,0" AutomationProperties.Name="Period end time" />
+        </Grid>
+
+        <!-- Time of day, on every day -->
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <CheckBox Content="Only at times of day between" IsChecked="{Binding UseTimeOfDay}" VerticalAlignment="Center" />
+            <views:TimePicker Time="{Binding DayFromTime}" Margin="8,0" IsEnabled="{Binding UseTimeOfDay}" AutomationProperties.Name="Time of day from" />
+            <TextBlock Text="and" VerticalAlignment="Center" />
+            <views:TimePicker Time="{Binding DayToTime}" Margin="8,0" IsEnabled="{Binding UseTimeOfDay}" AutomationProperties.Name="Time of day to" />
         </StackPanel>
-        <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0"
-                   Text="The treatment date is the _yyyyMMddHHmmss time stamp in the file name, or the file's modified date when the name has none." />
+        <TextBlock Style="{StaticResource Hint}" Margin="28,2,0,0" TextWrapping="Wrap"
+                   Text="On every day (within the period, if that is ticked too), e.g. the morning sessions of a week. 22:00 to 02:00 runs past midnight." />
+
+        <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0" TextWrapping="Wrap"
+                   Text="Dates are dd/mm/yyyy; times are 24-hour. The treatment date and time are the _yyyyMMddHHmmss time stamp in the file name, or the file's modified time when the name has none." />
         <TextBlock Text="{Binding Result}" FontWeight="SemiBold" Margin="0,12,0,0" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Add" Click="Add_Click" IsEnabled="{Binding CanAdd}" Style="{DynamicResource AccentButtonStyle}" Padding="18,6" IsDefault="True" />

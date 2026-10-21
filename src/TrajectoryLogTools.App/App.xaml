@@ -4,7 +4,7 @@
              xmlns:services="clr-namespace:TrajectoryLogTools.App.Services"
              xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
              ShutdownMode="OnMainWindowClose"
-             ThemeMode="System">
+             ThemeMode="Light">
     <!-- Colours come from the Fluent theme's resources (DynamicResource), so light and dark both work. -->
     <Application.Resources>
         <ResourceDictionary>
@@ -13,6 +13,7 @@
             <services:NotConverter x:Key="Not" />
             <services:NotEmptyToVisibilityConverter x:Key="NotEmptyToVisibility" />
             <services:NotEmptyToSeparatorConverter x:Key="NotEmptyToSeparator" />
+            <services:RadioBoolConverter x:Key="RadioIs" />
             <services:FractionToWidthConverter x:Key="FractionToWidth" />
 
             <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>

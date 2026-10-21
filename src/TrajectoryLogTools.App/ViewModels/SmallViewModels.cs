@@ -28,6 +28,13 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private bool _useDateRange;
         [ObservableProperty] private DateTime? _fromDate = DateTime.Today.AddDays(-7);
         [ObservableProperty] private DateTime? _toDate = DateTime.Today;
+        // The period's start and end times (with FromDate / ToDate): the whole of both days by default.
+        [ObservableProperty] private TimeSpan _fromTime = TimeSpan.Zero;
+        [ObservableProperty] private TimeSpan _toTime = new TimeSpan(23, 59, 0);
+        // Time of day, on every day (within the period when that is on too).
+        [ObservableProperty] private bool _useTimeOfDay;
+        [ObservableProperty] private TimeSpan _dayFromTime = new TimeSpan(8, 0, 0);
+        [ObservableProperty] private TimeSpan _dayToTime = new TimeSpan(17, 0, 0);
         [ObservableProperty] private string _result = "";
 
         public List<LogFile> Found { get; private set; } = new List<LogFile>();
@@ -42,6 +49,11 @@ namespace TrajectoryLogTools.App.ViewModels
         partial void OnUseDateRangeChanged(bool value) { Search(); }
         partial void OnFromDateChanged(DateTime? value) { Search(); }
         partial void OnToDateChanged(DateTime? value) { Search(); }
+        partial void OnUseTimeOfDayChanged(bool value) { Search(); }
+        partial void OnFromTimeChanged(TimeSpan value) { Search(); }
+        partial void OnToTimeChanged(TimeSpan value) { Search(); }
+        partial void OnDayFromTimeChanged(TimeSpan value) { Search(); }
+        partial void OnDayToTimeChanged(TimeSpan value) { Search(); }
 
         [RelayCommand]
         void Browse()
@@ -56,6 +68,17 @@ namespace TrajectoryLogTools.App.ViewModels
             string f = (Folder ?? "").Trim().Trim('"');
             if (f.Length == 0) { Result = ""; return; }
             if (!Directory.Exists(f)) { Result = "Folder not found."; return; }
+            // Period: from the start date and time to the end date and time (to the end of that minute).
+            TimeSpan p0 = FromTime, p1 = ToTime, t0 = DayFromTime, t1 = DayToTime;
+            DateTime from = (FromDate ?? DateTime.Today).Date + p0;
+            DateTime to = (ToDate ?? DateTime.Today).Date + p1 + TimeSpan.FromMinutes(1) - TimeSpan.FromTicks(1);
+            if (UseDateRange && to < from)
+            {
+                Result = "The period ends before it starts.";
+                Found = new List<LogFile>();
+                OnPropertyChanged(nameof(CanAdd));
+                return;
+            }
             try
             {
                 Found = LogFinder.Find(new FindSettings
@@ -64,8 +87,11 @@ namespace TrajectoryLogTools.App.ViewModels
                     Input = f,
                     IncludeSubfolders = IncludeSubfolders,
                     UseDateRange = UseDateRange,
-                    From = (FromDate ?? DateTime.Today).Date,
-                    To = (ToDate ?? DateTime.Today).Date.AddDays(1).AddTicks(-1),
+                    From = from,
+                    To = to,
+                    UseTimeOfDay = UseTimeOfDay,
+                    TimeFrom = t0,
+                    TimeTo = t1.Add(TimeSpan.FromMinutes(1)).Subtract(TimeSpan.FromTicks(1)),   // to the end of that minute
                 });
                 Result = Found.Count == 0 ? "No logs found." : Found.Count + (Found.Count == 1 ? " log found." : " logs found.");
                 if (Found.Count > 200) Result += " That's a lot to open at once; consider a date range.";
@@ -83,6 +109,9 @@ namespace TrajectoryLogTools.App.ViewModels
         public string[] Themes { get; } = { "System", "Light", "Dark" };
 
         [ObservableProperty] private string _theme;
+        /// <summary>0 IEC 61217, 1 Varian Standard.</summary>
+        [ObservableProperty] private int _angleIndex;
+        public string[] AngleChoices { get; } = { "IEC 61217 (default)", "Varian Standard" };
         [ObservableProperty] private string _mlcTolerance;
         [ObservableProperty] private string _gantryTolerance;
         [ObservableProperty] private string _muTolerance;
@@ -92,6 +121,7 @@ namespace TrajectoryLogTools.App.ViewModels
             _main = main;
             var s = AppSettings.Current;
             _theme = s.Theme;
+            _angleIndex = Display.Angles == TrajectoryLogTools.Analysis.AngleScale.Varian ? 1 : 0;
             _mlcTolerance = Text(s.MlcToleranceMm);
             _gantryTolerance = Text(s.GantryToleranceDeg);
             _muTolerance = Text(s.MuTolerance);
@@ -105,7 +135,6 @@ namespace TrajectoryLogTools.App.ViewModels
             return double.TryParse((s ?? "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v) && v > 0 ? v : (double?)null;
         }
 
-        partial void OnThemeChanged(string value) { Services.Theme.Apply(value); }
 
         /// <summary>Saves; returns false (with a message) if a tolerance isn't a number.</summary>
         public bool Save()
@@ -119,6 +148,7 @@ namespace TrajectoryLogTools.App.ViewModels
             var s = AppSettings.Current;
             if (s.Theme != Theme) s.ThemeChosen = true;
             s.Theme = Theme;
+            Display.SetAngles(AngleIndex == 1 ? TrajectoryLogTools.Analysis.AngleScale.Varian : TrajectoryLogTools.Analysis.AngleScale.Iec);
             s.MlcToleranceMm = Parse(MlcTolerance);
             s.GantryToleranceDeg = Parse(GantryTolerance);
             s.MuTolerance = Parse(MuTolerance);

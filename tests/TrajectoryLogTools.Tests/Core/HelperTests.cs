@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Xunit;
 using TrajectoryLogTools.Core;
@@ -317,6 +318,99 @@ namespace TrajectoryLogTools.Tests
                 string path = dir.Write("out.bin", new byte[] { 9, 9, 9, 9 });
                 FileUtil.WriteAtomic(path, new byte[] { 1 });
                 Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(path));
+            }
+        }
+
+        [Fact]
+        public void Dates_AreNewZealandFormat()
+        {
+            var d = new System.DateTime(2026, 3, 4, 15, 6, 7);
+            Assert.Equal("04/03/2026", Fmt.Date(d));
+            Assert.Equal("04/03/2026 15:06", Fmt.DateTimeMinutes(d));
+            Assert.Equal("04/03/2026 15:06:07", Fmt.DateTimeSeconds(d));
+        }
+
+        [Theory]
+        [InlineData("08:30", 8, 30)]
+        [InlineData("8:30", 8, 30)]
+        [InlineData("0830", 8, 30)]
+        [InlineData("13", 13, 0)]
+        [InlineData("23.59", 23, 59)]
+        public void TimeOfDay_Parses(string text, int h, int m)
+        {
+            System.TimeSpan t;
+            Assert.True(LogFinder.TryParseTimeOfDay(text, out t));
+            Assert.Equal(new System.TimeSpan(h, m, 0), t);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("25:00")]
+        [InlineData("8:5")]
+        [InlineData("noon")]
+        public void TimeOfDay_Rejects(string text)
+        {
+            System.TimeSpan t;
+            Assert.False(LogFinder.TryParseTimeOfDay(text, out t));
+        }
+
+        [Fact]
+        public void TimeWindow_IncludingPastMidnight()
+        {
+            System.Func<int, int, System.TimeSpan> T = (h, m) => new System.TimeSpan(h, m, 0);
+            Assert.True(LogFinder.InTimeWindow(T(9, 0), T(8, 0), T(12, 0)));
+            Assert.False(LogFinder.InTimeWindow(T(13, 0), T(8, 0), T(12, 0)));
+            Assert.True(LogFinder.InTimeWindow(T(23, 0), T(22, 0), T(2, 0)));
+            Assert.True(LogFinder.InTimeWindow(T(1, 0), T(22, 0), T(2, 0)));
+            Assert.False(LogFinder.InTimeWindow(T(12, 0), T(22, 0), T(2, 0)));
+        }
+
+        [Fact]
+        public void Find_ByTimeOfDay()
+        {
+            using (var dir = new TempDir())
+            {
+                foreach (string stamp in new[] { "20261020081500", "20261020113000", "20261020143000", "20261021090000" })
+                    dir.Write("Field_" + stamp + ".bin", LogBuilder.V51().Build());
+                var found = LogFinder.Find(new FindSettings
+                {
+                    FolderMode = true, Input = dir.Path,
+                    UseTimeOfDay = true, TimeFrom = new System.TimeSpan(8, 0, 0), TimeTo = new System.TimeSpan(12, 0, 0),
+                });
+                Assert.Equal(new[] { "Field_20261020081500.bin", "Field_20261020113000.bin", "Field_20261021090000.bin" },
+                             found.Select(f => System.IO.Path.GetFileName(f.FullPath)).OrderBy(x => x));
+                found = LogFinder.Find(new FindSettings
+                {
+                    FolderMode = true, Input = dir.Path,
+                    UseDateRange = true, From = new System.DateTime(2026, 10, 20), To = new System.DateTime(2026, 10, 20, 23, 59, 59),
+                    UseTimeOfDay = true, TimeFrom = new System.TimeSpan(8, 0, 0), TimeTo = new System.TimeSpan(12, 0, 0),
+                });
+                Assert.Equal(2, found.Count);
+            }
+        }
+
+        [Fact]
+        public void Find_ByPeriodOfDateAndTime_AndWithTimeOfDay()
+        {
+            using (var dir = new TempDir())
+            {
+                foreach (string stamp in new[] { "20261019230000", "20261020081500", "20261020113000", "20261020143000", "20261021090000", "20261021153000" })
+                    dir.Write("Field_" + stamp + ".bin", LogBuilder.V51().Build());
+                System.Func<FindSettings, string[]> names = fs =>
+                    LogFinder.Find(fs).Select(f => System.IO.Path.GetFileNameWithoutExtension(f.FullPath).Substring(6)).OrderBy(x => x).ToArray();
+                // 20/10/2026 11:00 to 21/10/2026 14:30 (that minute included)
+                var period = new FindSettings
+                {
+                    FolderMode = true, Input = dir.Path, UseDateRange = true,
+                    From = new System.DateTime(2026, 10, 20, 11, 0, 0),
+                    To = new System.DateTime(2026, 10, 21, 14, 30, 0).AddMinutes(1).AddTicks(-1),
+                };
+                Assert.Equal(new[] { "20261020113000", "20261020143000", "20261021090000" }, names(period));
+                // and only in the mornings
+                period.UseTimeOfDay = true;
+                period.TimeFrom = new System.TimeSpan(6, 0, 0);
+                period.TimeTo = new System.TimeSpan(12, 0, 0);
+                Assert.Equal(new[] { "20261020113000", "20261021090000" }, names(period));
             }
         }
     }

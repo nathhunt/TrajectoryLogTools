@@ -13,7 +13,11 @@ namespace TrajectoryLogTools.App.Views
             InitializeComponent();
             AllowDrop = true;
             Drop += OnDrop;
+            Loaded += (s, e) => Services.Display.AnglesChanged += OnAnglesChanged;
+            Unloaded += (s, e) => Services.Display.AnglesChanged -= OnAnglesChanged;
         }
+
+        void OnAnglesChanged(object sender, EventArgs e) { (DataContext as RebuildPageViewModel)?.RefreshAngles(); }
 
         // Eclipse exports (.csv) dropped on this page go to the fields; anything else to the window.
         void OnDrop(object sender, DragEventArgs e)

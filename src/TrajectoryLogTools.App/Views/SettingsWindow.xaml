@@ -8,6 +8,12 @@
 
         <TextBlock Text="Theme" Style="{StaticResource SectionTitle}" />
         <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="Theme" />
+        <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" Text="Changes when you press Save." />
+
+        <TextBlock Text="Angles" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
+        <ComboBox ItemsSource="{Binding AngleChoices}" SelectedIndex="{Binding AngleIndex}" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="Angles" />
+        <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0" TextWrapping="Wrap"
+                   Text="Gantry and collimator angles in the charts, tables and cards. IEC 61217 = (180 − Varian Standard), the direction reversed. Couch and jaw values are shown as recorded. Files written (exports, Eclipse MLC files) are not affected; Eclipse MLC files are always IEC 61217." />
 
         <TextBlock Text="Compare tolerances" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
         <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8"

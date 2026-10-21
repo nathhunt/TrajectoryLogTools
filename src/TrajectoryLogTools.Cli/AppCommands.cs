@@ -96,6 +96,7 @@ namespace TrajectoryLogTools.Cli
             var inputs = new List<string>();
             string folder = null;
             string patientId = null, planName = null, planUid = null;
+            bool runLog = false;
             for (int i = 1; i < args.Length; i++)
             {
                 string a = args[i];
@@ -130,6 +131,7 @@ namespace TrajectoryLogTools.Cli
                     case "--actual-only": j.ActualOnly = true; break;
                     case "--overwrite": j.Overwrite = true; break;
                     case "--ignore-crc": j.IgnoreCrc = true; break;
+                    case "--run-log": runLog = true; break;
                     default:
                         if (a.StartsWith("-")) throw new ArgumentException("Unknown option " + a);
                         inputs.Add(a); break;
@@ -155,30 +157,24 @@ namespace TrajectoryLogTools.Cli
                 throw new ArgumentException("-o is the folder of one of the logs, so its v4.0 file would replace the original. Choose another folder, or leave out -o (next to each log, in a \"converted\" subfolder).");
 
             int ok = 0, skipped = 0, failed = 0;
-            var runLog = new StringBuilder();
-            runLog.AppendLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", Inv) + "  Export of " + logs.Count + " log(s)");
+            DateTime started = DateTime.Now;
+            var records = new List<ExportRecord>();
             foreach (string log in logs)
             {
                 var lines = new List<string>();
-                ExportOutcome outcome = Exporter.Run(log, Exporter.OutputFolder(log, folder), j, lines);
-                runLog.AppendLine(log);
-                foreach (string l in lines)
-                {
-                    runLog.AppendLine("  " + l);
-                    (l.StartsWith("FAIL", StringComparison.Ordinal) ? Console.Error : Console.Out).WriteLine(l);
-                }
+                string outDir = Exporter.OutputFolder(log, folder);
+                ExportOutcome outcome = Exporter.Run(log, outDir, j, lines);
+                records.Add(new ExportRecord { Log = log, OutputFolder = outDir, Lines = lines });
+                foreach (string l in lines) (l.StartsWith("FAIL", StringComparison.Ordinal) ? Console.Error : Console.Out).WriteLine(l);
                 if (outcome == ExportOutcome.Done) ok++; else if (outcome == ExportOutcome.Skipped) skipped++; else failed++;
             }
             Console.WriteLine(ok + " done, " + skipped + " skipped, " + failed + " failed.");
-            if (folder != null)
+            if (runLog)
             {
-                // A run log with the files, as the app saves.
-                try
-                {
-                    Directory.CreateDirectory(folder);
-                    File.WriteAllText(Path.Combine(folder, "TrajectoryLogConversion_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", Inv) + ".log"), runLog.ToString(), Encoding.UTF8);
-                }
-                catch (Exception ex) { Console.Error.WriteLine("Run log not saved: " + ex.Message); }
+                // As the app's "Also save a run log": one in each output folder.
+                var errors = new List<string>();
+                foreach (string f in Exporter.WriteRunLogs(records, started, errors)) Console.WriteLine("Run log: " + f);
+                foreach (string e in errors) Console.Error.WriteLine("Run log not saved: " + e);
             }
             return failed == 0 ? 0 : 1;
         }
@@ -189,7 +185,9 @@ namespace TrajectoryLogTools.Cli
 
         static int RebuildMlc(string[] args)
         {
-            var o = new MlcReconstructionOptions();
+            // The app's defaults: the planned (expected) positions, placed by the log's control point;
+            // no report files unless asked (reconstruct-mlc keeps LogToEclipseMlc's defaults).
+            var o = new MlcReconstructionOptions { Positions = "expected", Axis = "cp", WriteReport = false };
             var inputs = new List<string>();
             var exports = new List<string>();
             string folder = null;
@@ -211,6 +209,7 @@ namespace TrajectoryLogTools.Cli
                     case "--field": fields = Next(args, ref i); break;
                     case "--scale": o.Scale = Next(args, ref i); break;
                     case "--verbose": verbose = true; break;
+                    case "--report": o.WriteReport = true; break;
                     case "--ignore-crc": ignoreCrc = true; break;
                     case "--min-gap":
                         double g;
@@ -280,6 +279,7 @@ namespace TrajectoryLogTools.Cli
                 var run = new MlcReconstructionOptions
                 {
                     Positions = o.Positions, Axis = o.Axis, GantryMode = o.GantryMode, Scale = o.Scale, MinGap = o.MinGap, IncludeHold = o.IncludeHold,
+                    WriteReport = o.WriteReport,
                     Subbeams = string.Join(",", l.Item3.Select(i => i.Subbeam)),
                     OutputFolder = folder ?? Path.GetDirectoryName(log),
                 };

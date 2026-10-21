@@ -93,6 +93,8 @@ namespace TrajectoryLogTools.Analysis
         /// <summary>[leaf, grid] A - B in mm.</summary>
         public double[,] LeafDiffExpected, LeafDiffActual;
         public int[] LeafNumbers;
+        /// <summary>Axis scale of log A (and B): the scale the angles and their differences are in.</summary>
+        public int AxisScale;
     }
 
     public static class DeliveryComparison
@@ -202,6 +204,7 @@ namespace TrajectoryLogTools.Analysis
                 LabelA = labelA ?? ShortLabel(logA.SourcePath),
                 LabelB = labelB ?? ShortLabel(logB.SourcePath),
                 LeafNumbers = leaves.Select(l => int.Parse(l.Substring(l.Length - 3), Inv)).ToArray(),
+                AxisScale = logA.AxisScale,
             };
 
             DeliveryRecord a = BeamOnByCp(A), b = BeamOnByCp(B);

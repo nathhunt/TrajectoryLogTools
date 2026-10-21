@@ -262,7 +262,11 @@ namespace TrajectoryLogTools.App.ViewModels
         void ShowSettings()
         {
             var vm = new SettingsViewModel(this);
-            Dialogs.ShowDialog(new Views.SettingsWindow { DataContext = vm });
+            if (Dialogs.ShowDialog(new Views.SettingsWindow { DataContext = vm }) != true) return;
+            // Applied once the dialog has closed: switching the theme while a dialog (and its
+            // drop-down) is open is what could fail.
+            ApplyThemeLater();
+            OnPropertyChanged(nameof(AngleIndex));
         }
 
         [RelayCommand]
@@ -271,8 +275,28 @@ namespace TrajectoryLogTools.App.ViewModels
             AppSettings.Current.Theme = Theme.IsDark ? "Light" : "Dark";
             AppSettings.Current.ThemeChosen = true;
             AppSettings.Current.Save();
-            Theme.Apply(AppSettings.Current.Theme);
+            ApplyThemeLater();
         }
+
+        /// <summary>Switches the theme after the click that asked for it has been handled.</summary>
+        static void ApplyThemeLater()
+        {
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() => Theme.Apply(AppSettings.Current.Theme)));
+        }
+
+        /// <summary>Angles shown: 0 IEC 61217 (default), 1 Varian Standard. Also in Settings.</summary>
+        public int AngleIndex
+        {
+            get { return Display.Angles == Analysis.AngleScale.Varian ? 1 : 0; }
+            set
+            {
+                Display.SetAngles(value == 1 ? Analysis.AngleScale.Varian : Analysis.AngleScale.Iec);
+                OnPropertyChanged();
+            }
+        }
+
+        public string[] AngleChoices { get; } = { "IEC 61217", "Varian Standard" };
 
         public void ClearRecent()
         {

@@ -43,11 +43,16 @@ namespace TrajectoryLogTools.App.ViewModels
         public string MlcRms { get; set; }
         public string MlcMax { get; set; }
 
-        public static BeamRow From(BeamStat b, string log = "")
+        /// <param name="axisScale">Axis scale of the log; gantry and collimator are shown in the chosen scale (Display).</param>
+        /// <param name="record">The log, for the field's own control points (FieldSpan); null = as the comparison counted them.</param>
+        public static BeamRow From(BeamStat b, string log, int axisScale, TrajectoryLogTools.Analysis.DeliveryRecord record = null)
         {
+            int first, last;
+            string cps = record != null && TrajectoryLogTools.Analysis.FieldSpan.Of(record, b.Beam, out first, out last) ? first + "-" + last : b.ControlPoints;
             return new BeamRow
             {
-                Log = log, Beam = b.Beam, Gantry = b.Gantry, Coll = Fmt.N(b.CollDeg, 2), ControlPoints = b.ControlPoints,
+                Log = log, Beam = b.Beam, Gantry = Services.Display.AngleText(b.Gantry, axisScale),
+                Coll = Fmt.N(Services.Display.Angle(b.CollDeg, axisScale), 2), ControlPoints = cps,
                 MuPlanned = Fmt.N(b.MuPlanned, 3), MuDelivered = Fmt.N(b.MuDelivered, 3), BeamOnS = Fmt.N(b.BeamOnS, 2),
                 HoldS = Fmt.N(b.HoldS, 2), MlcRms = Fmt.N(b.MlcRmsErrMm, 3), MlcMax = Fmt.N(b.MlcMaxErrMm, 3)
             };
@@ -68,12 +73,14 @@ namespace TrajectoryLogTools.App.ViewModels
         public string LeafErr { get; set; }
         public string LeafErrAfter { get; set; }
 
-        public static HoldRow From(BeamHold h, string log = "")
+        /// <param name="axisScale">Axis scale of the log; gantry and collimator are shown in the chosen scale (Display).</param>
+        public static HoldRow From(BeamHold h, string log, int axisScale)
         {
             return new HoldRow
             {
                 Log = log, Type = h.Type, Beam = h.Beam, Start = Fmt.N(h.StartS, 2), Duration = Fmt.N(h.DurationS, 2),
-                ControlPoint = Fmt.N(h.ControlPoint, 2), Mu = Fmt.N(h.Mu, 2), Gantry = h.Gantry, Coll = h.Coll,
+                ControlPoint = Fmt.N(h.ControlPoint, 2), Mu = Fmt.N(h.Mu, 2),
+                Gantry = Services.Display.AngleText(h.Gantry, axisScale), Coll = Services.Display.AngleText(h.Coll, axisScale),
                 LeafErr = Fmt.N(h.LeafErrDuringMm, 3), LeafErrAfter = Fmt.N(h.LeafErr1sAfterMm, 3)
             };
         }
@@ -90,9 +97,13 @@ namespace TrajectoryLogTools.App.ViewModels
         public string P95 { get; set; }
         public string P99 { get; set; }
 
-        public static AxisRow From(AxisStat s)
+        /// <summary>Gantry and collimator rows in the chosen scale: only the mean's sign can change (the rest are sizes).</summary>
+        public static AxisRow From(AxisStat s, int axisScale)
         {
-            return new AxisRow { Axis = s.Axis, Values = s.Values, Sampling = s.Sampling, Mean = Fmt.N(s.Mean, 4),
+            bool angle = s.Axis.StartsWith("Gantry", System.StringComparison.Ordinal) || s.Axis.StartsWith("Collimator", System.StringComparison.Ordinal);
+            double sign = angle ? Services.Display.DifferenceSign(axisScale) : 1.0;
+            return new AxisRow { Axis = angle ? s.Axis.Replace("(deg)", "(deg, " + Services.Display.AnglesName + ")") : s.Axis,
+                                 Values = s.Values, Sampling = s.Sampling, Mean = Fmt.N(sign * s.Mean, 4),
                                  Rms = Fmt.N(s.Rms, 4), Max = Fmt.N(s.Max, 4), P95 = Fmt.N(s.P95, 4), P99 = Fmt.N(s.P99, 4) };
         }
     }
@@ -103,7 +114,17 @@ namespace TrajectoryLogTools.App.ViewModels
         public LogItem Log { get; set; }
         public int Subbeam { get; set; }
         public string Name { get; set; }
-        public string Info { get; set; }
+        string _info = "";
+        /// <summary>"41 control points · gantry 130.0° · 150.0 MU", gantry in the chosen scale (see Describe).</summary>
+        public string Info { get { return _info; } set { SetProperty(ref _info, value); } }
+        public double Mu { get; set; }
+
+        /// <summary>Sets Info in the chosen angle scale (the field's gantry is kept in IEC).</summary>
+        public void Describe()
+        {
+            Info = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} control points · gantry {1:F1}° · {2:F1} MU", ControlPoints,
+                                 TrajectoryLogTools.Analysis.Angles.Convert(GantryIec, TrajectoryLogTools.Analysis.AngleScale.Iec, Services.Display.Angles), Mu);
+        }
         /// <summary>Where the field comes from: "Own log · 10:42 · a.bin" or "Field 2 of 3 in a.bin · 10:42".</summary>
         public string Source { get; set; }
         /// <summary>A caution shown under the field ("" for none), e.g. the same field is in another log too.</summary>
