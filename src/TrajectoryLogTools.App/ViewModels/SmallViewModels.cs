@@ -29,12 +29,12 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private DateTime? _fromDate = DateTime.Today.AddDays(-7);
         [ObservableProperty] private DateTime? _toDate = DateTime.Today;
         // The period's start and end times (with FromDate / ToDate): the whole of both days by default.
-        [ObservableProperty] private string _fromTime = "00:00";
-        [ObservableProperty] private string _toTime = "23:59";
+        [ObservableProperty] private TimeSpan _fromTime = TimeSpan.Zero;
+        [ObservableProperty] private TimeSpan _toTime = new TimeSpan(23, 59, 0);
         // Time of day, on every day (within the period when that is on too).
         [ObservableProperty] private bool _useTimeOfDay;
-        [ObservableProperty] private string _dayFromTime = "08:00";
-        [ObservableProperty] private string _dayToTime = "17:00";
+        [ObservableProperty] private TimeSpan _dayFromTime = new TimeSpan(8, 0, 0);
+        [ObservableProperty] private TimeSpan _dayToTime = new TimeSpan(17, 0, 0);
         [ObservableProperty] private string _result = "";
 
         public List<LogFile> Found { get; private set; } = new List<LogFile>();
@@ -50,10 +50,10 @@ namespace TrajectoryLogTools.App.ViewModels
         partial void OnFromDateChanged(DateTime? value) { Search(); }
         partial void OnToDateChanged(DateTime? value) { Search(); }
         partial void OnUseTimeOfDayChanged(bool value) { Search(); }
-        partial void OnFromTimeChanged(string value) { Search(); }
-        partial void OnToTimeChanged(string value) { Search(); }
-        partial void OnDayFromTimeChanged(string value) { Search(); }
-        partial void OnDayToTimeChanged(string value) { Search(); }
+        partial void OnFromTimeChanged(TimeSpan value) { Search(); }
+        partial void OnToTimeChanged(TimeSpan value) { Search(); }
+        partial void OnDayFromTimeChanged(TimeSpan value) { Search(); }
+        partial void OnDayToTimeChanged(TimeSpan value) { Search(); }
 
         [RelayCommand]
         void Browse()
@@ -69,19 +69,7 @@ namespace TrajectoryLogTools.App.ViewModels
             if (f.Length == 0) { Result = ""; return; }
             if (!Directory.Exists(f)) { Result = "Folder not found."; return; }
             // Period: from the start date and time to the end date and time (to the end of that minute).
-            TimeSpan p0 = TimeSpan.Zero, p1 = TimeSpan.Zero, t0 = TimeSpan.Zero, t1 = TimeSpan.Zero;
-            if (UseDateRange && (!LogFinder.TryParseTimeOfDay(FromTime, out p0) || !LogFinder.TryParseTimeOfDay(ToTime, out p1)))
-            {
-                Result = "Enter the period's times as hh:mm, 24-hour (e.g. 08:00 and 13:30).";
-                OnPropertyChanged(nameof(CanAdd));
-                return;
-            }
-            if (UseTimeOfDay && (!LogFinder.TryParseTimeOfDay(DayFromTime, out t0) || !LogFinder.TryParseTimeOfDay(DayToTime, out t1)))
-            {
-                Result = "Enter the times of day as hh:mm, 24-hour (e.g. 08:00 and 13:30).";
-                OnPropertyChanged(nameof(CanAdd));
-                return;
-            }
+            TimeSpan p0 = FromTime, p1 = ToTime, t0 = DayFromTime, t1 = DayToTime;
             DateTime from = (FromDate ?? DateTime.Today).Date + p0;
             DateTime to = (ToDate ?? DateTime.Today).Date + p1 + TimeSpan.FromMinutes(1) - TimeSpan.FromTicks(1);
             if (UseDateRange && to < from)
