@@ -92,12 +92,12 @@
 
                 <!-- Where -->
                 <TextBlock Text="Where" Style="{StaticResource SectionTitle}" Margin="0,10,0,6" />
-                <RadioButton Content="One folder for all" IsChecked="{Binding OneFolder}" GroupName="Where" />
+                <RadioButton Content="One folder for all" IsChecked="{Binding OneFolder, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Where" />
                 <DockPanel Margin="28,6,0,6" IsEnabled="{Binding OneFolder}">
                     <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseCommand}" Padding="12,5" Margin="8,0,0,0" />
                     <TextBox Text="{Binding Folder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Export folder" />
                 </DockPanel>
-                <RadioButton Content="Next to each log, in a &quot;converted&quot; subfolder" IsChecked="{Binding OneFolder, Converter={StaticResource Not}}" GroupName="Where" />
+                <RadioButton Content="Next to each log, in a &quot;converted&quot; subfolder" IsChecked="{Binding OneFolder, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Where" />
                 <CheckBox Content="Overwrite existing files" IsChecked="{Binding Overwrite}" Margin="0,10,0,0" />
                 <CheckBox Content="Also process logs whose CRC does not verify" IsChecked="{Binding IgnoreCrc}" Margin="0,4,0,0"
                           Visibility="{Binding AnyCrcFailed, Converter={StaticResource BoolToVisibility}}" />

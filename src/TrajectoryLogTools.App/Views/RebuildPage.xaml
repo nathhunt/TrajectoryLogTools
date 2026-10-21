@@ -121,8 +121,8 @@
                         </Border>
 
                         <TextBlock Text="2  Save to" Style="{StaticResource SectionTitle}" Margin="0,14,0,6" />
-                        <RadioButton Content="{Binding NextToLogText}" IsChecked="{Binding SaveNextToLog}" GroupName="SaveTo" />
-                        <RadioButton IsChecked="{Binding SaveNextToLog, Converter={StaticResource Not}}" GroupName="SaveTo" Margin="0,4,0,0">
+                        <RadioButton Content="{Binding NextToLogText}" IsChecked="{Binding SaveNextToLog, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="SaveTo" />
+                        <RadioButton IsChecked="{Binding SaveNextToLog, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="SaveTo" Margin="0,4,0,0">
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseFolderCommand}" Padding="8,3" FontSize="12" Margin="8,0,0,0" />
                                 <TextBlock Text="Another folder" VerticalAlignment="Center" />
@@ -142,18 +142,18 @@
                             <StackPanel Margin="4,10,0,0">
                                 <TextBlock Text="Leaf positions" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
-                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual}" GroupName="Pos" Margin="0,0,16,0" />
-                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource Not}}" GroupName="Pos" />
+                                    <RadioButton Content="Actual (as delivered)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Pos" Margin="0,0,16,0" />
+                                    <RadioButton Content="Expected (planned)" IsChecked="{Binding UseActual, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Pos" />
                                 </StackPanel>
                                 <TextBlock Text="Where each sample sits between control points" FontWeight="SemiBold" />
                                 <StackPanel Margin="0,4,0,10">
-                                    <RadioButton Content="From the delivered MU (recommended)" IsChecked="{Binding AxisMu}" GroupName="Axis" />
-                                    <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource Not}}" GroupName="Axis" />
+                                    <RadioButton Content="From the delivered MU (recommended)" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Axis" />
+                                    <RadioButton Content="From the log's control point (follows the planned MU)" IsChecked="{Binding AxisMu, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Axis" />
                                 </StackPanel>
                                 <TextBlock Text="Gantry angles" FontWeight="SemiBold" />
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
-                                    <RadioButton Content="Plan (rebuilt exactly)" IsChecked="{Binding GantryFromPlan}" GroupName="Gantry" Margin="0,0,16,0" />
-                                    <RadioButton Content="Actual" IsChecked="{Binding GantryFromPlan, Converter={StaticResource Not}}" GroupName="Gantry" />
+                                    <RadioButton Content="Plan (rebuilt exactly)" IsChecked="{Binding GantryFromPlan, Converter={StaticResource RadioIs}, ConverterParameter=true}" GroupName="Gantry" Margin="0,0,16,0" />
+                                    <RadioButton Content="Actual" IsChecked="{Binding GantryFromPlan, Converter={StaticResource RadioIs}, ConverterParameter=false}" GroupName="Gantry" />
                                 </StackPanel>
                                 <DockPanel Margin="0,0,0,10">
                                     <TextBlock Text="Minimum leaf gap (mm)" FontWeight="SemiBold" VerticalAlignment="Center" Width="170" />

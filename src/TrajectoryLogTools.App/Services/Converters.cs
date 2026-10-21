@@ -28,6 +28,28 @@ namespace TrajectoryLogTools.App.Services
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { throw new NotSupportedException(); }
     }
 
+    /// <summary>
+    /// A radio button for one value of a bool: checked when the bool equals the parameter ("true" or
+    /// "false"), and when checked it sets the bool to that value. Being unchecked writes nothing.
+    /// A radio button's group unchecks the others in it; if that "unchecked" were written back (as a
+    /// plain or inverted binding does), the two buttons of a pair can set each other back and forth
+    /// without end, which overflows the stack (seen when the theme changed on the Rebuild page).
+    /// </summary>
+    public sealed class RadioBoolConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value is bool b && b == Wanted(parameter);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value is bool b && b ? (object)Wanted(parameter) : Binding.DoNothing;
+        }
+
+        static bool Wanted(object parameter) { return !string.Equals(parameter as string, "false", StringComparison.OrdinalIgnoreCase); }
+    }
+
     /// <summary>" · " after a value that is there, "" otherwise (for joining Runs).</summary>
     public sealed class NotEmptyToSeparatorConverter : IValueConverter
     {
