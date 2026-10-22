@@ -142,7 +142,7 @@ namespace TrajectoryLogTools.DocShots
             {
                 if (!(d is System.Windows.Controls.ScrollViewer sv)) continue;
                 Rect b = e.TransformToAncestor(sv).TransformBounds(new Rect(0, 0, e.ActualWidth, e.ActualHeight));
-                if (b.Bottom < 2 || b.Top > sv.ViewportHeight - 2) return false;
+                if (b.Bottom < 2 || b.Top > sv.ActualHeight - 2) return false;   // ActualHeight: a list scrolls by items, and its ViewportHeight counts items
             }
             return true;
         }
