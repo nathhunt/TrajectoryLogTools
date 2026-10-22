@@ -168,6 +168,40 @@
             "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
             "problemMatcher": []
         },
+        // ------------------------------------------------------------------------------------
+        // User guide (docs/user -> site/, copied into Help\ of both deploy folders when publishing).
+        // Needs Python 3 with docs/requirements.txt: python -m pip install -r docs/requirements.txt
+        // ------------------------------------------------------------------------------------
+        {
+            "label": "docs: build",
+            "type": "process",
+            "command": "python",
+            "args": ["-m", "mkdocs", "build", "--strict"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            // Live preview at http://127.0.0.1:8000 while you edit; stop with Ctrl+C.
+            "label": "docs: serve",
+            "type": "process",
+            "command": "python",
+            "args": ["-m", "mkdocs", "serve"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "isBackground": true,
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            // Windows only: makes every screenshot in docs/user/images from the real windows, with
+            // synthetic demo logs written to C:\Demo (tools/TrajectoryLogTools.DocShots).
+            "label": "docs: screenshots",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["run", "-c", "Release", "--project", "${workspaceFolder}/tools/TrajectoryLogTools.DocShots"],
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": "$msCompile"
+        },
         {
             "label": "open Deploy folder",
             "type": "process",

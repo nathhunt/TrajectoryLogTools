@@ -1,0 +1,94 @@
+# User guide: build and test the solution, make the screenshots from the real windows (DocShots,
+# Windows only), build the offline HTML guide (MkDocs, strict), check that publishing puts it in
+# both deploy folders, and upload the guide. On a working branch (not the default branch) the
+# regenerated screenshots are committed back when they changed, so the PNGs in the repository are
+# always the ones this run made. See docs/CONTRIBUTING-docs.md.
+name: User guide
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Build (no warnings allowed)
+        run: dotnet build TrajectoryLogTools.sln -c Release -warnaserror
+
+      - name: Test
+        run: dotnet test tests/TrajectoryLogTools.Tests -c Release --no-build
+
+      - name: Screenshots (DocShots)
+        run: dotnet run -c Release --no-build --project tools/TrajectoryLogTools.DocShots
+
+      - name: Install MkDocs
+        run: python -m pip install -r docs/requirements.txt
+
+      - name: Build the guide (strict)
+        run: python -m mkdocs build --strict
+
+      - name: Publish, and check the guide is in both deploy folders
+        shell: pwsh
+        run: |
+          dotnet publish src/TrajectoryLogTools.App -p:PublishProfile=Deploy
+          foreach ($f in 'Deploy\TrajectoryLogTools\Help\index.html', 'Deploy\TrajectoryLogConverter\Help\index.html',
+                         'Deploy\TrajectoryLogTools\TrajectoryLogTools.exe', 'Deploy\TrajectoryLogConverter\TrajectoryLogConverter.exe') {
+            if (-not (Test-Path $f)) { Write-Error "Missing after publish: $f"; exit 1 }
+          }
+          if (Test-Path 'Deploy\TrajectoryLogTools\TrajectoryLogTools.DocShots.dll') { Write-Error 'DocShots must not be deployed'; exit 1 }
+          Write-Host 'Both deploy folders have Help\index.html.'
+
+      - name: Upload the guide
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-guide-site
+          path: site/
+
+      - name: Upload the screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: docs/user/images/
+
+      - name: Commit changed screenshots (working branches only)
+        if: github.event_name != 'pull_request' && github.ref_name != github.event.repository.default_branch
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs/user/images
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host 'Screenshots unchanged.'; exit 0 }
+          git commit -m "Regenerate the user guide screenshots [skip ci]"
+          for ($i = 0; $i -lt 4; $i++) {
+            git pull --rebase origin $env:GITHUB_REF_NAME
+            git push origin HEAD:$env:GITHUB_REF_NAME
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            Start-Sleep -Seconds (5 * ($i + 1))
+          }
+          exit 1

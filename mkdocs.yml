@@ -1,0 +1,157 @@
+# The user guide of Trajectory Log Tools and Trajectory Log Converter: docs/user, built with
+# MkDocs Material into site/ as an offline site (works opened from disk or a share, search
+# included), which publishing copies into Help\ in both deploy folders.
+#   python -m mkdocs build --strict     (VS Code: Run Task > docs: build)
+#   python -m mkdocs serve              (VS Code: Run Task > docs: serve), then http://127.0.0.1:8000
+# See docs/CONTRIBUTING-docs.md.
+site_name: Trajectory Log Tools
+site_description: User guide for Trajectory Log Tools and Trajectory Log Converter (Halcyon / Ethos trajectory logs)
+docs_dir: docs/user
+site_dir: site
+# Pages are files (page.html), not folders (page/): links must work opened from disk (file://).
+# The offline plugin sets this too.
+use_directory_urls: false
+strict: true
+copyright: Trajectory Log Tools 1.0.0-beta
+
+theme:
+  name: material
+  language: en
+  logo: assets/icon.png
+  favicon: assets/favicon.png
+  # No web fonts: the guide is read on PCs without internet access. The system fonts are used.
+  font: false
+  palette:
+    # Light by default, as the apps; the reader can switch.
+    - media: "(prefers-color-scheme)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.highlight
+    - content.tooltips
+    - toc.follow
+
+plugins:
+  - search:
+      lang: en
+  # Downloads the few external files the theme would load (e.g. the search worker's shim) at
+  # build time and serves them from the site, so nothing is fetched when the guide is read.
+  - privacy
+  # Inlines the search index, so search works opened from disk (file://).
+  - offline
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.smartsymbols
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: docs/user
+      check_paths: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - assets/extra.css
+
+not_in_nav: |
+  /snippets/*.md
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started/index.md
+      - Install and deploy: getting-started/install.md
+      - Set up the Eclipse launchers: getting-started/eclipse-launchers.md
+      - First run: getting-started/first-run.md
+  - Tutorials:
+      - tutorials/index.md
+      - Your first look at a log: tutorials/first-look.md
+      - Your first delivery comparison: tutorials/first-comparison.md
+  - How-to guides:
+      - how-to/index.md
+      - Open logs: how-to/open-logs.md
+      - Compare two deliveries: how-to/compare-deliveries.md
+      - Save a comparison report: how-to/save-comparison-report.md
+      - Validate a v4.0 conversion: how-to/validate-conversion.md
+      - Rebuild Eclipse MLC files: how-to/rebuild-mlc.md
+      - Rebuild with Eclipse exports: how-to/rebuild-with-exports.md
+      - Export logs: how-to/export.md
+      - Change header details: how-to/export-header-details.md
+      - Convert the day's logs: how-to/convert-days-logs.md
+      - Convert a single file: how-to/convert-one-file.md
+      - Set the converter's folders: how-to/converter-folders.md
+      - Change the theme: how-to/change-theme.md
+      - Change the angle scale: how-to/change-angle-scale.md
+      - Set Compare tolerances: how-to/set-tolerances.md
+      - Report a problem: how-to/report-a-problem.md
+  - Reference:
+      - reference/index.md
+      - The log page: reference/log-page.md
+      - Settings: reference/settings.md
+      - Export options: reference/export-options.md
+      - Compare cards and statistics: reference/compare.md
+      - File comparison: reference/file-comparison.md
+      - Rebuild statuses and checks: reference/rebuild-statuses.md
+      - Trajectory Log Converter: reference/converter.md
+      - Keyboard and mouse: reference/keyboard-mouse.md
+      - Files and folders: reference/files.md
+      - "Advanced: command line": reference/cli.md
+  - Explanation:
+      - explanation/index.md
+      - IEC 61217 and Varian Standard: explanation/angles.md
+      - Log versions 4.0 and 5.1: explanation/log-versions.md
+      - How the MLC rebuild works: explanation/mlc-rebuild.md
+      - Compare and File comparison: explanation/compare-vs-file-comparison.md
+      - Privacy and Eclipse: explanation/privacy.md
+  - About:
+      - about/index.md
+      - Intended use and limitations: about/intended-use.md
+      - Validation and commissioning: about/validation.md
+      - What's new: about/whats-new.md
+      - Version and support: about/support.md

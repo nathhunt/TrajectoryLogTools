@@ -1,0 +1,2 @@
+/* Screenshots: a light border so a white window stands out from the page. */
+.md-typeset img.shot { border: 1px solid var(--md-default-fg-color--lightest); border-radius: 4px; }
