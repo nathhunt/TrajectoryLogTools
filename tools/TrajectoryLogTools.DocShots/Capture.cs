@@ -96,6 +96,10 @@ namespace TrajectoryLogTools.DocShots
                     FrameworkElement target = c.Target(root);
                     if (target == null) throw new InvalidOperationException(Path.GetFileName(file) + ": callout " + c.Number + "'s element was not found.");
                     Rect b = BoundsIn(target, root);
+                    if (!VisibleInScrollViewer(target))
+                        throw new InvalidOperationException(Path.GetFileName(file) + ": callout " + c.Number + "'s element is scrolled out of view.");
+                    if (!new Rect(area.X - 1, area.Y - 1, area.Width + 2, area.Height + 2).IntersectsWith(b))
+                        throw new InvalidOperationException(Path.GetFileName(file) + ": callout " + c.Number + "'s element is outside the picture.");
                     b.Offset(origin.X - area.X, origin.Y - area.Y);
                     DrawCallout(dc, c, b, new Rect(0, 0, ow, oh));
                 }
@@ -129,6 +133,18 @@ namespace TrajectoryLogTools.DocShots
             rtb.Render(dv);
             rtb.Freeze();
             return rtb;
+        }
+
+        /// <summary>False when the element is scrolled out of the view of a scroll viewer it is in.</summary>
+        static bool VisibleInScrollViewer(FrameworkElement e)
+        {
+            for (DependencyObject d = VisualTreeHelper.GetParent(e); d != null; d = VisualTreeHelper.GetParent(d))
+            {
+                if (!(d is System.Windows.Controls.ScrollViewer sv)) continue;
+                Rect b = e.TransformToAncestor(sv).TransformBounds(new Rect(0, 0, e.ActualWidth, e.ActualHeight));
+                if (b.Bottom < 2 || b.Top > sv.ViewportHeight - 2) return false;
+            }
+            return true;
         }
 
         public static Rect BoundsIn(FrameworkElement e, FrameworkElement root)

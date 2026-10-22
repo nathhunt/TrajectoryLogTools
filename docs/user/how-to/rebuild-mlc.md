@@ -25,17 +25,20 @@ The **Rebuild Eclipse MLC** page opens.
 
 1. Check the fields under **1  Fields** (1). They are found automatically and listed by delivery: one
    box per plan and day, its fields in the order delivered. Each field shows its control points,
-   gantry and MU, and where it came from: *Own log* or *Field 2 of 3 in one log*, the time and the file.
+   gantry and MU, and where it came from: *Field 1 of 3 in one log* (2) when the machine wrote one log
+   for the delivery, or *Own log* (3) when it wrote one per field, then the time and the file.
     - Untick a field you don't want, or a whole delivery with the tick of its box. **All** and **None**
       tick or untick everything.
     - A field found in two logs of one delivery (usually one resumed after an interruption) is marked
       *Delivered 2 times…*; each part gets its own file.
     - Logs that can't be rebuilt are listed under **Not included**, with the reason.
-2. Under **2  Save to** (2), choose **Next to the log** (each file beside its log), or
+2. Scroll down. Under **2  Save to** (1), choose **Next to the log** (each file beside its log), or
    **Another folder** and select **Browse…**.
     - In one folder, two logs with the same file name would overwrite each other's files, so the app
       refuses; save next to each log instead.
-3. Optional: tick **Also save each field's QA report (_report.txt)**. The report is in **Details…**
+    ![Save to, Advanced and Rebuild](../images/rebuild-save.png){ .shot }
+
+3. Optional: tick **Also save each field's QA report (_report.txt)** (2). The report is in **Details…**
    either way.
 4. Leave **Advanced** (3) as it is, unless you know you need another method. See
    [How the MLC rebuild works](../explanation/mlc-rebuild.md).

@@ -103,7 +103,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(3, r => Ui.Find<TextBox>(r), "right")
                 .Mark(4, r => Ui.Find<ListBoxItem>(Named(w, "LogList")), "left")
                 .Mark(5, r => Ui.Up<UniformGrid>(Ui.Button(r, "Compare")), "top")
-                .Mark(6, r => ItemsFor(r, ((LogPageViewModel)vm.CurrentPage).Facts), "top")
+                .Mark(6, r => ItemsFor(r, ((LogPageViewModel)vm.CurrentPage).Facts), "left")
                 .Mark(7, r => Named(w, "HelpButton"), "bottom"));
 
             // The Open logs list alone: badges, patient IDs, ticks
@@ -225,8 +225,8 @@ namespace TrajectoryLogTools.DocShots
             await Ui.Settle();
             await Ui.WaitUntil(() => !vm.IsBusy, "the file comparison");
             await s.Shoot(w, "file-compare-differences", new ShotOptions()
-                .Mark(1, r => Ui.Find<DataGrid>(r, g => ReferenceEquals(g.ItemsSource, vm.Axes)), "topleft")
-                .Mark(2, r => Ui.Find<DataGrid>(r, g => ReferenceEquals(g.ItemsSource, vm.Examples)), "topleft"));
+                .Mark(1, r => Ui.Text(r, vm.Verdict), "left")
+                .Mark(2, r => Ui.Find<DataGrid>(r, g => ReferenceEquals(g.ItemsSource, vm.Axes)), "topleft"));
 
             Ui.Find<TabControl>(w).SelectedIndex = 1;
             await Ui.Settle();
@@ -243,7 +243,13 @@ namespace TrajectoryLogTools.DocShots
             await Ui.WaitUntil(() => !page.IsBusy && page.Groups.Count > 0, "the rebuild page");
             await s.Shoot(w, "rebuild-page", new ShotOptions()
                 .Mark(1, r => Ui.Text(r, "1  Fields"), "left")
-                .Mark(2, r => Ui.Text(r, "2  Save to"), "left")
+                .Mark(2, r => Ui.Text(r, "Field 1 of 3 in one log", true), "left")
+                .Mark(3, r => Ui.Text(r, "Own log", true), "left"));
+            // Save to, Advanced and Rebuild, further down the left of the page
+            await Ui.ScrollToTop(Ui.Text(w, "2  Save to"), 40);
+            await s.Shoot(w, "rebuild-save", new ShotOptions { Crop = r => Ui.Up<ScrollViewer>(Ui.Text(r, "1  Fields")), Padding = 0 }
+                .Mark(1, r => Ui.Text(r, "2  Save to"), "left")
+                .Mark(2, r => Ui.Button(r, "Also save each field's QA report (_report.txt)"), "left")
                 .Mark(3, r => Ui.Text(r, "Advanced"), "left")
                 .Mark(4, r => Ui.Button(r, page.RebuildText), "left"));
 

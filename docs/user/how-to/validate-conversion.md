@@ -34,9 +34,10 @@ Untick the box to see them:
 
 ![File comparison: the differences a conversion makes](../images/file-compare-differences.png){ .shot }
 
-- (1) **Axes**: each axis that differs, how many values, expected and actual, in how many snapshots,
-  the largest difference, values that are "no value" in one log only, and the first snapshot.
-- (2) The values that differ on the axis you select above.
+- (1) For a correct conversion: a few header fields (the version, the axes, the machine specifier and
+  serial number), and *Stored values: all equal*.
+- (2) **Axes**: only **Time** differs, *Only in A*: v4.0 logs have no time axis. Every other axis holds
+  the same values. When an axis has values that differ, select it to list them in the table below.
 
 The **Header and subbeams** tab lists each header field that differs, A and B side by side;
 **As text** gives the comparison as text (**Copy as text** copies it).
