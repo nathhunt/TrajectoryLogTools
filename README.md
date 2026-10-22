@@ -14,186 +14,17 @@ The analyses work straight from the `.bin` log; you no longer have to export a C
 exports, from this tool or the old converter, still work as input.
 
 A second, small app, **Trajectory Log Converter**, does one job: converting v5.1 logs to v4.0
-(see [below](#trajectory-log-converter)). It uses the same conversion code.
+(see the [user guide](#user-guide)). It uses the same conversion code.
 
-## The application
+## User guide
 
-The window has two parts: **Open logs** on the left and the selected log (or what you're doing
-with it) on the right.
+How to use the two apps is in the **user guide**: `docs/user`, built into an offline HTML site that
+ships in `Help\` of both deploy folders and opens from **Help** (or F1) in each app. Every screenshot
+in it is generated from the real windows by `tools/TrajectoryLogTools.DocShots`. See
+[docs/CONTRIBUTING-docs.md](docs/CONTRIBUTING-docs.md) to add a page or a screenshot, and
+[docs/SHOTLIST.md](docs/SHOTLIST.md) for the few Eclipse screens that can't be generated.
 
-**Open logs.** Logs are opened from anywhere and each keeps its own location, so two logs from
-different folders or drives sit side by side. No folder is remembered as a default.
-* **Ways to open:**
-  * **Open** (Ctrl+O) picks one or more files;
-  * the **▾** menu has **Add from folder…** and **Recent logs**. Add from folder can include
-    subfolders and filter by when the log was treated:
-    * a **period**: from a start date and time to an end date and time (e.g. 20/10/2026 11:00 to
-      21/10/2026 14:30; the end minute is included);
-    * **times of day**, on every day (within the period when both are ticked), e.g. 08:00 to
-      12:00 for the morning sessions; 22:00 to 02:00 runs past midnight;
-  * you can drag files or folders anywhere onto the window;
-  * the Eclipse launcher, or a file dragged onto the exe, opens a log straight away.
-* **Each entry** shows the plan name and **patient ID** (from the log's metadata), fields,
-  treatment date, version and folder. The filter matches the patient ID too.
-  The patient ID is also shown on the log page, on both sides of Compare (with a warning when
-  A and B are different patients), on the Rebuild page and its deliveries, in Export and in the
-  details windows. Badges mark **Interrupted** deliveries and logs whose **CRC failed** (still
-  opened, with a warning).
-* **Ticking** logs selects them for **Compare** (two) or **Export…** (any number). **✕** closes
-  them; nothing is deleted.
-* The pane folds to a narrow strip (‹) when you want the room.
-
-**A log** has key facts across the top (MU delivered vs planned, duration, interruptions, MLC
-error, file status) and four tabs:
-* **Overview:** the delivery timeline (beam on, interruptions and planned holds, with details on
-  hover), the per-field table (gantry and collimator in IEC, MU, beam-on time, MLC error), beam
-  holds, and the header and metadata.
-* **Axes:** pick an axis to see expected and actual, and actual − expected underneath (zooming
-  one zooms both), against time or control point.
-* **MLC:** actual − expected for every leaf, beam on, against time or control point, with the
-  RMS per leaf beside it and the worst leaves named.
-* **Raw:** the whole file as stored (header with byte offsets, subbeams, every value, CRC), with
-  find.
-
-From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
-
-**Compare** (two ticked logs, or *Compare with…*) works answer first:
-* it says what was compared (same plan delivered twice, or plans that differ);
-* cards show the MLC, gantry and MU differences, marked within or over your tolerances if you set
-  them in Settings;
-* below are the leaf-difference map and the gantry and MU charts, then folded details: planned
-  differences, per field, beam holds, all statistics, the full report;
-* the gantry and MU charts share one legend, above them, and zoom and pan separately;
-* **File differences (validation) → Compare the files…** opens the **File comparison** window,
-  which compares every stored value, for example to check a v4.0 conversion against its original.
-  At the top: what is compared, the verdict and one row of counts (header, metadata, subbeams,
-  axes, stored values), and what was ignored. Below, tabs that fill the window:
-  * **Axes:** every axis (how many values differ, expected / actual, in how many snapshots, the
-    largest difference, values that are "no value" in one log only, and where it starts) and,
-    under it, the values that differ on the axis picked;
-  * **Header and subbeams:** the fields that differ, A and B side by side, one row per metadata
-    line (Patient ID, Plan Name, …);
-  * **As text:** what the command line prints.
-
-The **←** button goes back to the log. You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
-
-**Rebuild Eclipse MLC** writes, for each field, the Eclipse MLC file of the leaf positions as
-delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or on the shown log
-(**Rebuild Eclipse MLC…** on its page; if that log is ticked, all the ticked logs).
-1. The fields are found automatically and listed by delivery: one box per plan and day, its
-   fields in the order delivered. A plan delivered as one log per field and a plan delivered as one
-   log with several fields look the same; each field says where it came from ("Own log" or
-   "Field 2 of 3 in one log", the time and the file). A field found in two logs of one delivery,
-   usually one resumed after an interruption, is flagged; each part gets its own file. Logs that
-   can't be rebuilt are listed under **Not included** with the reason. Untick any field you don't
-   want, or a whole delivery with its box's tick.
-2. Choose where to save: next to each log, or one other folder (refused if two logs have the same
-   file name, since their files would overwrite each other).
-3. **Advanced** (folded) holds the method options. The defaults are the log's **expected
-   (planned)** leaf positions, placed between control points by the **log's control point**;
-   actual (as delivered) positions and the delivered-MU axis are the alternatives. **Use Eclipse exports**,
-   off by default, makes the file keep an Eclipse export's header, meterset weights, jaws and
-   angles; the exports are matched to the fields by control points and gantry angle.
-4. **Also save each field's QA report** (off by default) writes `_report.txt` beside each MLC
-   file; the report is in **Details…** either way.
-
-Each field gets a status:
-* **Ready to import:** no leaf-gap problem left, gantry rebuilt cleanly, every control point had
-  data;
-* **Check first:** written, with the reasons listed;
-* **Failed:** nothing written, with the reason.
-
-Each result shows delivered vs planned (for information), the leaf-gap rules and the gantry.
-**Details…** opens the field in a window of its own: status and what to check, the QA report's
-numbers as cards (delivered vs planned, leaf-gap rules, gantry, control points, MU, snapshots
-used, how it was built, and the Eclipse export check when one was used), then the difference map,
-a leaf-by-leaf view and the full report. **‹ ›** step through the fields of the rebuild.
-
-**Export** works on the ticked logs (or the shown one), wherever they are:
-* **What to write:** v4.0 `.bin`, CSV, full dump CSV and/or raw dump text, each with its own options.
-* **v4.0 header** (every log): machine **TrueBeam (0)** (default) or **Halcyon (1)**; serial
-  number **removed** (default), kept or changed; couch rotation, pitch and roll **removed**
-  (default) or kept.
-* **Header details…** (one v5.1 log only) changes the patient ID, plan name, plan UID and field
-  (beam / subbeam) names written to the v4.0 file. Each shows the value in the log beside the one
-  to write; anything not changed is copied exactly. Renaming field 1 also changes the header's
-  BeamName line, which holds the first field's name. The original log is never changed, and the
-  CSV and dump exports are written from it.
-* **Where:** one folder for all, or next to each log in a `converted` subfolder.
-* Progress is shown per log. **Also save a run log** (off by default) writes
-  `TrajectoryLogConversion_<date_time>.log` in each output folder.
-
-**Scrolling and zooming.** Wherever the mouse is, exactly one thing scrolls:
-* on a page (log, compare, rebuild) and in the Export and Header details windows, tables and
-  texts are shown at full length with no scroll bar of their own, so the wheel always scrolls
-  the page, whether the mouse is over a table or not;
-* in the File comparison window, the tables fill the window and nothing around them scrolls, so
-  the wheel scrolls the table under the mouse (drag the bar between the two tables to share the
-  room differently);
-* **Shift + wheel** scrolls a table that is wider than its space sideways;
-* **Ctrl + wheel** zooms a chart on a page (the page doesn't move); drag pans, double-click goes
-  back to the full view. Right-click → *Open in New Window* shows a chart in a window of its own,
-  where the wheel alone zooms (as in the Rebuild details window).
-
-**Angles: IEC 61217 or Varian Standard.** The **Angles** drop-down at the top of the window (also
-in Settings) sets how gantry and collimator angles are shown: in the axis charts, the field and
-beam-hold tables, the Compare charts and tables, the Rebuild page and the details windows.
-**IEC 61217 is the default.** A log stores its angles in the scale its header names (Halcyon:
-machine scale, i.e. Varian Standard), and the two are related by IEC = (180 − Varian) mod 360,
-the direction reversed, so a difference only changes sign. This is the relation the MLC rebuild
-has always used, checked against Eclipse exports. Couch rotation, pitch, roll and couch / jaw
-positions are shown as recorded (labelled so). Nothing written to files changes: exports keep
-the log's values, Eclipse MLC files are always IEC 61217, and Compare's report text is in the
-log's own scale (its header says which); Save report…'s figure follows the setting.
-
-**Dates** are shown and written in the New Zealand format, dd/MM/yyyy with 24-hour times,
-whatever the PC's regional settings (the date pickers too).
-
-**Errors** are logged in full to `%LocalAppData%\TrajectoryLogTools\errors.log`; the message
-shown names the file.
-
-**Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), applied when you press Save, optional Compare
-tolerances, and clearing the recent logs list. They are saved per user in
-`%AppData%\TrajectoryLogTools\settings.json`.
-
-The app opens no ESAPI session and needs no Eclipse login or script approval. It only reads and
-writes files.
-
-## Trajectory Log Converter
-
-`TrajectoryLogConverter.exe`, started from Eclipse by `LaunchTrajectoryLogConverter.cs`, converts
-v5.1 logs to v4.0 and nothing else:
-* **From:** the logs in the default input folder (optionally with subfolders), filtered by when
-  they were treated, as in Add from folder: a period (start date and time to end date and time)
-  and / or times of day on every day. Or **one file**, chosen with *Choose file…*.
-* **The list** shows, compactly, every log that will be converted (treated, patient · plan ·
-  fields, file, subfolder), each with a tick to leave it out, and a count. Logs that won't be
-  converted are hidden unless asked for, with the reason: already v4.0, already in the output
-  folder, same file name as another log in the list, can't be read, or the output folder is
-  the log's own folder.
-* **To:** the default output folder, each log keeping its file name. *Replace logs already in
-  the output folder* is off by default.
-* **What is written:** the v4.0 log only, always the same way: machine specifier TrueBeam (0),
-  serial number removed, couch axes kept, everything else in the header (patient, plan, field
-  names, metadata) as it is. No time-axis file, CSV or run log.
-
-**Settings** holds the default input and output folders (and *include subfolders*). They are
-saved in `TrajectoryLogConverter.settings.json` **in the app's folder**, so everyone using that
-copy gets the same folders; whoever changes them needs write access to the folder. A folder
-chosen in the main window is for that session only (*Back to the default folder* returns).
-Publishing doesn't overwrite the settings file. Example:
-
-```json
-{
-  "InputFolder": "\\\\server\\Halcyon\\TrajectoryLogs",
-  "OutputFolder": "\\\\server\\Halcyon\\TrajectoryLogs v4",
-  "IncludeSubfolders": false
-}
-```
-
-It is published into its own folder, `Deploy\TrajectoryLogConverter\`, which has its own runtime
-and shares nothing with Trajectory Log Tools. Publishing Trajectory Log Tools publishes it too. To
-publish only the converter: `dotnet publish src/TrajectoryLogTools.Converter -p:PublishProfile=Deploy`.
+This README is for developers: building, testing, publishing, versioning and the code layout.
 
 **Icons:** both exes carry an icon (blue: Trajectory Log Tools; orange: the converter), drawn by
 `scripts/make_icons.py`.
@@ -215,6 +46,7 @@ The first build downloads packages from nuget.org. `global.json` asks for a .NET
 | Build | **Build > Build Solution** | **Ctrl+Shift+B** | `dotnet build TrajectoryLogTools.sln` |
 | Run / debug the GUI | **F5** (TrajectoryLogTools.App is the startup project) | **F5** > *GUI* | `dotnet run --project src/TrajectoryLogTools.App` |
 | Tests | **Test > Run All Tests** | **Run Task** > *test* | `dotnet test tests/TrajectoryLogTools.Tests` |
+| User guide | | **Run Task** > *docs: build* / *docs: serve* / *docs: screenshots* | `python -m mkdocs build --strict`; `dotnet run -c Release --project tools/TrajectoryLogTools.DocShots` |
 | Publish (deploy folder) | Right-click **TrajectoryLogTools.App > Publish** > *Deploy* > **Publish** | **Run Task** > *publish* | `dotnet publish src/TrajectoryLogTools.App -p:PublishProfile=Deploy` or `scripts\publish.ps1` |
 
 Publishing writes two separate folders. Each is self-contained (its own copy of the .NET 10
@@ -225,13 +57,22 @@ Deploy\TrajectoryLogTools\             (about 180 MB)
   TrajectoryLogTools.exe              the application
   TrajectoryLogCli.exe                the command-line tool
   LaunchTrajectoryLogTools.cs         the Eclipse launcher script for the application
+  Help\                               the user guide (copied from site\, see below)
   *.dll                               the .NET 10 runtime and libraries - keep everything together
 Deploy\TrajectoryLogConverter\         (about 160 MB)
   TrajectoryLogConverter.exe          the v5.1 -> v4.0 converter
   LaunchTrajectoryLogConverter.cs     the Eclipse launcher script for the converter
   TrajectoryLogConverter.settings.json  its default folders (written by Settings, kept on redeploy)
+  Help\                               the user guide
   *.dll                               its own .NET 10 runtime and libraries
 ```
+
+**The user guide in the deploy folders.** Publishing copies the built guide (`site\`, from
+`python -m mkdocs build`) into `Help\` of both folders (`src/Help.targets`). It copies rather than
+builds, so publishing needs no Python; if `site\index.html` is missing it warns (TLT0001) and goes
+on, and the apps' Help button says the guide isn't installed. Build the guide first (VS Code:
+*docs: build*, needs `python -m pip install -r docs/requirements.txt`), or download the
+`user-guide-site` artifact of the *User guide* GitHub workflow and unzip it into `site\`.
 
 It is a self-contained **folder**, not a single-file exe. A single-file WPF app unpacks native
 DLLs to `%TEMP%` when it first starts, and application whitelisting on clinical PCs and Citrix
@@ -246,8 +87,8 @@ came from, on the line at the bottom of the window (e.g. *Version 1.2.0+aeaf93d*
 records the same. Each exe's file properties carry it too.
 
 The `.vscode` folder has tasks for: build, release build, CLI-only build, clean, rebuild,
-publish, publish to folder, tests, tests with coverage, the CLI commands, the round-trip test
-and golden-file regeneration. It also has debug configurations (GUI, GUI pre-filled as from
+publish, publish to folder, tests, tests with coverage, the CLI commands, the round-trip test,
+golden-file regeneration, and the user guide (docs: build, docs: serve, docs: screenshots). It also has debug configurations (GUI, GUI pre-filled as from
 Eclipse, and the CLI commands). In Visual Studio, `Properties/launchSettings.json` adds a
 pre-filled GUI profile.
 
@@ -256,23 +97,10 @@ runs on Windows only. The libraries, the CLI and the tests run on any OS.
 
 ## Launching from Eclipse
 
-Eclipse runs scripts in-process on .NET Framework 4.8, so the launcher stays a 4.8 single-file
-script. It starts `TrajectoryLogTools.exe` as a separate process, which is why the application
-can be .NET 10.
-
-1. Publish, and copy the whole `Deploy\TrajectoryLogTools` folder to a location the Eclipse
-   workstations (or the Citrix servers Eclipse runs on) can read.
-2. Edit the constants at the top of `LaunchTrajectoryLogTools.cs`: `ExePath` (required), and
-   optionally `StartFolder`, the folder the Open dialogs start in.
-3. Copy the script into your Eclipse scripts folder (e.g. `\\<server>\va_data$\ProgramData\Vision\PublishedScripts`)
-   and run it from **Tools > Scripts**.
-4. For the converter, the same with `LaunchTrajectoryLogConverter.cs` (its `ExePath` points to
-   `TrajectoryLogConverter.exe` in the deployed `TrajectoryLogConverter` folder, copied whole like
-   the first). Then open it once and set the default folders in **Settings**.
-
-The first time, check the line at the bottom of the window. It shows the app's version, the Windows version, the
-.NET runtime and the folder the app runs from. If the app doesn't start, the usual cause is
-application whitelisting (AppLocker / WDAC); ask IT to allow the deployed folder.
+Eclipse runs scripts in-process on .NET Framework 4.8, so the launchers (`launcher/`) stay 4.8
+single-file scripts. Each starts its app as a separate process, which is why the apps can be .NET 10.
+Setting them up (ExePath, StartFolder, the scripts folder) is in the user guide:
+*Getting started > Set up the Eclipse launchers*.
 
 The application's own arguments, all optional: log files to open (`.bin` or `.csv`), a folder
 to add from, and `--start-folder <folder>` for the Open dialogs. Arguments of earlier versions
@@ -367,9 +195,13 @@ src/
                                 panel, dialogs, error log, NZ dates, wheel scrolling
 launcher/                       Eclipse scripts (.NET Framework 4.8, compiled by Eclipse), one per app
 tests/TrajectoryLogTools.Tests  xUnit: the converter's 363 tests + analysis, CLI and golden tests
+tools/TrajectoryLogTools.DocShots  the user guide's screenshots from the real windows (Windows; not deployed)
+docs/user/                      the user guide (MkDocs Material, mkdocs.yml at the root; built into site/)
 reference/                      the original tools, unchanged, and the golden-file generator
 scripts/                        publish.ps1, RoundTripTest.ps1, make_icons.py
 docs/engine-notes.md            how the engine converts and exports
+docs/CONTRIBUTING-docs.md       how to add a page or a screenshot, and regenerate the guide
+.github/workflows/docs.yml      CI on Windows: build, test, screenshots, strict guide build, publish check
 ```
 
 Core and Analysis also build for .NET Framework 4.8, so they could be used from an ESAPI script
