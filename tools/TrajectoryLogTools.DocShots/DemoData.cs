@@ -62,7 +62,7 @@ namespace TrajectoryLogTools.DocShots
             ProstateFx3 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 19, 8, 42, 10), vmat, Delivery(33, "PHANTOM-01", "Prostate VMAT (demo)"));
             SimDelivery fx4 = Delivery(34, "PHANTOM-01", "Prostate VMAT (demo)");
             fx4.LeafLagCp = 0.07;
-            fx4.Interruptions.Add(Tuple.Create(0, 17.3, 60));   // 1.2 s interruption in Arc 1
+            fx4.Interruptions.Add(Tuple.Create(0, 17.3, 90));   // 1.8 s interruption in Arc 1
             ProstateFx4 = Write(Logs, "Prostate_VMAT", Today.Add(new TimeSpan(8, 45, 30)), vmat, fx4);
 
             SimPlan imrt = SimPlan.Imrt();
@@ -120,7 +120,7 @@ namespace TrajectoryLogTools.DocShots
         {
             return new SimDelivery
             {
-                Seed = seed, SnapshotsPerCp = 5, Version = "5.1", HalcyonTransition = true, LeafLagCp = 0.05,
+                Seed = seed, SnapshotsPerCp = 30, Version = "5.1", HalcyonTransition = true, LeafLagCp = 0.05,
                 Metadata = "Patient ID:\t" + patient + "\r\nPlan Name:\t" + plan + "\r\nPlan UID:\t1.2.3.999." + seed + "\r\n",
             };
         }

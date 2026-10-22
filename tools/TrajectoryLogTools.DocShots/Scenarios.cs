@@ -88,7 +88,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(1, r => Ui.Button(r, "Open files…"), "top")
                 .Mark(2, r => Ui.Button(r, "Add from folder…"), "top")
                 .Mark(3, r => Ui.Text(r, "Recent logs"))
-                .Mark(4, r => Named(w, "HelpButton"), "left"));
+                .Mark(4, r => Named(w, "HelpButton"), "bottom"));
         }
 
         static async Task MainWindowAndLogPage(Shots s)
@@ -100,11 +100,11 @@ namespace TrajectoryLogTools.DocShots
             await s.Shoot(w, "main-window", new ShotOptions()
                 .Mark(1, r => Ui.Up<Button>(Ui.Text(r, "Open")), "top")
                 .Mark(2, r => Named(w, "MoreButton"), "top")
-                .Mark(3, r => Ui.Find<TextBox>(r), "inside")
+                .Mark(3, r => Ui.Find<TextBox>(r), "right")
                 .Mark(4, r => Ui.Find<ListBoxItem>(Named(w, "LogList")), "left")
                 .Mark(5, r => Ui.Up<UniformGrid>(Ui.Button(r, "Compare")), "top")
                 .Mark(6, r => ItemsFor(r, ((LogPageViewModel)vm.CurrentPage).Facts), "top")
-                .Mark(7, r => Named(w, "HelpButton"), "left"));
+                .Mark(7, r => Named(w, "HelpButton"), "bottom"));
 
             // The Open logs list alone: badges, patient IDs, ticks
             await s.Shoot(w, "open-logs-list", new ShotOptions { Crop = r => Ui.Up<Border>(Named(w, "LogList")), Padding = 0 }
@@ -160,7 +160,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(2, r => Ui.Button(r, "Include subfolders"), "left")
                 .Mark(3, r => Ui.Button(r, "Only logs treated in this period"), "left")
                 .Mark(4, r => Ui.Button(r, "Only at times of day between"), "left")
-                .Mark(5, r => Ui.Button(r, "Add"), "left"));
+                .Mark(5, r => Ui.Button(r, "Add"), "top"));
         }
 
         static async Task Compare(Shots s)
@@ -179,11 +179,11 @@ namespace TrajectoryLogTools.DocShots
                 await Ui.WaitUntil(() => !page.IsBusy && page.HasResult, "the comparison");
                 await Ui.Settle(800);
                 await s.Shoot(w, "compare-page", new ShotOptions()
-                    .Mark(1, r => Ui.Text(r, "Compare deliveries"), "left")
+                    .Mark(1, r => Ui.Text(r, "Compare deliveries"), "right")
                     .Mark(2, r => Ui.Find<Border>(r, b => b.Name == "DropA"), "left")
                     .Mark(3, r => Ui.Text(r, page.Verdict), "left")
                     .Mark(4, r => ItemsFor(r, page.Cards), "topleft")
-                    .Mark(5, r => Ui.Button(r, "Save report…"), "left"));
+                    .Mark(5, r => Ui.Button(r, "Save report…"), "bottom"));
                 await s.Shoot(w, "compare-cards", new ShotOptions
                 {
                     CropAll = r => new[] { Ui.Up<Border>(Ui.Text(r, page.Verdict)), ItemsFor(r, page.Cards) },
@@ -249,7 +249,7 @@ namespace TrajectoryLogTools.DocShots
             await Ui.WaitUntil(() => !page.IsBusy && page.Results.Count > 0, "the rebuild");
             await s.Shoot(w, "rebuild-results", new ShotOptions()
                 .Mark(1, r => Ui.Find<ContentPresenter>(ItemsFor(r, page.Results)), "topleft")
-                .Mark(2, r => Ui.Button(r, "Details…"), "left"));
+                .Mark(2, r => Ui.Button(r, "Details…"), "top"));
 
             var details = new RebuildDetailsViewModel(page.Results.ToList(), 0);
             var dw = await s.Show(new RebuildDetailsWindow { DataContext = details }, 1184, 820);
@@ -311,7 +311,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(3, r => Ui.Button(r, "Full dump as CSV (_full.csv)"), "left")
                 .Mark(4, r => Ui.Button(r, "Raw dump as text (.txt)"), "left")
                 .Mark(5, r => Ui.Text(r, "Where"), "left")
-                .Mark(6, r => Ui.Button(r, "Export"), "left"));
+                .Mark(6, r => Ui.Button(r, "Export"), "top"));
 
             vm.ToCsv = true;
             await vm.ExportCommand.ExecuteAsync(null);
@@ -333,7 +333,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(1, r => Ui.Text(r, "In the log"), "top")
                 .Mark(2, r => Ui.Text(r, "In the export"), "top")
                 .Mark(3, r => Ui.Text(r, "Field 1"), "left")
-                .Mark(4, r => Ui.Button(r, "OK"), "left"));
+                .Mark(4, r => Ui.Button(r, "OK"), "top"));
             s.Close(hw);
 
             var vm = new ExportViewModel(new List<LogItem> { item }) { Folder = s.Demo.Exports, HeaderEdits = edits };
@@ -345,11 +345,11 @@ namespace TrajectoryLogTools.DocShots
         static async Task SettingsAndTitleBar(Shots s)
         {
             var (main, mvm) = await OpenMain(s, s.Demo.ProstateFx4);
-            await s.Shoot(main, "title-bar", new ShotOptions { Crop = r => Ui.Up<DockPanel>(Named(main, "HelpButton")), Padding = 4 }
-                .Mark(1, r => Named(main, "ThemeButton"), "left")
-                .Mark(2, r => Named(main, "AnglesBox"), "top")
-                .Mark(3, r => Named(main, "SettingsButton"), "top")
-                .Mark(4, r => Named(main, "HelpButton"), "top"));
+            await s.Shoot(main, "title-bar", new ShotOptions { Crop = r => Ui.Up<DockPanel>(Named(main, "HelpButton")), Padding = 30 }
+                .Mark(1, r => Named(main, "ThemeButton"), "bottom")
+                .Mark(2, r => Named(main, "AnglesBox"), "bottom")
+                .Mark(3, r => Named(main, "SettingsButton"), "bottom")
+                .Mark(4, r => Named(main, "HelpButton"), "bottom"));
 
             var vm = new App.ViewModels.SettingsViewModel(mvm) { MlcTolerance = "1", GantryTolerance = "0.5", MuTolerance = "0.5" };
             var w = await s.Show(new SettingsWindow { DataContext = vm }, 544);
@@ -358,7 +358,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(2, r => Ui.Text(r, "Angles"), "left")
                 .Mark(3, r => Ui.Text(r, "Compare tolerances"), "left")
                 .Mark(4, r => Ui.Text(r, "Recent logs"), "left")
-                .Mark(5, r => Ui.Button(r, "Save"), "left"));
+                .Mark(5, r => Ui.Button(r, "Save"), "top"));
         }
 
         static async Task Dark(Shots s)
@@ -407,7 +407,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(1, r => Ui.Text(r, "Default input folder (v5.1 logs)"), "left")
                 .Mark(2, r => Ui.Button(r, "Include subfolders"), "left")
                 .Mark(3, r => Ui.Text(r, "Default output folder (v4.0 logs)"), "left")
-                .Mark(4, r => Ui.Button(r, "Save"), "left"));
+                .Mark(4, r => Ui.Button(r, "Save"), "top"));
             s.Close(sw);
 
             // The day's logs
@@ -422,9 +422,9 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(1, r => Ui.Find<TextBlock>(r, t => t.IsVisible && t.Text == "From" && t.FontSize > 13), "left")
                 .Mark(2, r => Ui.Button(r, "Only logs treated in this period"), "left")
                 .Mark(3, r => Ui.Find<TextBlock>(r, t => t.IsVisible && t.Text == "To" && t.FontSize > 13), "left")
-                .Mark(4, r => Ui.Text(r, vm.ListSummary), "left")
+                .Mark(4, r => Ui.Text(r, vm.ListSummary), "top")
                 .Mark(5, r => Ui.Up<ButtonBase>(Ui.Text(r, vm.ShowSkippedText)), "left")
-                .Mark(6, r => Ui.Button(r, vm.ConvertText), "left"));
+                .Mark(6, r => Ui.Button(r, vm.ConvertText), "top"));
 
             vm.ShowSkipped = true;
             await Ui.Settle();
@@ -437,7 +437,7 @@ namespace TrajectoryLogTools.DocShots
             await s.Shoot(w, "converter-one-file", new ShotOptions()
                 .Mark(1, r => Ui.Button(r, "One file"), "left")
                 .Mark(2, r => Ui.Button(r, "Choose file…"), "left")
-                .Mark(3, r => Ui.Button(r, vm.ConvertText), "left"));
+                .Mark(3, r => Ui.Button(r, vm.ConvertText), "top"));
 
             // Convert the day's logs
             vm.FolderMode = true;

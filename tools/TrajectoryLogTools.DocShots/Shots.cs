@@ -49,58 +49,43 @@ namespace TrajectoryLogTools.DocShots
             w.MinHeight = 0;
             w.Width = width + 16;
             if (!autoHeight) w.Height = height.Value + 39;
-            AllowAnySize(w);
             w.Show();
             _open.Add(w);
-            // The frame differs between Windows versions: size the window so the client area is exact.
-            for (int i = 0; i < 3; i++)
-            {
-                await Ui.Settle(100);
-                FrameworkElement root = ClientRoot(w);
-                double dw = width - root.ActualWidth, dh = autoHeight ? 0 : height.Value - root.ActualHeight;
-                if (Math.Abs(dw) < 0.01 && Math.Abs(dh) < 0.01) break;
-                w.Width += dw;
-                if (!autoHeight) w.Height += dh;
-            }
+            await SizeClient(w, width, height);
+            if (autoHeight) await SizeClient(w, width, null);   // re-wrapping at the new width changes the height
             return w;
         }
 
-        // Windows keeps a window no larger than the screen (a CI runner's is 1024 x 768): let these be any size.
-        const int WM_GETMINMAXINFO = 0x0024;
+        // Windows keeps a window no larger than the screen (a CI runner's is 1024 x 768) when it is
+        // sized the usual way. Sized with SWP_NOSENDCHANGING, that limit isn't applied.
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+        const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010, SWP_NOSENDCHANGING = 0x0400, SWP_NOMOVE = 0x0002;
 
-        [StructLayout(LayoutKind.Sequential)]
-        struct POINT { public int X, Y; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct MINMAXINFO { public POINT Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }
-
-        static void AllowAnySize(Window w)
+        /// <summary>Sizes the window so its client area is width x height (DIPs); height null = keep it.</summary>
+        static async Task SizeClient(Window w, double width, double? height)
         {
-            IntPtr handle = new WindowInteropHelper(w).EnsureHandle();
-            HwndSource.FromHwnd(handle).AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+            IntPtr handle = new WindowInteropHelper(w).Handle;
+            for (int i = 0; i < 4; i++)
             {
-                if (msg != WM_GETMINMAXINFO) return IntPtr.Zero;
-                var info = Marshal.PtrToStructure<MINMAXINFO>(lParam);
-                info.MaxTrackSize = new POINT { X = 10000, Y = 10000 };
-                info.MaxSize = new POINT { X = 10000, Y = 10000 };
-                Marshal.StructureToPtr(info, lParam, false);
-                handled = true;
-                return IntPtr.Zero;
-            });
+                await Ui.Settle(100);
+                FrameworkElement root = ClientRoot(w);
+                double dw = width - root.ActualWidth, dh = height.HasValue ? height.Value - root.ActualHeight : 0;
+                if (Math.Abs(dw) < 0.01 && Math.Abs(dh) < 0.01) return;
+                Matrix toDevice = PresentationSource.FromVisual(w).CompositionTarget.TransformToDevice;
+                double outerW = w.ActualWidth + dw, outerH = w.ActualHeight + dh;
+                SetWindowPos(handle, IntPtr.Zero, 0, 0, (int)Math.Round(outerW * toDevice.M11), (int)Math.Round(outerH * toDevice.M22),
+                             SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSENDCHANGING);
+            }
+            FrameworkElement r = ClientRoot(w);
+            if (Math.Abs(width - r.ActualWidth) > 0.5 || (height.HasValue && Math.Abs(height.Value - r.ActualHeight) > 0.5))
+                Program.Log("  note: client area is " + r.ActualWidth + " x " + r.ActualHeight + ", not " + width + " x " + height);
         }
 
         /// <summary>Changes the client height of a shown window (e.g. taller, to show a whole page).</summary>
         public async Task Resize(Window w, double width, double height)
         {
-            for (int i = 0; i < 3; i++)
-            {
-                await Ui.Settle(100);
-                FrameworkElement root = ClientRoot(w);
-                double dw = width - root.ActualWidth, dh = height - root.ActualHeight;
-                if (Math.Abs(dw) < 0.01 && Math.Abs(dh) < 0.01) break;
-                w.Width += dw;
-                w.Height += dh;
-            }
+            await SizeClient(w, width, height);
         }
 
         public static FrameworkElement ClientRoot(Window w)

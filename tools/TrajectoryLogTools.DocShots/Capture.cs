@@ -18,7 +18,7 @@ namespace TrajectoryLogTools.DocShots
     {
         public int Number;
         public Func<FrameworkElement, FrameworkElement> Target;
-        /// <summary>Where on the element: "left" (centre of the left edge, the default), "right", "top", "topleft".</summary>
+        /// <summary>Where on the element: "left" (centre of the left edge, the default), "right", "top", "bottom", "topleft", "inside".</summary>
         public string At = "left";
     }
 
@@ -171,6 +171,7 @@ namespace TrajectoryLogTools.DocShots
             {
                 case "right": p = new Point(b.Right + r + 2, b.Top + b.Height / 2); break;
                 case "top": p = new Point(b.Left + b.Width / 2, b.Top - r - 2); break;
+                case "bottom": p = new Point(b.Left + b.Width / 2, b.Bottom + r + 2); break;
                 case "topleft": p = new Point(b.Left + 2, b.Top + 2); break;
                 case "inside": p = new Point(b.Left + r + 4, b.Top + b.Height / 2); break;
                 default: p = new Point(b.Left - r - 2, b.Top + b.Height / 2); break;
