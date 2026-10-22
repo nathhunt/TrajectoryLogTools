@@ -108,7 +108,7 @@ namespace TrajectoryLogTools.DocShots
 
             // The Open logs list alone: badges, patient IDs, ticks
             await s.Shoot(w, "open-logs-list", new ShotOptions { Crop = r => Ui.Up<Border>(Named(w, "LogList")), Padding = 0 }
-                .Mark(1, r => Ui.FindAll<CheckBox>(Named(w, "LogList"), c => c.IsChecked == true).Last(), "left"));
+                .Mark(1, r => Ui.Find<CheckBox>(Named(w, "LogList"), c => c.IsChecked == true), "left"));
 
             var page = (LogPageViewModel)vm.CurrentPage;
             await s.Shoot(w, "log-overview", new ShotOptions { Crop = PagePane, Padding = 0 }
