@@ -8,7 +8,7 @@
     <Deterministic>true</Deterministic>
     <Company>TrajectoryLogTools</Company>
     <Product>Trajectory Log Tools</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.0-beta</Version>
     <!-- Lets the WPF app build (not run) on Linux / macOS too, e.g. for CI. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
