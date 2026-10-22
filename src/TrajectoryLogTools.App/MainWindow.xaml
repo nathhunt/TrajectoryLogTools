@@ -32,13 +32,16 @@
         <DockPanel Height="46" LastChildFill="False">
             <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE9D9;" FontSize="18" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="4,0,10,0" />
             <TextBlock DockPanel.Dock="Left" Text="Trajectory Log Tools" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <Button DockPanel.Dock="Right" Command="{Binding ShowSettingsCommand}" ToolTip="Settings" AutomationProperties.Name="Settings" Padding="8,6" Margin="4,0,0,0">
+            <Button DockPanel.Dock="Right" x:Name="HelpButton" Command="ApplicationCommands.Help" ToolTip="Help: the user guide for this page (F1)" AutomationProperties.Name="Help" Padding="8,6" Margin="4,0,0,0">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE897;" />
+            </Button>
+            <Button DockPanel.Dock="Right" x:Name="SettingsButton" Command="{Binding ShowSettingsCommand}" ToolTip="Settings" AutomationProperties.Name="Settings" Padding="8,6" Margin="4,0,0,0">
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" />
             </Button>
-            <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding AngleChoices}" SelectedIndex="{Binding AngleIndex}" Width="150" Margin="0,0,8,0" VerticalAlignment="Center"
+            <ComboBox DockPanel.Dock="Right" x:Name="AnglesBox" ItemsSource="{Binding AngleChoices}" SelectedIndex="{Binding AngleIndex}" Width="150" Margin="0,0,8,0" VerticalAlignment="Center"
                       ToolTip="Angles shown for gantry and collimator (IEC 61217 by default)" AutomationProperties.Name="Angles shown" />
             <TextBlock DockPanel.Dock="Right" Text="Angles" Style="{StaticResource Secondary}" VerticalAlignment="Center" Margin="0,0,6,0" />
-            <Button DockPanel.Dock="Right" Command="{Binding ToggleThemeCommand}" ToolTip="Light / dark" AutomationProperties.Name="Switch between light and dark" Padding="8,6">
+            <Button DockPanel.Dock="Right" x:Name="ThemeButton" Command="{Binding ToggleThemeCommand}" ToolTip="Light / dark" AutomationProperties.Name="Switch between light and dark" Padding="8,6">
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE793;" />
             </Button>
         </DockPanel>

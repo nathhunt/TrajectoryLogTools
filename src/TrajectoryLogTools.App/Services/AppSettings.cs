@@ -40,6 +40,20 @@ namespace TrajectoryLogTools.App.Services
 
         public static AppSettings Current { get; private set; } = Load();
 
+        /// <summary>
+        /// Uses <paramref name="settings"/> from now on, kept in memory only (nothing is read from or
+        /// written to settings.json). For the documentation screenshots (tools/TrajectoryLogTools.DocShots),
+        /// so they never depend on, or change, the settings of whoever runs them.
+        /// </summary>
+        internal static void UseInMemory(AppSettings settings)
+        {
+            settings.InMemory = true;
+            Current = settings;
+        }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        internal bool InMemory { get; private set; }
+
         static AppSettings Load()
         {
             try
@@ -57,6 +71,7 @@ namespace TrajectoryLogTools.App.Services
 
         public void Save()
         {
+            if (InMemory) return;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));

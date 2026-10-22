@@ -28,4 +28,7 @@
   <Target Name="CopyLauncher" AfterTargets="Publish" Condition=" '$(RuntimeIdentifier)' != '' ">
     <Copy SourceFiles="..\..\launcher\LaunchTrajectoryLogConverter.cs" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
   </Target>
+
+  <!-- The user guide (Help\ beside the exe) -->
+  <Import Project="..\Help.targets" />
 </Project>

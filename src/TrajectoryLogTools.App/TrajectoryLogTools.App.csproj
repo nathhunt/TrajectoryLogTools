@@ -25,6 +25,10 @@
     <PackageReference Include="ScottPlot.WPF" Version="5.1.59" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The documentation screenshot tool keeps the settings in memory (AppSettings.UseInMemory). -->
+    <InternalsVisibleTo Include="TrajectoryLogTools.DocShots" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
     <ProjectReference Include="..\TrajectoryLogTools.Charts\TrajectoryLogTools.Charts.csproj" />
     <ProjectReference Include="..\TrajectoryLogTools.Wpf\TrajectoryLogTools.Wpf.csproj" />
@@ -50,4 +54,7 @@
     <Message Importance="high" Text="Deploy folder: $([System.IO.Path]::GetFullPath($(PublishDir)))" />
     <Message Importance="high" Text="Converter deploy folder: $(ConverterPublishDir)" />
   </Target>
+
+  <!-- The user guide (Help\ beside the exe) -->
+  <Import Project="..\Help.targets" />
 </Project>

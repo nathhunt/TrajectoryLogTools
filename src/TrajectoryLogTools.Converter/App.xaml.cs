@@ -22,6 +22,8 @@ namespace TrajectoryLogTools.Converter
             AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled (closing)", a.ExceptionObject as Exception);
             TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Background task", a.Exception); a.SetObserved(); };
             WheelScrolling.Register();
+            // F1 in every window: the converter's pages of the user guide
+            Help.Register(w => w is SettingsWindow ? "how-to/converter-folders.html" : "how-to/convert-days-logs.html");
             var window = new MainWindow();
             MainWindow = window;
             window.Show();   // before the view model: it may show a message owned by the window

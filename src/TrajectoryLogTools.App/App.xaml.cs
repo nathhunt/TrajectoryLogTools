@@ -24,6 +24,7 @@ namespace TrajectoryLogTools.App
             TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Background task", a.Exception); a.SetObserved(); };
             Theme.Apply(AppSettings.Current.Theme);
             WheelScrolling.Register();
+            Help.Register(HelpPages.For);   // F1 in every window
             var window = new MainWindow();
             MainWindow = window;
             window.Show();   // before the view model: it may open a dialog owned by the window
