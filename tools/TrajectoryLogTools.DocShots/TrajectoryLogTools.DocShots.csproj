@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- DocShots: makes the user guide's screenshots (docs/user/images) from the real windows of
+       Trajectory Log Tools and Trajectory Log Converter, with synthetic demo logs. A developer
+       tool: not in the solution's publish and not in either deployed folder. Windows only.
+         dotnet run (Release) of tools/TrajectoryLogTools.DocShots
+       (VS Code: Run Task > docs: screenshots). See docs/CONTRIBUTING-docs.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.14393.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TrajectoryLogTools.DocShots</RootNamespace>
+    <AssemblyName>TrajectoryLogTools.DocShots</AssemblyName>
+    <StartupObject>TrajectoryLogTools.DocShots.Program</StartupObject>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- The version the windows show is the plain version (no git commit), so the images don't change with every commit. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TrajectoryLogTools.App\TrajectoryLogTools.App.csproj" />
+    <ProjectReference Include="..\..\src\TrajectoryLogTools.Converter\TrajectoryLogTools.Converter.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The synthetic logs of the tests (built per the Varian specification), shared, not copied. -->
+    <Compile Include="..\..\tests\TrajectoryLogTools.Tests\TestSupport\LogBuilder.cs" Link="Shared\LogBuilder.cs" />
+    <Compile Include="..\..\tests\TrajectoryLogTools.Tests\TestSupport\DeliverySimulator.cs" Link="Shared\DeliverySimulator.cs" />
+    <!-- The apps' icons, for the window frame drawn around each screenshot. -->
+    <None Include="..\..\src\TrajectoryLogTools.App\app.ico" Link="Icons\tools.ico" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\TrajectoryLogTools.Converter\app.ico" Link="Icons\converter.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

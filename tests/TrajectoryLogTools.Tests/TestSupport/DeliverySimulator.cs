@@ -156,6 +156,8 @@ namespace TrajectoryLogTools.Tests
         /// no planned MU; the field's own control point 0 is the next one.
         /// </summary>
         public bool HalcyonTransition;
+        /// <summary>The header's metadata text; null = "Patient ID: SIM001, Plan Name: Simulated".</summary>
+        public string Metadata;
     }
 
     /// <summary>Builds a Halcyon-style trajectory log (.bin) of a simulated delivery.</summary>
@@ -301,7 +303,7 @@ namespace TrajectoryLogTools.Tests
                 b.Subbeams.Add(new Subbeam { ControlPoint = d.HalcyonTransition && f > 0 ? off - 1 : off, MU = (float)fl.Mu, RadTime = 60f, Seq = f, Name = fl.Name });
                 off += fl.Cps;
             }
-            b.Metadata = "Patient ID:\tSIM001\r\nPlan Name:\tSimulated\r\n";
+            b.Metadata = d.Metadata ?? "Patient ID:\tSIM001\r\nPlan Name:\tSimulated\r\n";
             b.Value = (s, axis, k, actual) =>
             {
                 Snap x = snaps[s];
