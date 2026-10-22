@@ -191,9 +191,9 @@ Publishing doesn't overwrite the settings file. Example:
 }
 ```
 
-It is published into the same folder as Trajectory Log Tools (sharing its runtime files). To
-deploy it on its own: `dotnet publish src/TrajectoryLogTools.Converter -p:PublishProfile=Deploy`
-(`Deploy\TrajectoryLogConverter\`).
+It is published into its own folder, `Deploy\TrajectoryLogConverter\`, which has its own runtime
+and shares nothing with Trajectory Log Tools. Publishing Trajectory Log Tools publishes it too. To
+publish only the converter: `dotnet publish src/TrajectoryLogTools.Converter -p:PublishProfile=Deploy`.
 
 **Icons:** both exes carry an icon (blue: Trajectory Log Tools; orange: the converter), drawn by
 `scripts/make_icons.py`.
@@ -217,21 +217,27 @@ The first build downloads packages from nuget.org. `global.json` asks for a .NET
 | Tests | **Test > Run All Tests** | **Run Task** > *test* | `dotnet test tests/TrajectoryLogTools.Tests` |
 | Publish (deploy folder) | Right-click **TrajectoryLogTools.App > Publish** > *Deploy* > **Publish** | **Run Task** > *publish* | `dotnet publish src/TrajectoryLogTools.App -p:PublishProfile=Deploy` or `scripts\publish.ps1` |
 
-Publishing writes **`Deploy\TrajectoryLogTools\`**, one folder (about 180 MB) that holds:
+Publishing writes two separate folders. Each is self-contained (its own copy of the .NET 10
+runtime), so either one can be deployed, moved or removed without the other:
 
 ```
-TrajectoryLogTools.exe            the application
-TrajectoryLogConverter.exe        the v5.1 -> v4.0 converter
-TrajectoryLogCli.exe              the command-line tool
-LaunchTrajectoryLogTools.cs       the Eclipse launcher script for the application
-LaunchTrajectoryLogConverter.cs   the Eclipse launcher script for the converter
-*.dll                          the .NET 10 runtime and libraries - keep everything together
+Deploy\TrajectoryLogTools\             (about 180 MB)
+  TrajectoryLogTools.exe              the application
+  TrajectoryLogCli.exe                the command-line tool
+  LaunchTrajectoryLogTools.cs         the Eclipse launcher script for the application
+  *.dll                               the .NET 10 runtime and libraries - keep everything together
+Deploy\TrajectoryLogConverter\         (about 160 MB)
+  TrajectoryLogConverter.exe          the v5.1 -> v4.0 converter
+  LaunchTrajectoryLogConverter.cs     the Eclipse launcher script for the converter
+  TrajectoryLogConverter.settings.json  its default folders (written by Settings, kept on redeploy)
+  *.dll                               its own .NET 10 runtime and libraries
 ```
 
 It is a self-contained **folder**, not a single-file exe. A single-file WPF app unpacks native
 DLLs to `%TEMP%` when it first starts, and application whitelisting on clinical PCs and Citrix
 servers often blocks that. To publish straight to a share, use
-`scripts\publish.ps1 -DeployDir \\server\ESAPI\TrajectoryLogTools` or the VS Code task *publish to folder*.
+`scripts\publish.ps1 -DeployDir \\server\ESAPI\TrajectoryLogTools` or the VS Code task *publish to folder*;
+the converter then goes to `\\server\ESAPI\TrajectoryLogConverter` (beside it).
 
 The `.vscode` folder has tasks for: build, release build, CLI-only build, clean, rebuild,
 publish, publish to folder, tests, tests with coverage, the CLI commands, the round-trip test
@@ -255,8 +261,8 @@ can be .NET 10.
 3. Copy the script into your Eclipse scripts folder (e.g. `\\<server>\va_data$\ProgramData\Vision\PublishedScripts`)
    and run it from **Tools > Scripts**.
 4. For the converter, the same with `LaunchTrajectoryLogConverter.cs` (its `ExePath` points to
-   `TrajectoryLogConverter.exe` in the same folder). Then open it once and set the default
-   folders in **Settings**.
+   `TrajectoryLogConverter.exe` in the deployed `TrajectoryLogConverter` folder, copied whole like
+   the first). Then open it once and set the default folders in **Settings**.
 
 The first time, check the line at the bottom of the window. It shows the Windows version, the
 .NET runtime and the folder the app runs from. If the app doesn't start, the usual cause is

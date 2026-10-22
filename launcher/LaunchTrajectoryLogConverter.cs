@@ -12,8 +12,8 @@
 // closing Eclipse does not stop it.
 //
 // Setup: set ExePath below to TrajectoryLogConverter.exe in the deployed folder (a local path or
-// a UNC share; keep the whole folder together). It is published into the same folder as Trajectory
-// Log Tools.
+// a UNC share; keep the whole folder together). It has its own folder, TrajectoryLogConverter,
+// separate from Trajectory Log Tools'.
 //
 // The script reads no patient data, so it runs with or without a patient open and does not need
 // to be approved as a writeable script.

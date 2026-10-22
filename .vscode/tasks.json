@@ -53,7 +53,7 @@
         },
 
         // ------------------------------------------------------------------------------------
-        // Publish: Deploy\TrajectoryLogTools\ (self-contained, win-x64) = what goes on the share
+        // Publish: Deploy\TrajectoryLogTools\ and Deploy\TrajectoryLogConverter\ (each self-contained, win-x64) = what goes on the share
         // ------------------------------------------------------------------------------------
         {
             "label": "publish",
@@ -172,7 +172,7 @@
             "label": "open Deploy folder",
             "type": "process",
             "command": "explorer.exe",
-            "args": ["${workspaceFolder}\\Deploy\\TrajectoryLogTools"],
+            "args": ["${workspaceFolder}\\Deploy"],
             "presentation": { "reveal": "never" },
             "problemMatcher": []
         }
