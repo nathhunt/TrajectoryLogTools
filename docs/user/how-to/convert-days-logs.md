@@ -20,7 +20,8 @@ Before the first time, [set the converter's folders](converter-folders.md).
 6. Select **Convert _n_ logs** (6).
 
 When it finishes, each log reads **Converted** (or why it was skipped or failed), and the total is
-shown at the bottom:
+shown at the bottom. A log whose CRC checksum doesn't verify (it may be damaged) isn't converted: it
+reads **Failed: Input CRC …**. Check the log with Trajectory Log Tools (its **Raw** tab).
 
 ![After converting](../images/converter-done.png){ .shot }
 

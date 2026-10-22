@@ -85,8 +85,8 @@ namespace TrajectoryLogTools.DocShots
             AppSettings.Current.RecentFiles = new List<string> { s.Demo.ProstateFx3, s.Demo.HeadNeck, s.Demo.Pelvis[0] };
             var (w, vm) = await OpenMain(s);
             await s.Shoot(w, "start-page", new ShotOptions()
-                .Mark(1, r => Ui.Button(r, "Open files…"), "top")
-                .Mark(2, r => Ui.Button(r, "Add from folder…"), "top")
+                .Mark(1, r => Ui.Button(r, "Open files…"), "bottom")
+                .Mark(2, r => Ui.Button(r, "Add from folder…"), "bottom")
                 .Mark(3, r => Ui.Text(r, "Recent logs"))
                 .Mark(4, r => Named(w, "HelpButton"), "bottom"));
         }
@@ -331,6 +331,7 @@ namespace TrajectoryLogTools.DocShots
             vm.ToCsv = true;
             await vm.ExportCommand.ExecuteAsync(null);
             await Ui.WaitUntil(() => vm.IsDone, "the export");
+            await Ui.ScrollToTop(Ui.Text(w, "Logs"), 24);
             await s.Shoot(w, "export-done", new ShotOptions()
                 .Mark(1, r => Ui.Text(r, "Logs"), "left")
                 .Mark(2, r => Ui.Button(r, "Open folder"), "top"));
