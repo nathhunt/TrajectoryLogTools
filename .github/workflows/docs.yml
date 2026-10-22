@@ -71,7 +71,13 @@ jobs:
             if (-not (Test-Path $f)) { Write-Error "Missing after publish: $f"; exit 1 }
           }
           if (Test-Path 'Deploy\TrajectoryLogTools\TrajectoryLogTools.DocShots.dll') { Write-Error 'DocShots must not be deployed'; exit 1 }
-          Write-Host 'Both deploy folders have Help\index.html.'
+          # Every page the Help buttons and F1 open (HelpPages.cs, the converter's App.xaml.cs) must be in the guide.
+          $pages = Select-String -Path src/TrajectoryLogTools.App/Services/HelpPages.cs, src/TrajectoryLogTools.Converter/App.xaml.cs `
+                     -Pattern '"([a-z-]+/[a-z-]+\.html|index\.html)"' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+          foreach ($p in $pages) {
+            if (-not (Test-Path "Deploy\TrajectoryLogTools\Help\$p")) { Write-Error "A Help page is missing from the guide: $p"; exit 1 }
+          }
+          Write-Host "Both deploy folders have Help\index.html, and the guide has all $($pages.Count) pages the apps open."
 
       - name: Upload the guide
         uses: actions/upload-artifact@v5

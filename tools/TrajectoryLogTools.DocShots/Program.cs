@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -68,6 +69,15 @@ namespace TrajectoryLogTools.DocShots
                 Fail("Unhandled: " + e.Exception);
             };
 
+            // The last resort: a run that hangs (e.g. on a modal window) ends after 30 minutes with an error.
+            var watchdog = new System.Threading.Thread(() =>
+            {
+                System.Threading.Thread.Sleep(TimeSpan.FromMinutes(30));
+                Console.Error.WriteLine("FAILED DocShots did not finish within 30 minutes.");
+                Environment.Exit(3);
+            }) { IsBackground = true };
+            watchdog.Start();
+
             int code = 0;
             app.Startup += async (s, e) =>
             {
@@ -81,7 +91,14 @@ namespace TrajectoryLogTools.DocShots
                     foreach (Scenario sc in Scenarios.All.Where(x => only.Count == 0 || only.Contains(x.Name)))
                     {
                         Log(sc.Name);
-                        try { await sc.Run(shots); }
+                        try
+                        {
+                            // A scenario that doesn't finish (e.g. a message box waiting for a click) fails, and the others go on.
+                            Task run = sc.Run(shots);
+                            if (await Task.WhenAny(run, Task.Delay(TimeSpan.FromMinutes(4))) != run)
+                                Fail(sc.Name + ": did not finish within 4 minutes (a message box or dialog may be open).");
+                            else await run;
+                        }
                         catch (Exception ex) { Fail(sc.Name + ": " + ex); }
                         finally { shots.CloseAll(); }
                     }

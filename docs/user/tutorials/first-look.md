@@ -36,7 +36,7 @@ Across the top of the page are cards:
 - **MLC actual − expected**: the largest leaf difference with the beam on, and its RMS.
 - **File**: whether the file's CRC checksum verifies, and its MLC.
 
-In the example, the delivery had one interruption of about 1.2 s in Arc 1.
+In the example, the delivery had one interruption of 1.8 s in Arc 1.
 
 ## 3. Follow the delivery timeline
 

@@ -115,7 +115,7 @@ namespace TrajectoryLogTools.DocShots
                 .Mark(1, r => ItemsFor(r, page.Facts), "topleft")
                 .Mark(2, r => Named(w, "TimelineBar"), "topleft")
                 .Mark(3, r => Ui.Find<DataGrid>(r, g => ReferenceEquals(g.ItemsSource, page.Fields)), "topleft")
-                .Mark(4, r => Ui.Find<TabPanel>(PagePane(w)), "right"));
+                .Mark(4, r => Ui.Text(PagePane(w), "Raw"), "right"));
 
             page.SelectedTab = 1;
             await Ui.Settle(800);
@@ -259,7 +259,7 @@ namespace TrajectoryLogTools.DocShots
             await s.Shoot(dw, "rebuild-details", new ShotOptions()
                 .Mark(1, r => Ui.Find<StatusChip>(r), "left")
                 .Mark(2, r => ItemsFor(r, details.Cards), "topleft")
-                .Mark(3, r => Ui.Find<TabPanel>(r), "right"));
+                .Mark(3, r => Ui.Text(r, "Full report"), "right"));
 
             // The three statuses, as the chips show them
             var chips = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8) };

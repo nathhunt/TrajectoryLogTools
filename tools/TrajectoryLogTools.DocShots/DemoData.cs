@@ -62,7 +62,7 @@ namespace TrajectoryLogTools.DocShots
             ProstateFx3 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 19, 8, 42, 10), vmat, Delivery(33, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1"));
             SimDelivery fx4 = Delivery(34, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1");
             fx4.LeafLagCp = 0.07;
-            fx4.Interruptions.Add(Tuple.Create(0, 17.3, 90));   // 1.8 s interruption in Arc 1
+            fx4.Interruptions.Add(Tuple.Create(0, 17.25, 90));   // 1.8 s interruption in Arc 1 (17.25: between two samples, so it is added once)
             ProstateFx4 = Write(Logs, "Prostate_VMAT", Today.Add(new TimeSpan(8, 45, 30)), vmat, fx4);
 
             SimPlan imrt = SimPlan.Imrt();
