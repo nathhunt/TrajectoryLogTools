@@ -1,0 +1,26 @@
+<Project>
+  <!-- The user guide in the deploy folder: after publishing, the built guide (site\ at the
+       repository root, made by "python -m mkdocs build" from docs\user) is copied to Help\ beside
+       the exe, where the Help button and F1 open it. Imported by both apps, so each deploy folder
+       gets its own copy.
+
+       The guide is copied, not built here: publishing needs no Python. When site\index.html is
+       missing, publishing goes on with a warning and the app shows a message instead of the guide.
+       Build the guide first (VS Code: Run Task > docs: build), or download the "user-guide-site"
+       artifact of the "User guide" GitHub workflow into site\. HelpSiteDir points elsewhere. -->
+  <Target Name="CopyUserGuide" AfterTargets="Publish" Condition=" '$(RuntimeIdentifier)' != '' ">
+    <PropertyGroup>
+      <HelpSiteDir Condition=" '$(HelpSiteDir)' == '' ">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\site'))</HelpSiteDir>
+      <HelpTargetDir>$([System.IO.Path]::Combine($(PublishDir), 'Help'))</HelpTargetDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <UserGuideFile Include="$(HelpSiteDir)\**\*" />
+    </ItemGroup>
+    <RemoveDir Condition="Exists('$(HelpSiteDir)\index.html')" Directories="$(HelpTargetDir)" />
+    <Copy Condition="Exists('$(HelpSiteDir)\index.html')" SourceFiles="@(UserGuideFile)"
+          DestinationFiles="@(UserGuideFile->'$(HelpTargetDir)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Message Condition="Exists('$(HelpSiteDir)\index.html')" Importance="high" Text="User guide: $(HelpTargetDir)" />
+    <Warning Condition="!Exists('$(HelpSiteDir)\index.html')" Code="TLT0001"
+             Text="The user guide isn't built ($(HelpSiteDir)\index.html not found), so this deploy folder has no Help folder. Build it with 'python -m mkdocs build' (VS Code: docs: build), or download the 'user-guide-site' artifact of the 'User guide' GitHub workflow into site\, then publish again." />
+  </Target>
+</Project>
