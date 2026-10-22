@@ -69,10 +69,16 @@ namespace TrajectoryLogTools.DocShots
             if (d is TextBlock t) return string.IsNullOrEmpty(t.Text) ? string.Concat(t.Inlines.OfType<Run>().Select(r => r.Text)) : t.Text;
             if (d is ContentControl c)
             {
-                if (c.Content is string s) return s;
+                if (c.Content is string s) return Displayed(s);
                 return string.Join(" ", Descendants(c).OfType<TextBlock>().Select(TextOf).Where(x => !string.IsNullOrEmpty(x)));
             }
             return null;
+        }
+
+        /// <summary>A label as a content control shows it: "_" marks an access key and isn't shown; "__" shows one "_".</summary>
+        static string Displayed(string s)
+        {
+            return s.Replace("__", "\u0001").Replace("_", "").Replace("\u0001", "_");
         }
 
         /// <summary>The visible button (or check box, radio button, ...) whose text is <paramref name="text"/>.</summary>

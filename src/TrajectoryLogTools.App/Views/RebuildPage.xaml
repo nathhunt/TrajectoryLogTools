@@ -131,7 +131,8 @@
                         <TextBox Text="{Binding OtherFolder, UpdateSourceTrigger=PropertyChanged}" Margin="28,6,0,0" AutomationProperties.Name="Other folder"
                                  Visibility="{Binding SaveNextToLog, Converter={StaticResource InverseBoolToVisibility}}" />
                         <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Files are named after their log: &lt;log&gt;[_subN]_reconstructed_MLC.csv." />
-                        <CheckBox Content="Also save each field's QA report (_report.txt)" IsChecked="{Binding SaveReports}" Margin="0,8,0,0"
+                        <!-- "__": a single _ would be taken as an access key and not shown -->
+                        <CheckBox Content="Also save each field's QA report (__report.txt)" IsChecked="{Binding SaveReports}" Margin="0,8,0,0"
                                   ToolTip="The report is in Details either way; this also writes it beside the MLC file" />
 
                         <Expander Margin="0,16,0,0">

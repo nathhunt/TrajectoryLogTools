@@ -56,7 +56,7 @@
                                     <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding CouchChoices}" SelectedIndex="{Binding CouchIndex}" HorizontalAlignment="Stretch" Margin="0,6,0,0"
                                               AutomationProperties.Name="Couch rotation, pitch and roll" ToolTip="Couch rotation, pitch and roll" />
                                 </Grid>
-                                <CheckBox Content="Save the removed time axis (_time.csv)" IsChecked="{Binding TimeCsv}" />
+                                <CheckBox Content="Save the removed time axis (__time.csv)" IsChecked="{Binding TimeCsv}" />
                                 <!-- One log: patient, plan and field names -->
                                 <StackPanel Margin="0,8,0,0" Visibility="{Binding CanEditHeader, Converter={StaticResource BoolToVisibility}}">
                                     <Button Content="Header details…" Command="{Binding EditHeaderCommand}" HorizontalAlignment="Left" Padding="10,4"
@@ -78,7 +78,7 @@
                     </Border>
                     <Border Style="{StaticResource Box}" Margin="0,0,8,8">
                         <StackPanel>
-                            <CheckBox IsChecked="{Binding FullCsv}" Content="Full dump as CSV (_full.csv)" FontWeight="SemiBold" />
+                            <CheckBox IsChecked="{Binding FullCsv}" Content="Full dump as CSV (__full.csv)" FontWeight="SemiBold" />
                             <TextBlock Text="The whole file exactly as stored: header fields with byte offsets, subbeams, every value, CRC." Style="{StaticResource Hint}" Margin="28,2,0,0" />
                         </StackPanel>
                     </Border>
