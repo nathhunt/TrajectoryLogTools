@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace TrajectoryLogTools.App.Services
+namespace TrajectoryLogTools.Wpf
 {
     public static class ErrorLog
     {
@@ -21,8 +21,9 @@ namespace TrajectoryLogTools.App.Services
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
                 var sb = new StringBuilder();
+                var app = (System.Reflection.Assembly.GetEntryAssembly() ?? typeof(ErrorLog).Assembly).GetName();
                 sb.AppendLine("==== " + TrajectoryLogTools.Core.Fmt.DateTimeSeconds(DateTime.Now) + "  " + where + "  (" +
-                              typeof(ErrorLog).Assembly.GetName().Version + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
+                              app.Name + " " + app.Version + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
                               System.Runtime.InteropServices.RuntimeInformation.OSDescription + ")");
                 sb.AppendLine(ex == null ? "(no details)" : ex.ToString());
                 sb.AppendLine();

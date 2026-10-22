@@ -25,35 +25,20 @@ namespace TrajectoryLogTools.App.ViewModels
     {
         [ObservableProperty] private string _folder = "";
         [ObservableProperty] private bool _includeSubfolders = true;
-        [ObservableProperty] private bool _useDateRange;
-        [ObservableProperty] private DateTime? _fromDate = DateTime.Today.AddDays(-7);
-        [ObservableProperty] private DateTime? _toDate = DateTime.Today;
-        // The period's start and end times (with FromDate / ToDate): the whole of both days by default.
-        [ObservableProperty] private TimeSpan _fromTime = TimeSpan.Zero;
-        [ObservableProperty] private TimeSpan _toTime = new TimeSpan(23, 59, 0);
-        // Time of day, on every day (within the period when that is on too).
-        [ObservableProperty] private bool _useTimeOfDay;
-        [ObservableProperty] private TimeSpan _dayFromTime = new TimeSpan(8, 0, 0);
-        [ObservableProperty] private TimeSpan _dayToTime = new TimeSpan(17, 0, 0);
+        /// <summary>By treatment date and time (shared with the v4.0 converter).</summary>
+        public LogFilter Filter { get; } = new LogFilter();
         [ObservableProperty] private string _result = "";
 
         public List<LogFile> Found { get; private set; } = new List<LogFile>();
 
         public AddFromFolderViewModel(string folder)
         {
+            Filter.Changed += (o, e) => Search();
             if (folder != null && Directory.Exists(folder)) { _folder = folder; Search(); }
         }
 
         partial void OnFolderChanged(string value) { Search(); }
         partial void OnIncludeSubfoldersChanged(bool value) { Search(); }
-        partial void OnUseDateRangeChanged(bool value) { Search(); }
-        partial void OnFromDateChanged(DateTime? value) { Search(); }
-        partial void OnToDateChanged(DateTime? value) { Search(); }
-        partial void OnUseTimeOfDayChanged(bool value) { Search(); }
-        partial void OnFromTimeChanged(TimeSpan value) { Search(); }
-        partial void OnToTimeChanged(TimeSpan value) { Search(); }
-        partial void OnDayFromTimeChanged(TimeSpan value) { Search(); }
-        partial void OnDayToTimeChanged(TimeSpan value) { Search(); }
 
         [RelayCommand]
         void Browse()
@@ -68,31 +53,17 @@ namespace TrajectoryLogTools.App.ViewModels
             string f = (Folder ?? "").Trim().Trim('"');
             if (f.Length == 0) { Result = ""; return; }
             if (!Directory.Exists(f)) { Result = "Folder not found."; return; }
-            // Period: from the start date and time to the end date and time (to the end of that minute).
-            TimeSpan p0 = FromTime, p1 = ToTime, t0 = DayFromTime, t1 = DayToTime;
-            DateTime from = (FromDate ?? DateTime.Today).Date + p0;
-            DateTime to = (ToDate ?? DateTime.Today).Date + p1 + TimeSpan.FromMinutes(1) - TimeSpan.FromTicks(1);
-            if (UseDateRange && to < from)
+            var settings = new FindSettings { FolderMode = true, Input = f, IncludeSubfolders = IncludeSubfolders };
+            string error = Filter.ApplyTo(settings);
+            if (error != null)
             {
-                Result = "The period ends before it starts.";
-                Found = new List<LogFile>();
+                Result = error;
                 OnPropertyChanged(nameof(CanAdd));
                 return;
             }
             try
             {
-                Found = LogFinder.Find(new FindSettings
-                {
-                    FolderMode = true,
-                    Input = f,
-                    IncludeSubfolders = IncludeSubfolders,
-                    UseDateRange = UseDateRange,
-                    From = from,
-                    To = to,
-                    UseTimeOfDay = UseTimeOfDay,
-                    TimeFrom = t0,
-                    TimeTo = t1.Add(TimeSpan.FromMinutes(1)).Subtract(TimeSpan.FromTicks(1)),   // to the end of that minute
-                });
+                Found = LogFinder.Find(settings);
                 Result = Found.Count == 0 ? "No logs found." : Found.Count + (Found.Count == 1 ? " log found." : " logs found.");
                 if (Found.Count > 200) Result += " That's a lot to open at once; consider a date range.";
             }

@@ -13,6 +13,9 @@ combines four earlier tools:
 The analyses work straight from the `.bin` log; you no longer have to export a CSV first. CSV
 exports, from this tool or the old converter, still work as input.
 
+A second, small app, **Trajectory Log Converter**, does one job: converting v5.1 logs to v4.0
+(see [below](#trajectory-log-converter)). It uses the same conversion code.
+
 ## The application
 
 The window has two parts: **Open logs** on the left and the selected log (or what you're doing
@@ -156,6 +159,45 @@ tolerances, and clearing the recent logs list. They are saved per user in
 The app opens no ESAPI session and needs no Eclipse login or script approval. It only reads and
 writes files.
 
+## Trajectory Log Converter
+
+`TrajectoryLogConverter.exe`, started from Eclipse by `LaunchTrajectoryLogConverter.cs`, converts
+v5.1 logs to v4.0 and nothing else:
+* **From:** the logs in the default input folder (optionally with subfolders), filtered by when
+  they were treated, as in Add from folder: a period (start date and time to end date and time)
+  and / or times of day on every day. Or **one file**, chosen with *Choose file…*.
+* **The list** shows, compactly, every log that will be converted (treated, patient · plan ·
+  fields, file, subfolder), each with a tick to leave it out, and a count. Logs that won't be
+  converted are hidden unless asked for, with the reason: already v4.0, already in the output
+  folder, same file name as another log in the list, can't be read, or the output folder is
+  the log's own folder.
+* **To:** the default output folder, each log keeping its file name. *Replace logs already in
+  the output folder* is off by default.
+* **What is written:** the v4.0 log only, always the same way: machine specifier TrueBeam (0),
+  serial number removed, couch axes kept, everything else in the header (patient, plan, field
+  names, metadata) as it is. No time-axis file, CSV or run log.
+
+**Settings** holds the default input and output folders (and *include subfolders*). They are
+saved in `TrajectoryLogConverter.settings.json` **in the app's folder**, so everyone using that
+copy gets the same folders; whoever changes them needs write access to the folder. A folder
+chosen in the main window is for that session only (*Back to the default folder* returns).
+Publishing doesn't overwrite the settings file. Example:
+
+```json
+{
+  "InputFolder": "\\\\server\\Halcyon\\TrajectoryLogs",
+  "OutputFolder": "\\\\server\\Halcyon\\TrajectoryLogs v4",
+  "IncludeSubfolders": false
+}
+```
+
+It is published into the same folder as Trajectory Log Tools (sharing its runtime files). To
+deploy it on its own: `dotnet publish src/TrajectoryLogTools.Converter -p:PublishProfile=Deploy`
+(`Deploy\TrajectoryLogConverter\`).
+
+**Icons:** both exes carry an icon (blue: Trajectory Log Tools; orange: the converter), drawn by
+`scripts/make_icons.py`.
+
 ## Requirements
 
 | To | You need |
@@ -178,9 +220,11 @@ The first build downloads packages from nuget.org. `global.json` asks for a .NET
 Publishing writes **`Deploy\TrajectoryLogTools\`**, one folder (about 180 MB) that holds:
 
 ```
-TrajectoryLogTools.exe         the application
-TrajectoryLogCli.exe           the command-line tool
-LaunchTrajectoryLogTools.cs    the Eclipse launcher script
+TrajectoryLogTools.exe            the application
+TrajectoryLogConverter.exe        the v5.1 -> v4.0 converter
+TrajectoryLogCli.exe              the command-line tool
+LaunchTrajectoryLogTools.cs       the Eclipse launcher script for the application
+LaunchTrajectoryLogConverter.cs   the Eclipse launcher script for the converter
 *.dll                          the .NET 10 runtime and libraries - keep everything together
 ```
 
@@ -210,6 +254,9 @@ can be .NET 10.
    optionally `StartFolder`, the folder the Open dialogs start in.
 3. Copy the script into your Eclipse scripts folder (e.g. `\\<server>\va_data$\ProgramData\Vision\PublishedScripts`)
    and run it from **Tools > Scripts**.
+4. For the converter, the same with `LaunchTrajectoryLogConverter.cs` (its `ExePath` points to
+   `TrajectoryLogConverter.exe` in the same folder). Then open it once and set the default
+   folders in **Settings**.
 
 The first time, check the line at the bottom of the window. It shows the Windows version, the
 .NET runtime and the folder the app runs from. If the app doesn't start, the usual cause is
@@ -303,10 +350,13 @@ src/
   TrajectoryLogTools.Charts     ScottPlot charts shared by the GUI and the CLI
   TrajectoryLogTools.Cli        TrajectoryLogCli.exe
   TrajectoryLogTools.App        TrajectoryLogTools.exe (WPF, Fluent theme, MVVM)
-launcher/LaunchTrajectoryLogTools.cs   Eclipse script (.NET Framework 4.8, compiled by Eclipse)
+  TrajectoryLogTools.Converter  TrajectoryLogConverter.exe (WPF): v5.1 -> v4.0 from default folders
+  TrajectoryLogTools.Wpf        what the two apps share: styles, converters, time picker, log filter
+                                panel, dialogs, error log, NZ dates, wheel scrolling
+launcher/                       Eclipse scripts (.NET Framework 4.8, compiled by Eclipse), one per app
 tests/TrajectoryLogTools.Tests  xUnit: the converter's 363 tests + analysis, CLI and golden tests
 reference/                      the original tools, unchanged, and the golden-file generator
-scripts/                        publish.ps1, RoundTripTest.ps1
+scripts/                        publish.ps1, RoundTripTest.ps1, make_icons.py
 docs/engine-notes.md            how the engine converts and exports
 ```
 

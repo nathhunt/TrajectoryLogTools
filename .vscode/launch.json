@@ -26,6 +26,17 @@
             "stopAtEntry": false
         },
         {
+            "name": "Converter (v5.1 -> v4.0)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/TrajectoryLogTools.Converter/bin/Debug/net10.0-windows10.0.19041.0/TrajectoryLogConverter.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "CLI (convert / export)",
             "type": "coreclr",
             "request": "launch",

@@ -19,7 +19,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace TrajectoryLogTools.App.Services
+namespace TrajectoryLogTools.Wpf
 {
     public static class WheelScrolling
     {

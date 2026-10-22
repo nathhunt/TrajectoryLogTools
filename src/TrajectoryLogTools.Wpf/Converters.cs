@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace TrajectoryLogTools.App.Services
+namespace TrajectoryLogTools.Wpf
 {
     /// <summary>true -> false and back (two-way).</summary>
     public sealed class NotConverter : IValueConverter

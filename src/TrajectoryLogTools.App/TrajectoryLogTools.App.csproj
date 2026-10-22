@@ -13,6 +13,8 @@
     <RootNamespace>TrajectoryLogTools.App</RootNamespace>
     <AssemblyName>TrajectoryLogTools</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The exe's icon (Explorer, taskbar, shortcuts); WPF windows use it too. Drawn by scripts/make_icons.py. -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Application.ThemeMode (Fluent theme) is marked experimental in WPF. -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
     <!-- Only English UI resources in the published folder. -->
@@ -25,14 +27,19 @@
   <ItemGroup>
     <ProjectReference Include="..\TrajectoryLogTools.Analysis\TrajectoryLogTools.Analysis.csproj" />
     <ProjectReference Include="..\TrajectoryLogTools.Charts\TrajectoryLogTools.Charts.csproj" />
+    <ProjectReference Include="..\TrajectoryLogTools.Wpf\TrajectoryLogTools.Wpf.csproj" />
   </ItemGroup>
 
-  <!-- After publishing the GUI, publish the command-line tool into the same folder (same runtime,
-       so shared files are identical) and copy the Eclipse launcher script next to them. -->
+  <!-- After publishing the GUI, publish the command-line tool and the v4.0 converter into the same
+       folder (same runtime, so shared files are identical) and copy the Eclipse launcher scripts next
+       to them. The converter's settings file (TrajectoryLogConverter.settings.json) is not published,
+       so redeploying keeps the folders it was set up with. -->
   <Target Name="PublishCliAndLauncher" AfterTargets="Publish" Condition=" '$(RuntimeIdentifier)' != '' ">
     <MSBuild Projects="..\TrajectoryLogTools.Cli\TrajectoryLogTools.Cli.csproj" Targets="Restore;Publish" RemoveProperties="PublishProfile"
              Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishDir=$(PublishDir);_DummyToForceRestore=$(MSBuildProjectFullPath)" />
-    <Copy SourceFiles="..\..\launcher\LaunchTrajectoryLogTools.cs" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+    <MSBuild Projects="..\TrajectoryLogTools.Converter\TrajectoryLogTools.Converter.csproj" Targets="Restore;Publish" RemoveProperties="PublishProfile"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishDir=$(PublishDir);_DummyToForceRestore=$(MSBuildProjectFullPath)" />
+    <Copy SourceFiles="..\..\launcher\LaunchTrajectoryLogTools.cs;..\..\launcher\LaunchTrajectoryLogConverter.cs" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="Deploy folder: $([System.IO.Path]::GetFullPath($(PublishDir)))" />
   </Target>
 </Project>
