@@ -29,6 +29,8 @@ namespace TrajectoryLogTools.DocShots
         /// <summary>Several elements: the crop is the box around all of them.</summary>
         public Func<FrameworkElement, IEnumerable<FrameworkElement>> CropAll;
         public double Padding = 10;
+        /// <summary>Blank space added below the picture (DIPs), e.g. room for callouts under a strip of buttons.</summary>
+        public double SpaceBelow;
         /// <summary>Draw a window frame (title bar with the icon and title). Default: for whole windows.</summary>
         public bool? Frame;
         public List<Callout> Callouts = new List<Callout>();
@@ -85,10 +87,11 @@ namespace TrajectoryLogTools.DocShots
             // 3. frame and callouts
             bool frame = o.Frame ?? parts == null;
             Point origin = frame ? new Point(Border, Border + TitleBar) : new Point(0, 0);
-            double ow = area.Width + (frame ? 2 * Border : 0), oh = area.Height + (frame ? 2 * Border + TitleBar : 0);
+            double ow = area.Width + (frame ? 2 * Border : 0), oh = area.Height + (frame ? 2 * Border + TitleBar : 0) + o.SpaceBelow;
             var dv = new DrawingVisual();
             using (DrawingContext dc = dv.RenderOpen())
             {
+                dc.DrawRectangle(background, null, new Rect(0, 0, ow, oh));
                 if (frame) DrawFrame(dc, window, ow, oh);
                 dc.DrawImage(content, new Rect(origin.X, origin.Y, area.Width, area.Height));
                 foreach (Callout c in o.Callouts)

@@ -120,7 +120,7 @@ namespace TrajectoryLogTools.DocShots
             page.SelectedTab = 1;
             await Ui.Settle(800);
             await s.Shoot(w, "log-axes", new ShotOptions { Crop = PagePane, Padding = 0 }
-                .Mark(1, r => Ui.Find<ListBox>(PagePane(w), l => ReferenceEquals(l.ItemsSource, page.Axes)), "topleft")
+                .Mark(1, r => Ui.Find<ListBox>(PagePane(w), l => ReferenceEquals(l.ItemsSource, page.Axes)), "right")
                 .Mark(2, r => Ui.Button(PagePane(w), "Plot against control point (instead of time)"), "left"));
 
             page.SelectedTab = 2;
@@ -361,7 +361,7 @@ namespace TrajectoryLogTools.DocShots
         static async Task SettingsAndTitleBar(Shots s)
         {
             var (main, mvm) = await OpenMain(s, s.Demo.ProstateFx4);
-            await s.Shoot(main, "title-bar", new ShotOptions { Crop = r => Ui.Up<DockPanel>(Named(main, "HelpButton")), Padding = 30 }
+            await s.Shoot(main, "title-bar", new ShotOptions { Crop = r => Ui.Up<DockPanel>(Named(main, "HelpButton")), Padding = 4, SpaceBelow = 30 }
                 .Mark(1, r => Named(main, "ThemeButton"), "bottom")
                 .Mark(2, r => Named(main, "AnglesBox"), "bottom")
                 .Mark(3, r => Named(main, "SettingsButton"), "bottom")
