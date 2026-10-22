@@ -5,10 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Interop;
 using System.Windows.Media;
 using TrajectoryLogTools.Wpf;
 
@@ -47,6 +49,7 @@ namespace TrajectoryLogTools.DocShots
             w.MinHeight = 0;
             w.Width = width + 16;
             if (!autoHeight) w.Height = height.Value + 39;
+            AllowAnySize(w);
             w.Show();
             _open.Add(w);
             // The frame differs between Windows versions: size the window so the client area is exact.
@@ -60,6 +63,30 @@ namespace TrajectoryLogTools.DocShots
                 if (!autoHeight) w.Height += dh;
             }
             return w;
+        }
+
+        // Windows keeps a window no larger than the screen (a CI runner's is 1024 x 768): let these be any size.
+        const int WM_GETMINMAXINFO = 0x0024;
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct POINT { public int X, Y; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MINMAXINFO { public POINT Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }
+
+        static void AllowAnySize(Window w)
+        {
+            IntPtr handle = new WindowInteropHelper(w).EnsureHandle();
+            HwndSource.FromHwnd(handle).AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+            {
+                if (msg != WM_GETMINMAXINFO) return IntPtr.Zero;
+                var info = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                info.MaxTrackSize = new POINT { X = 10000, Y = 10000 };
+                info.MaxSize = new POINT { X = 10000, Y = 10000 };
+                Marshal.StructureToPtr(info, lParam, false);
+                handled = true;
+                return IntPtr.Zero;
+            });
         }
 
         /// <summary>Changes the client height of a shown window (e.g. taller, to show a whole page).</summary>
@@ -116,13 +143,13 @@ namespace TrajectoryLogTools.DocShots
             string folder = converter ? ConverterFolder : ToolsFolder;
             string env = "Version " + AppVersion.Version + "  ·  Microsoft Windows 10.0.19045  ·  .NET 10.0.0  ·  " + folder;
             string here = AppContext.BaseDirectory;
-            foreach (DependencyObject d in Ui.Descendants(w))
+            foreach (DependencyObject d in Ui.Descendants(w).ToList())
             {
                 if (d is TextBlock t)
                 {
                     if (t.Text == AppVersion.EnvironmentText) t.Text = env;
                     else if (t.Inlines.Count > 1)
-                        foreach (Run r in t.Inlines.OfType<Run>().Where(r => r.Text != null && r.Text.Contains(here)))
+                        foreach (Run r in t.Inlines.OfType<Run>().Where(r => r.Text != null && r.Text.Contains(here)).ToList())
                             r.Text = r.Text.Replace(here, folder);
                     else if (t.Text != null && t.Text.Contains(here)) t.Text = t.Text.Replace(here, folder);
                 }

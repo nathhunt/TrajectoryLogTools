@@ -74,6 +74,8 @@ namespace TrajectoryLogTools.DocShots
                 }
                 box.Inflate(o.Padding, o.Padding);
                 box.Intersect(new Rect(0, 0, w, h));
+                if (box.IsEmpty || box.Width < 1 || box.Height < 1)
+                    throw new InvalidOperationException(Path.GetFileName(file) + ": the element to crop to is outside the window (make the window taller).");
                 area = Snap(box);
             }
             BitmapSource content = area == new Rect(0, 0, w, h) ? full

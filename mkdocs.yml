@@ -141,7 +141,6 @@ nav:
       - Trajectory Log Converter: reference/converter.md
       - Keyboard and mouse: reference/keyboard-mouse.md
       - Files and folders: reference/files.md
-      - "Advanced: command line": reference/cli.md
   - Explanation:
       - explanation/index.md
       - IEC 61217 and Varian Standard: explanation/angles.md

@@ -68,7 +68,8 @@ namespace TrajectoryLogTools.DocShots
 
         static LogItem Item(MainViewModel vm, string path) { return vm.Logs.First(l => string.Equals(l.Path, Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase)); }
 
-        static FrameworkElement Named(Window w, string name) { return (FrameworkElement)w.FindName(name); }
+        /// <summary>The element with this x:Name, in the window or any of its pages (user controls have their own names).</summary>
+        static FrameworkElement Named(Window w, string name) { return (FrameworkElement)w.FindName(name) ?? Ui.Find<FrameworkElement>(w, e => e.Name == name); }
 
         /// <summary>The page area of the main window (right of the Open logs pane).</summary>
         static FrameworkElement PagePane(DependencyObject w) { return Ui.Up<Border>(Ui.Find<ContentControl>(w, c => c.Content is LogPageViewModel || c.Content is ComparePageViewModel || c.Content is RebuildPageViewModel || c.Content is StartPageViewModel)); }
