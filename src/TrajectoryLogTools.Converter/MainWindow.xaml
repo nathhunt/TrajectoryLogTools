@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:TrajectoryLogTools.Converter"
         xmlns:wpf="clr-namespace:TrajectoryLogTools.Wpf;assembly=TrajectoryLogTools.Wpf"
-        Title="Trajectory Log Converter" Width="1000" Height="860" MinWidth="760" MinHeight="620"
+        Title="{Binding Title}" Width="1000" Height="860" MinWidth="760" MinHeight="620"
         Background="{DynamicResource ApplicationBackgroundBrush}" ResizeMode="CanResizeWithGrip">
     <!--
         One page: where the logs come from (the default folder, filtered, or one file), where they go,
@@ -36,6 +36,9 @@
                 <TextBlock Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
             </DockPanel>
         </Border>
+
+        <!-- Version, Windows, .NET, folder -->
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding EnvironmentText}" Style="{StaticResource Secondary}" FontSize="11" Margin="0,6,0,0" Opacity="0.8" />
 
         <!-- ======== From / To ======== -->
         <Grid DockPanel.Dock="Top" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">

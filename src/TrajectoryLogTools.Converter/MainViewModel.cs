@@ -80,6 +80,11 @@ namespace TrajectoryLogTools.Converter
         [ObservableProperty] private string _result = "";
         [ObservableProperty] private bool _isDone;
 
+        public string Title { get; } = "Trajectory Log Converter " + AppVersion.Version;
+
+        /// <summary>Version, and where and on what the app is running (handy when checking a new workstation).</summary>
+        public string EnvironmentText { get { return AppVersion.EnvironmentText; } }
+
         public string FixedOptions { get; } = "Writes the v4.0 log only: machine TrueBeam, serial number removed, couch axes kept, everything else in the header as it is.";
         public int ToConvert { get { return _all.Count(r => r.Include && r.CanConvert); } }
         public int SkippedCount { get { return _all.Count(r => !r.CanConvert); } }

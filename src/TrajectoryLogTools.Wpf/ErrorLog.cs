@@ -23,7 +23,7 @@ namespace TrajectoryLogTools.Wpf
                 var sb = new StringBuilder();
                 var app = (System.Reflection.Assembly.GetEntryAssembly() ?? typeof(ErrorLog).Assembly).GetName();
                 sb.AppendLine("==== " + TrajectoryLogTools.Core.Fmt.DateTimeSeconds(DateTime.Now) + "  " + where + "  (" +
-                              app.Name + " " + app.Version + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
+                              app.Name + " " + AppVersion.Full + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
                               System.Runtime.InteropServices.RuntimeInformation.OSDescription + ")");
                 sb.AppendLine(ex == null ? "(no details)" : ex.ToString());
                 sb.AppendLine();

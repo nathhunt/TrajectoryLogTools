@@ -239,6 +239,12 @@ servers often blocks that. To publish straight to a share, use
 `scripts\publish.ps1 -DeployDir \\server\ESAPI\TrajectoryLogTools` or the VS Code task *publish to folder*;
 the converter then goes to `\\server\ESAPI\TrajectoryLogConverter` (beside it).
 
+**Version number:** set `<Version>` in `Directory.Build.props` (all projects share it) and commit
+it before publishing; `-p:Version=1.2.0` on the publish command overrides it for one build. Both
+apps show it in the title bar (e.g. *Trajectory Log Tools 1.2.0*) and, with the git commit the build
+came from, on the line at the bottom of the window (e.g. *Version 1.2.0+aeaf93d*); the error log
+records the same. Each exe's file properties carry it too.
+
 The `.vscode` folder has tasks for: build, release build, CLI-only build, clean, rebuild,
 publish, publish to folder, tests, tests with coverage, the CLI commands, the round-trip test
 and golden-file regeneration. It also has debug configurations (GUI, GUI pre-filled as from
@@ -264,7 +270,7 @@ can be .NET 10.
    `TrajectoryLogConverter.exe` in the deployed `TrajectoryLogConverter` folder, copied whole like
    the first). Then open it once and set the default folders in **Settings**.
 
-The first time, check the line at the bottom of the window. It shows the Windows version, the
+The first time, check the line at the bottom of the window. It shows the app's version, the Windows version, the
 .NET runtime and the folder the app runs from. If the app doesn't start, the usual cause is
 application whitelisting (AppLocker / WDAC); ask IT to allow the deployed folder.
 

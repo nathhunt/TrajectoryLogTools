@@ -41,12 +41,10 @@ namespace TrajectoryLogTools.App.ViewModels
             }
         }
 
-        public string Title { get; } = "Trajectory Log Tools " + typeof(MainViewModel).Assembly.GetName().Version.ToString(3);
+        public string Title { get; } = "Trajectory Log Tools " + AppVersion.Version;
 
-        /// <summary>Where and on what the app is running (handy when checking a new workstation).</summary>
-        public string EnvironmentText { get; } =
-            System.Runtime.InteropServices.RuntimeInformation.OSDescription + "  ·  " +
-            System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + "  ·  " + AppContext.BaseDirectory;
+        /// <summary>Version, and where and on what the app is running (handy when checking a new workstation).</summary>
+        public string EnvironmentText { get { return AppVersion.EnvironmentText; } }
 
         /// <summary>Folder the open dialogs start in when the launcher gives one; otherwise Windows decides.</summary>
         public string StartFolder { get; }
