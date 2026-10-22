@@ -9,6 +9,12 @@ Eclipse exports and imports for a beam's MLC sequence), one per field. It is the
 
 ## The method, per field
 
+The options are under **Advanced** on the Rebuild page: **Leaf positions** (1), **Where each sample
+sits between control points** (2), **Gantry angles** (3), and the Eclipse exports (4).
+
+![The Advanced options](../images/rebuild-advanced.png){ .shot }
+
+
 1. **Split the fields.** A log may hold several fields (subbeams). Each becomes its own file. The
    control points and MU in such a log run on across fields, so each field's first control point and
    starting MU are subtracted, and the set-up snapshots before it (no dose, leaves and gantry moving to

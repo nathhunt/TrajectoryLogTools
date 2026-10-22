@@ -22,14 +22,7 @@ theme:
   # No web fonts: the guide is read on PCs without internet access. The system fonts are used.
   font: false
   palette:
-    # Light by default, as the apps; the reader can switch.
-    - media: "(prefers-color-scheme)"
-      scheme: default
-      primary: blue
-      accent: blue
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
+    # Light by default, as the apps; the reader can switch to dark.
     - scheme: default
       primary: blue
       accent: blue
@@ -41,7 +34,7 @@ theme:
       accent: blue
       toggle:
         icon: material/brightness-4
-        name: Switch to system preference
+        name: Switch to light mode
   features:
     - navigation.tabs
     - navigation.sections

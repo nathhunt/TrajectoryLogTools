@@ -57,17 +57,17 @@ namespace TrajectoryLogTools.DocShots
             foreach (string d in new[] { Logs, LogsV4, EclipseExports, Copied }) Directory.CreateDirectory(d);
 
             SimPlan vmat = SimPlan.Vmat();
-            ProstateFx1 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 15, 8, 40, 12), vmat, Delivery(31, "PHANTOM-01", "Prostate VMAT (demo)"));
-            ProstateFx2 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 16, 8, 41, 5), vmat, Delivery(32, "PHANTOM-01", "Prostate VMAT (demo)"));
-            ProstateFx3 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 19, 8, 42, 10), vmat, Delivery(33, "PHANTOM-01", "Prostate VMAT (demo)"));
-            SimDelivery fx4 = Delivery(34, "PHANTOM-01", "Prostate VMAT (demo)");
+            ProstateFx1 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 15, 8, 40, 12), vmat, Delivery(31, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1"));
+            ProstateFx2 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 16, 8, 41, 5), vmat, Delivery(32, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1"));
+            ProstateFx3 = Write(Logs, "Prostate_VMAT", new DateTime(2026, 10, 19, 8, 42, 10), vmat, Delivery(33, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1"));
+            SimDelivery fx4 = Delivery(34, "PHANTOM-01", "Prostate VMAT (demo)", "Arc 1");
             fx4.LeafLagCp = 0.07;
             fx4.Interruptions.Add(Tuple.Create(0, 17.3, 90));   // 1.8 s interruption in Arc 1
             ProstateFx4 = Write(Logs, "Prostate_VMAT", Today.Add(new TimeSpan(8, 45, 30)), vmat, fx4);
 
             SimPlan imrt = SimPlan.Imrt();
             RenameFields(imrt, "G0", "G120", "G240");
-            HeadNeck = Write(Logs, "HN_IMRT", Today.Add(new TimeSpan(9, 30, 5)), imrt, Delivery(41, "PHANTOM-02", "H&N IMRT (demo)"));
+            HeadNeck = Write(Logs, "HN_IMRT", Today.Add(new TimeSpan(9, 30, 5)), imrt, Delivery(41, "PHANTOM-02", "H&N IMRT (demo)", "G0"));
 
             // One log per field: the machine wrote a log for each.
             SimPlan pelvisAll = SimPlan.Imrt();
@@ -78,7 +78,7 @@ namespace TrajectoryLogTools.DocShots
                 var one = new SimPlan();
                 one.Fields.Add(pelvisAll.Fields[f]);
                 string name = "Pelvis_IMRT_" + pelvisAll.Fields[f].Name;
-                Pelvis.Add(Write(Logs, name, Today.Add(new TimeSpan(10, 15 + 2 * f, 20 * f)), one, Delivery(51 + f, "PHANTOM-03", "Pelvis IMRT (demo)")));
+                Pelvis.Add(Write(Logs, name, Today.Add(new TimeSpan(10, 15 + 2 * f, 20 * f)), one, Delivery(51 + f, "PHANTOM-03", "Pelvis IMRT (demo)", pelvisAll.Fields[f].Name)));
                 // The Eclipse export of the field; G240's comes from a plan with the gantry 2 degrees off (Check first).
                 SimPlan exportOf = one;
                 if (f == 2)
@@ -93,13 +93,13 @@ namespace TrajectoryLogTools.DocShots
                 PelvisExports.Add(export);
             }
 
-            SimDelivery brain = Delivery(61, "PHANTOM-04", "Brain VMAT (demo)");
+            SimDelivery brain = Delivery(61, "PHANTOM-04", "Brain VMAT (demo)", "Arc 1");
             Brain = Write(Logs, "Brain_VMAT", Today.Add(new TimeSpan(11, 5, 0)), vmat, brain);
             byte[] bytes = File.ReadAllBytes(Brain);
             bytes[bytes.Length - 1] ^= 0x5A;   // damaged in copying: the CRC no longer verifies
             File.WriteAllBytes(Brain, bytes);
 
-            SimDelivery breast = Delivery(71, "PHANTOM-05", "Breast IMRT (demo)");
+            SimDelivery breast = Delivery(71, "PHANTOM-05", "Breast IMRT (demo)", "Med tangent");
             breast.Version = "4.0";
             SimPlan tangents = SimPlan.Imrt();
             tangents.Fields.RemoveAt(2);
@@ -116,12 +116,13 @@ namespace TrajectoryLogTools.DocShots
             ProstateFx4V4 = item.OutputPath;
         }
 
-        static SimDelivery Delivery(int seed, string patient, string plan)
+        static SimDelivery Delivery(int seed, string patient, string plan, string firstField)
         {
             return new SimDelivery
             {
                 Seed = seed, SnapshotsPerCp = 30, Version = "5.1", HalcyonTransition = true, LeafLagCp = 0.05,
-                Metadata = "Patient ID:\t" + patient + "\r\nPlan Name:\t" + plan + "\r\nPlan UID:\t1.2.3.999." + seed + "\r\n",
+                Metadata = "Patient ID:\t" + patient + "\r\nPlan Name:\t" + plan + "\r\nPlan UID:\t1.2.3.999." + seed +
+                           "\r\nBeamName:\t" + firstField + "\r\n",
             };
         }
 

@@ -95,6 +95,17 @@ namespace TrajectoryLogTools.DocShots
             return d as T;
         }
 
+        /// <summary>Scrolls the nearest scroll viewer so <paramref name="e"/> is at its top (less <paramref name="margin"/>).</summary>
+        public static async Task ScrollToTop(FrameworkElement e, double margin = 8)
+        {
+            var sv = Up<ScrollViewer>(VisualTreeHelper.GetParent(e));
+            if (sv == null) return;
+            sv.UpdateLayout();
+            Point at = e.TransformToAncestor(sv).Transform(new Point(0, 0));
+            sv.ScrollToVerticalOffset(Math.Max(0, sv.VerticalOffset + at.Y - margin));
+            await Settle(300);
+        }
+
         /// <summary>The expander whose header shows <paramref name="startsWith"/>.</summary>
         public static Expander Expander(DependencyObject root, string startsWith)
         {

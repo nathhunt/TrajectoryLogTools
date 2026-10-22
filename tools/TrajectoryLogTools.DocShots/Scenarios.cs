@@ -133,8 +133,10 @@ namespace TrajectoryLogTools.DocShots
 
             // Overview with the beam holds open, the page made tall enough to show it all
             page.SelectedTab = 0;
-            await s.Resize(w, MainW, 1240);
+            await Ui.Settle();
             Ui.Expander(w, "Beam holds").IsExpanded = true;
+            await Ui.Settle();
+            await Ui.ScrollToTop(Ui.Expander(w, "Beam holds"));
             await s.Shoot(w, "log-beam-holds", new ShotOptions { Crop = r => Ui.Expander(r, "Beam holds"), Padding = 8 });
         }
 
@@ -191,14 +193,14 @@ namespace TrajectoryLogTools.DocShots
                 });
 
                 // The whole page, details open
-                await s.Resize(w, MainW, 1900);
-                foreach (string e in new[] { "Per field", "Beam holds", "By axis", "File differences" }) Ui.Expander(w, e).IsExpanded = true;
+                // The details, opened, from the top of the first
+                foreach (string e in new[] { "Per field", "By axis" }) Ui.Expander(w, e).IsExpanded = true;
                 await Ui.Settle(800);
-                await s.Shoot(w, "compare-details", new ShotOptions
-                {
-                    CropAll = r => new FrameworkElement[] { Ui.Expander(r, "Planned (expected)"), Ui.Expander(r, "File differences") },
-                    Padding = 8,
-                });
+                await Ui.ScrollToTop(Ui.Expander(w, "Planned (expected)"));
+                await s.Shoot(w, "compare-details", new ShotOptions { Crop = r => Ui.Up<ScrollViewer>(Ui.Expander(r, "Planned (expected)")), Padding = 0 });
+                Ui.Expander(w, "File differences").IsExpanded = true;
+                await Ui.Settle();
+                await Ui.ScrollToTop(Ui.Expander(w, "File differences"));
                 await s.Shoot(w, "compare-file-differences", new ShotOptions { Crop = r => Ui.Expander(r, "File differences"), Padding = 8 }
                     .Mark(1, r => Ui.Button(r, "Compare the files…"), "left"));
             }
@@ -277,18 +279,25 @@ namespace TrajectoryLogTools.DocShots
             vm.RebuildCommand.Execute(null);
             var page = (RebuildPageViewModel)vm.CurrentPage;
             await Ui.WaitUntil(() => !page.IsBusy && page.Groups.Count > 0, "the rebuild page");
-            await s.Resize(w, MainW, 1180);
             Ui.Expander(w, "Advanced").IsExpanded = true;
             page.AddExportFiles(d.PelvisExports);
             await Ui.Settle(600);
-            await s.Shoot(w, "rebuild-exports", new ShotOptions { Crop = r => Ui.Up<ScrollViewer>(Ui.Text(r, "1  Fields")), Padding = 0 }
+            // Advanced, with Use Eclipse exports ticked
+            await Ui.ScrollToTop(Ui.Expander(w, "Advanced"));
+            await s.Shoot(w, "rebuild-advanced", new ShotOptions { Crop = r => Ui.Up<ScrollViewer>(Ui.Text(r, "1  Fields")), Padding = 0 }
                 .Mark(1, r => Ui.Text(r, "Leaf positions"), "left")
-                .Mark(2, r => Ui.Button(r, "Use Eclipse exports of these beams"), "left")
-                .Mark(3, r => Ui.Text(r, "Eclipse export: ", true), "left"));
+                .Mark(2, r => Ui.Text(r, "Where each sample sits between control points"), "left")
+                .Mark(3, r => Ui.Text(r, "Gantry angles"), "left")
+                .Mark(4, r => Ui.Button(r, "Use Eclipse exports of these beams"), "left")
+                .Mark(5, r => Ui.Button(r, "Add exports…"), "left"));
+            // The fields, each with its export
+            await Ui.ScrollToTop(Ui.Text(w, "1  Fields"));
+            await s.Shoot(w, "rebuild-exports", new ShotOptions { Crop = r => Ui.Up<ScrollViewer>(Ui.Text(r, "1  Fields")), Padding = 0 }
+                .Mark(1, r => Ui.Text(r, "Eclipse export: ", true), "left")
+                .Mark(2, r => Ui.Button(r, "Choose…"), "top"));
 
             await page.RebuildCommand.ExecuteAsync(null);
             await Ui.WaitUntil(() => !page.IsBusy && page.Results.Count > 0, "the rebuild");
-            await s.Resize(w, MainW, MainH);
             await s.Shoot(w, "rebuild-results-check-first", new ShotOptions { Crop = r => Ui.Up<DockPanel>(ItemsFor(r, page.Results)), Padding = 0 });
 
             int check = Math.Max(0, page.Results.ToList().FindIndex(r => r.StatusKind != "ok"));
@@ -330,8 +339,8 @@ namespace TrajectoryLogTools.DocShots
             edits.Fields[0].Value = "G0 (QA)";
             var hw = await s.Show(new HeaderEditWindow { DataContext = edits }, 704, 600);
             await s.Shoot(hw, "header-details", new ShotOptions()
-                .Mark(1, r => Ui.Text(r, "In the log"), "top")
-                .Mark(2, r => Ui.Text(r, "In the export"), "top")
+                .Mark(1, r => Ui.Text(r, "In the log"), "left")
+                .Mark(2, r => Ui.Text(r, "In the export"), "left")
                 .Mark(3, r => Ui.Text(r, "Field 1"), "left")
                 .Mark(4, r => Ui.Button(r, "OK"), "top"));
             s.Close(hw);

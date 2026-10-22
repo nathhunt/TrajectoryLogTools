@@ -43,6 +43,16 @@ jobs:
       - name: Test
         run: dotnet test tests/TrajectoryLogTools.Tests -c Release --no-build
 
+      - name: Display at 1920 x 1080
+        # The runner's screen is 1024 x 768, and Windows keeps a window within the screen: the
+        # screenshots need the apps' real window sizes (Trajectory Log Tools opens at 1360 x 880).
+        shell: pwsh
+        run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop }
+          catch { Write-Warning "Set-DisplayResolution: $_" }
+          Add-Type -AssemblyName System.Windows.Forms
+          [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+
       - name: Screenshots (DocShots)
         run: dotnet run -c Release --no-build --project tools/TrajectoryLogTools.DocShots
 
