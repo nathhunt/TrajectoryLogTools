@@ -1,7 +1,10 @@
-<UserControl x:Class="TrajectoryLogTools.App.Views.TimePicker"
+<UserControl x:Class="TrajectoryLogTools.Wpf.TimePicker"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Name="Root" Focusable="False">
+    <UserControl.Resources>
+        <ResourceDictionary Source="pack://application:,,,/TrajectoryLogTools.Wpf;component/Styles.xaml" />
+    </UserControl.Resources>
     <!--
         A 24-hour time picker in the style of the Windows one: a button showing the time, which opens
         a drop-down with the hours and the minutes side by side. The mouse wheel or the arrow keys on

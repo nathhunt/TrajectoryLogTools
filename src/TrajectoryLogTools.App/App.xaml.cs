@@ -2,8 +2,6 @@
 // nothing else caught (logged in full to errors.log, then a message; the app carries on).
 
 using System;
-using System.Globalization;
-using System.Windows.Markup;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -19,7 +17,8 @@ namespace TrajectoryLogTools.App
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            UseNewZealandDates();
+            NzCulture.Apply();
+            Dialogs.Title = "Trajectory Log Tools";
             DispatcherUnhandledException += OnUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled (closing)", a.ExceptionObject as Exception);
             TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Background task", a.Exception); a.SetObserved(); };
@@ -29,27 +28,6 @@ namespace TrajectoryLogTools.App
             MainWindow = window;
             window.Show();   // before the view model: it may open a dialog owned by the window
             window.DataContext = new MainViewModel(StartupArgs.Parse(e.Args));
-        }
-
-        /// <summary>
-        /// Dates in the New Zealand format (dd/MM/yyyy, 24-hour) whatever the PC's regional settings:
-        /// the date pickers and any date WPF formats itself follow the culture. Text the app writes
-        /// uses Core.Fmt, which is fixed to the same format.
-        /// </summary>
-        static void UseNewZealandDates()
-        {
-            try
-            {
-                var nz = (CultureInfo)CultureInfo.GetCultureInfo("en-NZ").Clone();
-                nz.DateTimeFormat.ShortDatePattern = "dd/MM/yyyy";
-                nz.DateTimeFormat.ShortTimePattern = "HH:mm";
-                nz.DateTimeFormat.LongTimePattern = "HH:mm:ss";
-                CultureInfo.DefaultThreadCurrentCulture = nz;
-                CultureInfo.CurrentCulture = nz;
-                FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement),
-                    new FrameworkPropertyMetadata(XmlLanguage.GetLanguage("en-NZ")));
-            }
-            catch (Exception ex) { ErrorLog.Write("Date format", ex); }
         }
 
         void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

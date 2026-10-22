@@ -6,11 +6,12 @@ using System.IO;
 using System.Windows;
 using Microsoft.Win32;
 
-namespace TrajectoryLogTools.App.Services
+namespace TrajectoryLogTools.Wpf
 {
     public static class Dialogs
     {
-        public const string Title = "Trajectory Log Tools";
+        /// <summary>The title of message boxes: the app's name (each app sets its own at start-up).</summary>
+        public static string Title { get; set; } = "Trajectory Log Tools";
         public const string LogFilter = "Trajectory logs (*.bin)|*.bin|Log CSV exports (*.csv)|*.csv|All files (*.*)|*.*";
         public const string BinFilter = "Trajectory logs (*.bin)|*.bin|All files (*.*)|*.*";
         public const string EclipseFilter = "Eclipse MLC exports (*.csv)|*.csv|All files (*.*)|*.*";

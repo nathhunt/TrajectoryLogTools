@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace TrajectoryLogTools.App.Views
+namespace TrajectoryLogTools.Wpf
 {
     /// <summary>A 24-hour time of day (hours and minutes), bound through <see cref="Time"/>.</summary>
     public partial class TimePicker : UserControl

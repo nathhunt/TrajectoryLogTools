@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Trajectory Log Converter: converts v5.1 logs to v4.0, from a default input folder to a default
+       output folder (both set in TrajectoryLogConverter.settings.json beside the exe), or one file.
+       Started from Eclipse by launcher/LaunchTrajectoryLogConverter.cs. Same conversion code
+       (TrajectoryLogTools.Core) and shared UI pieces (TrajectoryLogTools.Wpf) as Trajectory Log Tools. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.14393.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TrajectoryLogTools.Converter</RootNamespace>
+    <AssemblyName>TrajectoryLogConverter</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The exe's icon (Explorer, taskbar, shortcuts); WPF windows use it too. Drawn by scripts/make_icons.py. -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TrajectoryLogTools.Core\TrajectoryLogTools.Core.csproj" />
+    <ProjectReference Include="..\TrajectoryLogTools.Wpf\TrajectoryLogTools.Wpf.csproj" />
+  </ItemGroup>
+
+  <!-- Its Eclipse launcher script goes next to it. -->
+  <Target Name="CopyLauncher" AfterTargets="Publish" Condition=" '$(RuntimeIdentifier)' != '' ">
+    <Copy SourceFiles="..\..\launcher\LaunchTrajectoryLogConverter.cs" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
