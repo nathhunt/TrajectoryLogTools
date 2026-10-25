@@ -96,9 +96,15 @@ namespace TrajectoryLogTools.App.ViewModels
             Run();
         }
 
-        /// <summary>Replaces A or B by a file dropped on it.</summary>
+        /// <summary>Replaces A or B by a file dropped on it. A DICOM RT Plan as B compares A with the plan instead.</summary>
         public void Replace(bool isA, string path)
         {
+            if (Analysis.RtPlan.IsDicom(path))
+            {
+                if (isA) { _main.ShowNotice("A must be a log: drop the plan on B to compare A with it.", "caution"); return; }
+                if (A != null) _main.ShowPlanCompare(A, path);
+                return;
+            }
             var items = _main.OpenPaths(new[] { path });
             _main.CurrentPage = this;
             if (items.Count != 1) return;
@@ -111,7 +117,7 @@ namespace TrajectoryLogTools.App.ViewModels
 
         void Browse(bool isA)
         {
-            string p = Dialogs.OpenFile(isA ? "Log A" : "Log B", Dialogs.LogFilter, (isA ? A : B)?.Folder);
+            string p = Dialogs.OpenFile(isA ? "Log A" : "Log B, or the RT Plan of log A", isA ? Dialogs.LogFilter : Dialogs.LogOrPlanFilter, (isA ? A : B)?.Folder);
             if (p != null) Replace(isA, p);
         }
 

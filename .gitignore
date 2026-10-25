@@ -20,3 +20,6 @@ __pycache__/
 
 # Test results / coverage
 TestResults/
+
+# DICOM files (RT plans hold patient data): never committed. Tests make their own in a temp folder.
+*.dcm

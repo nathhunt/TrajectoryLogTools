@@ -55,7 +55,7 @@ error, file status) and four tabs:
 * **Raw:** the whole file as stored (header with byte offsets, subbeams, every value, CRC), with
   find.
 
-From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
+From a log: **Compare with…** (another log, or the plan's DICOM RT Plan), **Rebuild Eclipse MLC…** and **Export…**.
 
 **Compare** (two ticked logs, or *Compare with…*) works answer first:
 * it says what was compared (same plan delivered twice, or plans that differ);
@@ -76,6 +76,36 @@ From a log: **Compare with…**, **Rebuild Eclipse MLC…** and **Export…**.
   * **As text:** what the command line prints.
 
 The **←** button goes back to the log. You can drop a log onto A or B to replace it. **Save report…** writes the report, tables and figure.
+
+**Compare with plan.** B can also be the plan's **DICOM RT Plan** (`RP….dcm`, as exported from
+Eclipse / ARIA): pick it with *Compare with…* on a log, with *Change…* on B, or drop it on B (or
+on the window while a log is shown). A DICOM file is recognised by its content, with or without
+the `.dcm` extension. The plan is read for that comparison only: it is not added to Open logs or
+Recent logs. Each field of the log is paired with a treatment beam of the plan by name (else by
+number of control points and the plan values that fit best); set-up (kV) beams are ignored, and
+plan beams not in the log are listed (usual when each field has its own log). The page answers
+three questions:
+* **Is it this plan?** Patient ID and plan UID (the log records the plan's SOP Instance UID): a red
+  warning when they differ.
+* **Did the machine get the plan as approved?** The *plan check* compares the log's planned
+  (expected) leaf positions, gantry, collimator and MU with the plan. The machine's planned
+  trajectory is the plan's straight lines except that it rounds the corners where a leaf turns
+  back, so the check uses the snapshots in the middle of each control-point interval; there they
+  match the plan to within 0.001 mm, and a change of 0.1 mm to one control point of the plan is
+  found. *Differs* means another plan or plan version, or a transfer problem.
+* **How accurately was it delivered?** The plan gives values at its control points and moves every
+  axis linearly in MU between them, so it is known at every moment. The cards compare **every
+  beam-on snapshot** with the plan at the MU delivered so far (MLC max, RMS and 95th percentile;
+  gantry; MU delivered vs planned), against the tolerances in Settings if set. The leaf map shows
+  actual − plan **at each control point** (actual positions from the least-squares fit the MLC
+  rebuild uses), with the gantry and cumulative MU differences beside it. Beam holds are left out.
+
+Folded below: the per-field table (control points covered, MU plan / log planned / delivered,
+gantry, collimator, plan check, MLC and gantry statistics), the plan-check map and the full
+report. A log that covers part of a beam (an interrupted delivery resumed in another log) is
+aligned on the plan control points it covers and marked *partial*. **Save report…** writes
+`plan_comparison_report.txt` and, per field, a table and a figure by control point. Supported:
+photon RT Plans for the Halcyon / Ethos SX2 MLC (as the rest of the app).
 
 **Rebuild Eclipse MLC** writes, for each field, the Eclipse MLC file of the leaf positions as
 delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or on the shown log
@@ -280,7 +310,7 @@ to add from, and `--start-folder <folder>` for the Open dialogs. Arguments of ea
 
 ## Command-line tool
 
-The first four commands do what the app does, with the same options, defaults and output files
+The first five commands do what the app does, with the same options, defaults and output files
 (they call the same code):
 
 ```
@@ -289,6 +319,7 @@ TrajectoryLogCli export <log | folder> ... [-o <folder>] [--v4] [--csv] [--full-
                         [--patient-id <text>] [--plan-name <text>] [--plan-uid <text>] [--field-name N=NAME ...]   (one log)
                         [--no-mlc] [--actual-only]
 TrajectoryLogCli compare-deliveries <logA> <logB> [-o <folder>] [--no-plot]
+TrajectoryLogCli compare-plan <log.bin | log.csv> <plan.dcm> [-o <folder>] [--no-plot]
 TrajectoryLogCli compare-files <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]
 TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...] [--positions actual|expected] [--axis mu|cp]
                         [--gantry plan|actual] [--min-gap <mm>] [--include-hold] [--field n,m] [--verbose]
@@ -304,6 +335,9 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
   app: expected positions, control-point axis, no report files (`--report` saves them).
   `reconstruct-mlc` keeps LogToEclipseMlc's method defaults (actual, MU axis); like every command
   it writes report files only when asked (`--save-report` or `--report <file>`).
+* `compare-plan` works as the Compare page with a plan as B: it prints the report, and with `-o`
+  also writes the report, a table and a figure per field. Exit code 1 when a field can't be
+  compared, the plan check differs, or the patient or plan UID differ.
 
 The original commands do one kind of output per run and are kept for scripts:
 
@@ -358,7 +392,8 @@ TrajectoryLogTools.sln
 src/
   TrajectoryLogTools.Core       engine: parse, v4.0 <-> v5.1, file compare, CSV and raw dumps, log finder,
                                 MLC geometry (net10.0 + net48)
-  TrajectoryLogTools.Analysis   DeliveryRecord, DeliveryComparison, MlcReconstruction, TemplateMatcher (net10.0 + net48)
+  TrajectoryLogTools.Analysis   DeliveryRecord, DeliveryComparison, MlcReconstruction, TemplateMatcher,
+                                RtPlan (DICOM, via fo-dicom) and PlanComparison (net10.0 + net48)
   TrajectoryLogTools.Charts     ScottPlot charts shared by the GUI and the CLI
   TrajectoryLogTools.Cli        TrajectoryLogCli.exe
   TrajectoryLogTools.App        TrajectoryLogTools.exe (WPF, Fluent theme, MVVM)

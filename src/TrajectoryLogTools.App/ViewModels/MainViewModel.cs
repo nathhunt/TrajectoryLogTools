@@ -117,6 +117,12 @@ namespace TrajectoryLogTools.App.ViewModels
             CurrentPage = new ComparePageViewModel(a, b, this);
         }
 
+        /// <summary>Log <paramref name="a"/> against a DICOM RT Plan (not opened as a log, not in Recent logs).</summary>
+        public void ShowPlanCompare(LogItem a, string planPath)
+        {
+            CurrentPage = new PlanComparePageViewModel(a, planPath, this);
+        }
+
         public void ShowRebuild(IEnumerable<LogItem> items)
         {
             CurrentPage = new RebuildPageViewModel(items, this);
@@ -132,16 +138,22 @@ namespace TrajectoryLogTools.App.ViewModels
         // Opening and closing
         // =========================================================================================
 
-        /// <summary>Opens .bin / .csv files; a folder opens the Add from folder dialog for it. Returns the logs added or already open.</summary>
+        /// <summary>
+        /// Opens .bin / .csv files; a folder opens the Add from folder dialog for it. Returns the logs
+        /// added or already open. A DICOM file (an RT Plan) is not opened as a log: it is compared
+        /// with the log shown, if any.
+        /// </summary>
         public List<LogItem> OpenPaths(IEnumerable<string> paths)
         {
             var result = new List<LogItem>();
             var bad = new List<string>();
+            string plan = null;
             foreach (string raw in paths)
             {
                 string p = raw.Trim().Trim('"');
                 if (Directory.Exists(p)) { AddFromFolder(p); continue; }
                 if (!File.Exists(p)) { bad.Add(System.IO.Path.GetFileName(p) + ": not found"); continue; }
+                if (Analysis.RtPlan.IsDicom(p)) { plan = p; continue; }
                 LogItem existing = Logs.FirstOrDefault(l => string.Equals(l.Path, System.IO.Path.GetFullPath(p), StringComparison.OrdinalIgnoreCase));
                 if (existing != null) { result.Add(existing); continue; }
                 try
@@ -155,6 +167,12 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             if (bad.Count > 0) ShowNotice("Not opened: " + string.Join("; ", bad), "caution");
             if (result.Count > 0) ShowLog(result[result.Count - 1]);
+            if (plan != null)
+            {
+                LogItem log = result.Count > 0 ? result[result.Count - 1] : CurrentLog;
+                if (log != null) ShowPlanCompare(log, plan);
+                else ShowNotice(System.IO.Path.GetFileName(plan) + " is a DICOM file: open a log first, then compare it with the plan (Compare with…, or drop the plan on the log).", "caution");
+            }
             return result;
         }
 
@@ -210,7 +228,7 @@ namespace TrajectoryLogTools.App.ViewModels
             bool wasCurrent = CurrentLog == l;
             Logs.RemoveAt(i);
             if (Logs.Count == 0) { CurrentLog = null; CurrentPage = StartPage; return; }
-            if (wasCurrent || CurrentPage is ComparePageViewModel || CurrentPage is RebuildPageViewModel)
+            if (wasCurrent || CurrentPage is ComparePageViewModel || CurrentPage is PlanComparePageViewModel || CurrentPage is RebuildPageViewModel)
                 ShowLog(Logs[Math.Min(i, Logs.Count - 1)]);
         }
 

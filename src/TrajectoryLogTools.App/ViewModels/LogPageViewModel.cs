@@ -358,8 +358,9 @@ namespace TrajectoryLogTools.App.ViewModels
         [RelayCommand]
         void CompareWith()
         {
-            string p = Dialogs.OpenFile("Compare " + Item.DisplayName + " with", Dialogs.LogFilter, Item.Folder);
+            string p = Dialogs.OpenFile("Compare " + Item.DisplayName + " with a log or its RT Plan", Dialogs.LogOrPlanFilter, Item.Folder);
             if (p == null) return;
+            if (Analysis.RtPlan.IsDicom(p)) { _main.ShowPlanCompare(Item, p); return; }
             var other = _main.OpenPaths(new[] { p });
             if (other.Count == 1 && other[0] != Item) _main.ShowCompare(Item, other[0]);
         }

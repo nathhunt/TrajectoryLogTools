@@ -2,7 +2,7 @@
 //
 //   As in the app (AppCommands, the app's options and defaults):
 //     export            Export: v4.0 / CSV / full CSV / dump of any number of logs
-//     compare-deliveries, compare-files, rebuild-mlc
+//     compare-deliveries, compare-plan, compare-files, rebuild-mlc
 //   Single conversions (used by scripts and the tests):
 //     to-v4             v5.1 -> v4.0
 //     to-csv            data CSV, or with --full the whole file as CSV
