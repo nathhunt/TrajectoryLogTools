@@ -1,8 +1,5 @@
 {
-    // Use the C# extension on its own (C# Dev Kit is optional; it adds a Solution Explorer and
-    // test explorer if you have it).
-    "dotnet.preferCSharpExtension": true,
-    // Load this solution so IntelliSense sees every project.
+    // Load this solution so IntelliSense and C# Dev Kit's Solution Explorer see every project.
     "dotnet.defaultSolution": "TrajectoryLogTools.sln",
     "files.exclude": {
         "**/bin": true,
