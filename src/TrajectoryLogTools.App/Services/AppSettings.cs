@@ -31,6 +31,9 @@ namespace TrajectoryLogTools.App.Services
         public double? GantryToleranceDeg { get; set; }
         public double? MuTolerance { get; set; }
 
+        /// <summary>Show the value under the mouse on every chart (right-click a chart > Show data cursor). Off by default.</summary>
+        public bool DataCursor { get; set; }
+
         public List<string> RecentFiles { get; set; } = new List<string>();
 
         static string FilePath

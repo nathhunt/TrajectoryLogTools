@@ -164,6 +164,11 @@ a leaf-by-leaf view and the full report. **‹ ›** step through the fields of 
 * **Ctrl + wheel** zooms a chart on a page (the page doesn't move); drag pans, double-click goes
   back to the full view. Right-click → *Open in New Window* shows a chart in a window of its own,
   where the wheel alone zooms (as in the Rebuild details window).
+* **Data cursor:** right-click any chart → *Show data cursor* to see the value under the mouse:
+  on a line, the nearest point (marked with a ring), its series and its x and y; on an MLC map,
+  the cell's value with its x (time or control point) and y (leaf number, or leaf pair and bank);
+  on the RMS-per-leaf bars, the leaf and its value. It is one setting for every chart, remembered
+  between sessions; *Hide data cursor* turns it off.
 
 **Angles: IEC 61217 or Varian Standard.** The **Angles** drop-down at the top of the window (also
 in Settings) sets how gantry and collimator angles are shown: in the axis charts, the field and

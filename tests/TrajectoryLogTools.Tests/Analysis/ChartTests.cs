@@ -130,3 +130,92 @@ namespace TrajectoryLogTools.Tests
         }
     }
 }
+
+namespace TrajectoryLogTools.Tests
+{
+    public class ChartProbeTests
+    {
+        static DeliveryRecord Imrt() { return DeliveryRecord.FromLog(LogBuilder.Parse(GoldenCases.Bin("imrt_A"))); }
+
+        static Plot Rendered(Action<Plot> draw)
+        {
+            var plt = new Plot();
+            draw(plt);
+            plt.GetImage(900, 600);   // lays the chart out, as the GUI does before the mouse moves over it
+            return plt;
+        }
+
+        [Fact]
+        public void Line_NearestPointWithSeriesAndAxisNames()
+        {
+            DeliveryRecord d = Imrt();
+            Plot plt = Rendered(p => LogCharts.AxisTrace(p, d, "GantryRtn_deg", false));
+            var sc = plt.GetPlottables().OfType<ScottPlot.Plottables.Scatter>().First(s => !string.IsNullOrEmpty(s.LegendText));
+            Coordinates target = sc.Data.GetScatterPoints()[40];
+            Pixel px = plt.GetPixel(target);
+            var hit = ChartProbe.At(plt, px);
+            Assert.NotNull(hit);
+            Assert.True(hit.Point.HasValue);
+            Assert.Equal(target.X, hit.Point.Value.X, 9);
+            Assert.Equal(target.Y, hit.Point.Value.Y, 9);
+            // a few pixels off: still a point of the line, near the mouse (samples are under a pixel apart here)
+            var near = ChartProbe.At(plt, new Pixel(px.X + 3, px.Y - 2));
+            Assert.NotNull(near);
+            Assert.InRange(near.Point.Value.X, target.X - 0.2, target.X + 0.2);
+            string[] lines = hit.Text.Split('\n');
+            Assert.Equal(3, lines.Length);
+            Assert.StartsWith(plt.Axes.Bottom.Label.Text.Split(new[] { " (blank" }, StringSplitOptions.None)[0] + ": ", lines[1]);
+            // outside the data area: nothing
+            Assert.Null(ChartProbe.At(plt, new Pixel(1, 1)));
+        }
+
+        [Fact]
+        public void Map_CellValueAndCoordinates()
+        {
+            DeliveryRecord d = Imrt();
+            LeafErrorMap map = LeafErrorMap.ByTime(d);
+            Plot plt = Rendered(p => LogCharts.MlcError(p, d, false));
+            // a beam-on cell: leaf 30, column 200
+            int leaf = 30, col = Enumerable.Range(150, 500).First(g => !double.IsNaN(map.Values[leaf - 1, g]));
+            double w = (map.X1 - map.X0) / map.Columns;
+            var c = new Coordinates(map.X0 + (col + 0.5) * w, leaf);
+            var hit = ChartProbe.At(plt, plt.GetPixel(c));
+            Assert.NotNull(hit);
+            Assert.Null(hit.Point);
+            string expected = map.Values[leaf - 1, col].ToString(Math.Abs(map.Values[leaf - 1, col]) >= 1 ? "0.###" : "0.####", System.Globalization.CultureInfo.InvariantCulture);
+            Assert.StartsWith("Value: " + expected + " mm", hit.Text);
+            Assert.Contains("Time (s): ", hit.Text);
+            Assert.Contains("Leaf number: 30", hit.Text);
+        }
+
+        [Fact]
+        public void Bars_LeafAndValue()
+        {
+            DeliveryRecord d = Imrt();
+            Plot plt = Rendered(p => LogCharts.LeafRms(p, d));
+            var bar = plt.GetPlottables().OfType<ScottPlot.Plottables.BarPlot>().First().Bars.First(b => b.Position == 12);
+            var hit = ChartProbe.At(plt, plt.GetPixel(new Coordinates(bar.Value / 2, 12.2)));
+            Assert.NotNull(hit);
+            Assert.StartsWith("Leaf number: 12\n", hit.Text);
+        }
+
+        [Fact]
+        public void ValueIndexMap_NamesPairAndBank()
+        {
+            using (var dir = new TempDir())
+            {
+                SimPlan sim = SimPlan.Vmat();
+                var plan = RtPlan.Load(SimRtPlan.Save(SimRtPlan.Build(sim), dir.File("RP.dcm")));
+                var d = GoldenCases.Delivery("vmat_A");
+                var f = PlanComparison.Compare(DeliveryRecord.FromLog(LogBuilder.Parse(DeliverySimulator.Build(sim, d))), plan).Fields[0];
+                Plot plt = Rendered(p => PlanCharts.LeafDifference(p, f, true));
+                var hit = ChartProbe.At(plt, plt.GetPixel(new Coordinates(10, 23)));   // value 23 = pair 12, X2
+                Assert.NotNull(hit);
+                Assert.Contains("Pair 12 X2", hit.Text);
+                Assert.Contains("Plan control point: 10", hit.Text);
+                double v = f.ActualLeaves[10, 23] - f.PlanLeaves[10, 23];
+                Assert.StartsWith("Value: " + v.ToString(Math.Abs(v) >= 1 ? "0.###" : "0.####", System.Globalization.CultureInfo.InvariantCulture), hit.Text);
+            }
+        }
+    }
+}
