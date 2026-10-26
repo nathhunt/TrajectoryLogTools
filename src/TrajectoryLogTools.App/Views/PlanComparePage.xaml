@@ -149,7 +149,7 @@
                 <Expander Header="Plan check: the log's planned leaf positions against the plan" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
                     <StackPanel Margin="0,8,0,0">
                         <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
-                                   Text="The machine's planned (expected) trajectory is the plan's straight lines, except that it rounds the corners where a leaf turns back. So the check uses the snapshots in the middle of each control-point interval, where they lie on the plan's line; a change to any control point of the plan shows there. When the plan matches, this map is blank." />
+                                   Text="Checks that the machine was given the plan unchanged: the log's planned leaf positions against the plan file. Only snapshots midway between control points are used, as the machine smooths leaf reversals at the control points themselves. A matching plan is near zero throughout; white columns are intervals with no snapshots to check." />
                         <Border Style="{StaticResource Box}" Padding="4" Height="300">
                             <sp:WpfPlot x:Name="TransferPlot" />
                         </Border>
