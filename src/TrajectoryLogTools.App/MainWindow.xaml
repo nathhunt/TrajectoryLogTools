@@ -17,6 +17,7 @@
         <DataTemplate DataType="{x:Type vm:StartPageViewModel}"><views:StartPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:LogPageViewModel}"><views:LogPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:ComparePageViewModel}"><views:ComparePage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PlanComparePageViewModel}"><views:PlanComparePage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:RebuildPageViewModel}"><views:RebuildPage /></DataTemplate>
     </Window.Resources>
 

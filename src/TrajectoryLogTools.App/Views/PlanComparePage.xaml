@@ -1,0 +1,164 @@
+<UserControl x:Class="TrajectoryLogTools.App.Views.PlanComparePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
+             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+    <!-- A log compared with its DICOM RT Plan (B). Laid out as the Compare page: what was compared,
+         the verdict, cards, charts, then folded details. -->
+    <DockPanel>
+        <!-- A / B -->
+        <DockPanel DockPanel.Dock="Top" Margin="22,18,22,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <Button Content="Save report…" Command="{Binding SaveReportCommand}" Padding="12,6" Style="{DynamicResource AccentButtonStyle}"
+                        IsEnabled="{Binding HasResult}" ToolTip="Report, tables and figures to a folder" />
+            </StackPanel>
+            <Button DockPanel.Dock="Left" Command="{Binding BackCommand}" ToolTip="Back to the log" AutomationProperties.Name="Back to the log" Padding="8,6" Margin="0,0,12,0" VerticalAlignment="Top">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE72B;" />
+            </Button>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="Compare with plan" Style="{StaticResource PageTitle}" Margin="0,0,0,8" />
+                <Border x:Name="DropA" AllowDrop="True" Drop="DropA_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2"
+                        ToolTip="Drop a log here to compare it with the plan">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
+                            <TextBlock Text="A" Foreground="{DynamicResource SolidBackgroundFillColorBaseBrush}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Button DockPanel.Dock="Right" Content="Change…" Command="{Binding BrowseACommand}" Style="{StaticResource LinkButton}" FontSize="12" />
+                        <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PathA}">
+                            <Run Text="{Binding A.PatientId, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding A.PatientId, Mode=OneWay, Converter={StaticResource NotEmptyToSeparator}}" /><Run Text="{Binding DateA, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathA, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+                <Border x:Name="DropB" AllowDrop="True" Drop="DropB_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2" Margin="0,4,0,0"
+                        ToolTip="Drop an RT Plan here, or a log to compare the two logs">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" BorderThickness="1.5" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
+                            <TextBlock Text="B" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <Button DockPanel.Dock="Right" Content="Change…" Command="{Binding BrowseBCommand}" Style="{StaticResource LinkButton}" FontSize="12" />
+                        <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PlanPath}">
+                            <Run Text="RT Plan" FontWeight="SemiBold" /><Run Text="  ·  " /><Run Text="{Binding PlanLine, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PlanPath, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+        </DockPanel>
+
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3" Margin="22,10,22,0"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22,12,22,16">
+            <StackPanel>
+                <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                        Visibility="{Binding Error, Converter={StaticResource NotEmptyToVisibility}}">
+                    <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+                </Border>
+                <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                        Visibility="{Binding IdentityWarning, Converter={StaticResource NotEmptyToVisibility}}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE7BA;" Margin="0,2,8,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding IdentityWarning}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                    </DockPanel>
+                </Border>
+
+                <!-- Verdict -->
+                <Border Padding="12,8" CornerRadius="6" Margin="0,0,0,12" Visibility="{Binding Verdict, Converter={StaticResource NotEmptyToVisibility}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding VerdictKind}" Value="caution">
+                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding Verdict}" TextWrapping="Wrap" />
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding Cards}" ItemTemplate="{StaticResource FactCard}" Margin="0,0,-10,14" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- Field picker (a log with several fields) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Visibility="{Binding ShowFieldPicker, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="Charts for" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox ItemsSource="{Binding FieldChoices}" SelectedItem="{Binding SelectedField}" DisplayMemberPath="Label" MinWidth="220" />
+                </StackPanel>
+
+                <!-- Charts -->
+                <Grid Height="380" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Box}" Padding="4" Margin="0,0,10,0">
+                        <sp:WpfPlot x:Name="LeafPlot" />
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Box}" Padding="4">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <!-- One legend for the gantry and MU charts (same colours as ChartStyle.Actual / Expected) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,2">
+                                <Rectangle Width="18" Height="3" Fill="#eb6834" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="Actual (delivered) − plan" Style="{StaticResource Secondary}" Margin="0,0,18,0" />
+                                <Rectangle Width="18" Height="3" Fill="#2a78d6" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="Log planned − plan" Style="{StaticResource Secondary}" />
+                            </StackPanel>
+                            <sp:WpfPlot Grid.Row="1" x:Name="GantryPlot" />
+                            <sp:WpfPlot Grid.Row="2" x:Name="MuPlot" />
+                        </Grid>
+                    </Border>
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,12" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}"
+                           Text="The plan gives values at its control points and moves every axis linearly in MU between them. The cards compare every beam-on snapshot with the plan at the MU delivered so far; the leaf map shows the actual positions at the control points. Beam holds are left out. Ctrl + scroll to zoom · drag to pan · double-click to reset · right-click to open a chart in its own window." />
+
+                <!-- Details -->
+                <Expander Header="{Binding FieldsHeader}" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Margin="0,8,0,0">
+                        <DataGrid ItemsSource="{Binding Fields}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                                  CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Field" Binding="{Binding Field}" />
+                                <DataGridTextColumn Header="Plan beam" Binding="{Binding PlanBeam}" />
+                                <DataGridTextColumn Header="Plan control points" Binding="{Binding ControlPoints}" />
+                                <DataGridTextColumn Header="MU plan" Binding="{Binding MuPlan}" />
+                                <DataGridTextColumn Header="MU log planned" Binding="{Binding MuLogPlanned}" />
+                                <DataGridTextColumn Header="MU delivered" Binding="{Binding MuDelivered}" />
+                                <DataGridTextColumn Header="Gantry (plan)" Binding="{Binding Gantry}" />
+                                <DataGridTextColumn Header="Collimator (plan)" Binding="{Binding Collimator}" />
+                                <DataGridTextColumn Header="Plan check" Binding="{Binding PlanCheck}" />
+                                <DataGridTextColumn Header="MLC max (mm)" Binding="{Binding MlcMax}" />
+                                <DataGridTextColumn Header="MLC RMS (mm)" Binding="{Binding MlcRms}" />
+                                <DataGridTextColumn Header="MLC 95% (mm)" Binding="{Binding Mlc95}" />
+                                <DataGridTextColumn Header="MLC max at CPs (mm)" Binding="{Binding MlcCpMax}" />
+                                <DataGridTextColumn Header="Gantry max (°)" Binding="{Binding GantryMax}" />
+                                <DataGridTextColumn Header="Note" Binding="{Binding Note}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="{Binding NotInLog}" Style="{StaticResource Hint}" Margin="0,8,0,0"
+                                   Visibility="{Binding NotInLog, Converter={StaticResource NotEmptyToVisibility}}" />
+                    </StackPanel>
+                </Expander>
+                <Expander Header="Plan check: the log's planned leaf positions against the plan" Margin="0,0,0,6" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Margin="0,8,0,0">
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
+                                   Text="Checks that the machine was given the plan unchanged: the log's planned leaf positions against the plan file. Only snapshots midway between control points are used, as the machine smooths leaf reversals at the control points themselves. A matching plan is near zero throughout; white columns are intervals with no snapshots to check." />
+                        <Border Style="{StaticResource Box}" Padding="4" Height="300">
+                            <sp:WpfPlot x:Name="TransferPlot" />
+                        </Border>
+                    </StackPanel>
+                </Expander>
+                <Expander Header="Full report · angles IEC 61217" Margin="0,0,0,6" Visibility="{Binding Report, Converter={StaticResource NotEmptyToVisibility}}">
+                    <TextBox Text="{Binding Report, Mode=OneWay}" Style="{StaticResource Mono}" Margin="0,8,0,0" />
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -29,7 +29,7 @@
                     </DockPanel>
                 </Border>
                 <Border x:Name="DropB" AllowDrop="True" Drop="DropB_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2" Margin="0,4,0,0"
-                        ToolTip="Drop a log here to compare it as B">
+                        ToolTip="Drop a log here to compare it as B, or the DICOM RT Plan to compare A with its plan">
                     <DockPanel>
                         <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" BorderThickness="1.5" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
                             <TextBlock Text="B" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />

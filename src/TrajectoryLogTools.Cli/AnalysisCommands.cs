@@ -1,9 +1,10 @@
-// AnalysisCommands.cs - compare-delivery and reconstruct-mlc.
+// AnalysisCommands.cs - compare-delivery, compare-plan and reconstruct-mlc.
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using TrajectoryLogTools.Analysis;
 using TrajectoryLogTools.Charts;
 
@@ -14,14 +15,15 @@ namespace TrajectoryLogTools.Cli
         public static bool Handles(string command)
         {
             string c = command.ToLowerInvariant();
-            return c == "compare-delivery" || c == "reconstruct-mlc";
+            return c == "compare-delivery" || c == "compare-plan" || c == "reconstruct-mlc";
         }
 
         public static int Run(string[] args)
         {
             try
             {
-                return args[0].ToLowerInvariant() == "compare-delivery" ? CompareDelivery(args) : ReconstructMlc(args);
+                string c = args[0].ToLowerInvariant();
+                return c == "compare-delivery" ? CompareDelivery(args) : c == "compare-plan" ? ComparePlan(args) : ReconstructMlc(args);
             }
             catch (ArgumentException ex)
             {
@@ -79,6 +81,48 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine();
             Console.WriteLine("Wrote results to " + Path.GetFullPath(outDir));
             return 0;
+        }
+
+        // ---------------------------------------------------------------------------------------
+        /// <summary>A log against its DICOM RT Plan, as the Compare page does with a plan as B.</summary>
+        static int ComparePlan(string[] args)
+        {
+            var inputs = new List<string>();
+            string outDir = null;
+            bool plot = true, ignoreCrc = false, save = false;
+            for (int i = 1; i < args.Length; i++)
+            {
+                string a = args[i];
+                if (a.Length == 0) continue;
+                switch (a)
+                {
+                    case "-h": case "--help": Usage.Print(); return 0;
+                    case "-o": case "--output": outDir = Next(args, ref i); save = true; break;
+                    case "--no-plot": plot = false; break;
+                    case "--ignore-crc": ignoreCrc = true; break;
+                    default:
+                        if (a.StartsWith("-")) throw new ArgumentException("Unknown option " + a);
+                        inputs.Add(a); break;
+                }
+            }
+            if (inputs.Count != 2) throw new ArgumentException("compare-plan needs a log and an RT Plan");
+            foreach (string p in inputs)
+                if (!File.Exists(p)) { Console.Error.WriteLine("Input not found: " + p); return 1; }
+
+            DeliveryRecord log = DeliveryRecord.Load(inputs[0], ignoreCrc);
+            RtPlan plan = RtPlan.Load(inputs[1]);
+            PlanComparisonResult r = PlanComparison.Compare(log, plan);
+            Console.Write(PlanComparison.Report(r));
+            if (save)
+            {
+                var files = PlanComparison.WriteResults(r, outDir);
+                if (plot) files.AddRange(PlanCharts.SaveFigures(r, outDir));
+                Console.WriteLine();
+                Console.WriteLine("Wrote " + files.Count + " files to " + Path.GetFullPath(outDir));
+            }
+            // 0 = compared and the plan matches; 1 = a field not compared, a transfer difference or another patient / plan
+            bool ok = r.AnyCompared && r.Fields.All(f => f.Compared) && r.TransferOk && r.SamePatient != false && r.SamePlanUid != false;
+            return ok ? 0 : 1;
         }
 
         // ---------------------------------------------------------------------------------------

@@ -33,6 +33,13 @@ namespace TrajectoryLogTools.Cli
             Console.WriteLine("      Compare two deliveries, as the Compare page; writes what Save report... writes.");
             Console.WriteLine("      Same as compare-delivery (below).");
             Console.WriteLine();
+            Console.WriteLine("  TrajectoryLogCli compare-plan <log.bin | log.csv> <plan.dcm> [-o <folder>] [--no-plot]");
+            Console.WriteLine("      Compare a log with its DICOM RT Plan, as the Compare page with a plan as B: identity");
+            Console.WriteLine("      (patient, plan UID), transfer check (log planned vs plan) and delivery (actual vs plan).");
+            Console.WriteLine("      Prints the report; with -o also writes plan_comparison_report.txt and, per field, a");
+            Console.WriteLine("      table and figure by control point. Exit code 1 if a field could not be compared, the");
+            Console.WriteLine("      planned values differ from the plan, or the patient / plan UID differ.");
+            Console.WriteLine();
             Console.WriteLine("  TrajectoryLogCli compare-files <a.bin | folderA> <b.bin | folderB> [--ignore-version] ...");
             Console.WriteLine("      Compare every stored value, as the File comparison window. Same as compare (below).");
             Console.WriteLine();

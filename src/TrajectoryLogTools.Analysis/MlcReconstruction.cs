@@ -887,7 +887,7 @@ namespace TrajectoryLogTools.Analysis
         //  interval has no samples (it then bridges linearly) without biasing
         //  well-sampled intervals.
         // ---------------------------------------------------------------------
-        static double[][] FitPiecewiseLinear(double[] c, double[][] ys, int n)
+        internal static double[][] FitPiecewiseLinear(double[] c, double[][] ys, int n)
         {
             const double lambda = 1e-4;
             var M = new double[n, n];
@@ -961,7 +961,7 @@ namespace TrajectoryLogTools.Analysis
         }
 
         // fractional index at which monotone 'knots' reaches 'value'
-        static double InverseInterp(double[] knots, double value)
+        internal static double InverseInterp(double[] knots, double value)
         {
             int n = knots.Length;
             if (value <= knots[0]) return 0;

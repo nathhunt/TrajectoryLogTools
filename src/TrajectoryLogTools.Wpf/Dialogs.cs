@@ -13,6 +13,8 @@ namespace TrajectoryLogTools.Wpf
         /// <summary>The title of message boxes: the app's name (each app sets its own at start-up).</summary>
         public static string Title { get; set; } = "Trajectory Log Tools";
         public const string LogFilter = "Trajectory logs (*.bin)|*.bin|Log CSV exports (*.csv)|*.csv|All files (*.*)|*.*";
+        /// <summary>A log, or a DICOM RT Plan to compare a log with.</summary>
+        public const string LogOrPlanFilter = "Trajectory logs and RT Plans (*.bin;*.csv;*.dcm)|*.bin;*.csv;*.dcm|Trajectory logs (*.bin)|*.bin|DICOM RT Plans (*.dcm)|*.dcm|Log CSV exports (*.csv)|*.csv|All files (*.*)|*.*";
         public const string BinFilter = "Trajectory logs (*.bin)|*.bin|All files (*.*)|*.*";
         public const string EclipseFilter = "Eclipse MLC exports (*.csv)|*.csv|All files (*.*)|*.*";
 
