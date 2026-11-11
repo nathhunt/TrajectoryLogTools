@@ -3,7 +3,8 @@
 //   {
 //     "InputFolder":  "\\\\server\\logs\\Halcyon",     where the v5.1 logs are
 //     "OutputFolder": "\\\\server\\logs\\Halcyon v4",  where the v4.0 logs go
-//     "IncludeSubfolders": false
+//     "IncludeSubfolders": false,
+//     "LeaveOutImaging": true                          leave out kV imaging (CBCT) logs
 //   }
 // The file is written by Settings > Save. It is not part of the deployed files, so redeploying the
 // app keeps it.
@@ -19,6 +20,8 @@ namespace TrajectoryLogTools.Converter
         public string InputFolder { get; set; } = "";
         public string OutputFolder { get; set; } = "";
         public bool IncludeSubfolders { get; set; }
+        /// <summary>Leave kV imaging (CBCT) logs out of the list. On by default (also when an older file doesn't have it).</summary>
+        public bool LeaveOutImaging { get; set; } = true;
 
         public const string FileName = "TrajectoryLogConverter.settings.json";
 

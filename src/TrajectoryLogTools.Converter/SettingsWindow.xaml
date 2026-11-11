@@ -12,6 +12,7 @@
             <TextBox Text="{Binding InputFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default input folder" />
         </DockPanel>
         <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" Margin="0,8,0,0" />
+        <CheckBox Content="Leave out kV imaging (CBCT) logs" IsChecked="{Binding LeaveOutImaging}" Margin="0,6,0,0" />
 
         <TextBlock Text="Default output folder (v4.0 logs)" Style="{StaticResource SectionTitle}" Margin="0,18,0,8" />
         <DockPanel>

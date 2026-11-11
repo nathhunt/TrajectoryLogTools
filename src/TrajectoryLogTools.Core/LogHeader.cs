@@ -50,6 +50,28 @@ namespace TrajectoryLogTools.Core
 
         string First(string[] keys) { return keys.Select(Meta).FirstOrDefault(v => v != null); }
 
+        /// <summary>
+        /// True for a kV imaging log (CBCT): no planned MU (every subbeam's MU and the metadata's
+        /// "Original MU" are 0), and either a kV energy (Halcyon writes "Energy: 0k") or a plan,
+        /// beam or field name with "CBCT" in it (e.g. "KVCBCT_Setup"). A treatment log always has
+        /// planned MU, so it is never taken for one.
+        /// </summary>
+        public bool IsKvImaging
+        {
+            get
+            {
+                if (Subbeams.Any(s => Math.Abs(s.MU) > 1e-6)) return false;
+                double mu;
+                string original = Meta("Original MU");
+                if (original != null && double.TryParse(original, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out mu) && Math.Abs(mu) > 1e-6) return false;
+                string energy = (Meta("Energy") ?? "").Trim();
+                bool kv = System.Text.RegularExpressions.Regex.IsMatch(energy, @"^\d*(\.\d+)?\s*kv?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                var names = new[] { PlanName, Meta("BeamName"), Meta("Beam Name") }.Concat(Subbeams.Select(s => s.Name));
+                bool cbct = names.Any(n => n != null && n.IndexOf("CBCT", StringComparison.OrdinalIgnoreCase) >= 0);
+                return kv || cbct;
+            }
+        }
+
         /// <summary>The subbeam (field) names, e.g. "Arc 1 + Arc 2", or "3 fields" when there are many.</summary>
         public string FieldsText
         {

@@ -45,8 +45,8 @@ namespace TrajectoryLogTools.Converter
         {
             Item = item;
             _include = item.WillConvert;
-            _status = item.WillConvert ? "To convert" : char.ToUpper(item.Reason[0]) + item.Reason.Substring(1);
-            _statusKind = item.WillConvert ? "neutral" : item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.NotV51 ? "neutral" : "caution";
+            _status = item.WillConvert ? (item.IsKvImaging ? "To convert (kV imaging (CBCT) log)" : "To convert") : char.ToUpper(item.Reason[0]) + item.Reason.Substring(1);
+            _statusKind = item.WillConvert ? "neutral" : item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.NotV51 || item.State == V4BatchState.Imaging ? "neutral" : "caution";
         }
     }
 
@@ -59,6 +59,8 @@ namespace TrajectoryLogTools.Converter
         [ObservableProperty] private bool _folderMode = true;
         [ObservableProperty] private string _inputFolder = "";
         [ObservableProperty] private bool _includeSubfolders;
+        /// <summary>Leave kV imaging (CBCT) logs out (they stay listed under the logs that won't be converted).</summary>
+        [ObservableProperty] private bool _leaveOutImaging = true;
         [ObservableProperty] private string _singleFile = "";
         public LogFilter Filter { get; } = new LogFilter();
 
@@ -113,6 +115,7 @@ namespace TrajectoryLogTools.Converter
             InputFolder = _settings.InputFolder ?? "";
             OutputFolder = _settings.OutputFolder ?? "";
             IncludeSubfolders = _settings.IncludeSubfolders;
+            LeaveOutImaging = _settings.LeaveOutImaging;
             OnPropertyChanged(nameof(InputIsDefault));
             OnPropertyChanged(nameof(OutputIsDefault));
         }
@@ -127,6 +130,7 @@ namespace TrajectoryLogTools.Converter
         partial void OnFolderModeChanged(bool value) { Refresh(); }
         partial void OnInputFolderChanged(string value) { OnPropertyChanged(nameof(InputIsDefault)); Refresh(); }
         partial void OnIncludeSubfoldersChanged(bool value) { Refresh(); }
+        partial void OnLeaveOutImagingChanged(bool value) { Refresh(); }
         partial void OnSingleFileChanged(string value) { Refresh(); }
         partial void OnOutputFolderChanged(string value) { OnPropertyChanged(nameof(OutputIsDefault)); Refresh(); }
         partial void OnOverwriteChanged(bool value) { Refresh(); }
@@ -146,7 +150,7 @@ namespace TrajectoryLogTools.Converter
             IsDone = false;
             Result = "";
             string input = (InputFolder ?? "").Trim().Trim('"'), output = (OutputFolder ?? "").Trim().Trim('"'), single = (SingleFile ?? "").Trim().Trim('"');
-            bool folderMode = FolderMode, subfolders = IncludeSubfolders, overwrite = Overwrite;
+            bool folderMode = FolderMode, subfolders = IncludeSubfolders, overwrite = Overwrite, includeImaging = !LeaveOutImaging;
             var settings = new FindSettings { FolderMode = true, Input = input, IncludeSubfolders = subfolders, Output = output };
             string error = folderMode ? Filter.ApplyTo(settings) : null;
 
@@ -168,7 +172,7 @@ namespace TrajectoryLogTools.Converter
                         if (!folderMode) return new List<V4BatchItem> { V4Batch.PlanOne(single, output, overwrite) };
                         List<LogFile> found = LogFinder.Find(settings);
                         cts.Token.ThrowIfCancellationRequested();
-                        return V4Batch.Plan(found, output, overwrite);
+                        return V4Batch.Plan(found, output, overwrite, includeImaging);
                     }, cts.Token);
                 }
                 catch (OperationCanceledException) { return; }
@@ -185,10 +189,12 @@ namespace TrajectoryLogTools.Converter
             else
             {
                 int convert = _all.Count(r => r.CanConvert), already = _all.Count(r => r.Item.State == V4BatchState.AlreadyConverted),
-                    v4 = _all.Count(r => r.Item.State == V4BatchState.NotV51), other = _all.Count - convert - already - v4;
+                    v4 = _all.Count(r => r.Item.State == V4BatchState.NotV51), imaging = _all.Count(r => r.Item.State == V4BatchState.Imaging),
+                    other = _all.Count - convert - already - v4 - imaging;
                 var parts = new List<string> { convert + (convert == 1 ? " log to convert" : " logs to convert") };
                 if (already > 0) parts.Add(already + " already converted");
                 if (v4 > 0) parts.Add(v4 + " already v4.0");
+                if (imaging > 0) parts.Add(imaging + (imaging == 1 ? " CBCT log left out" : " CBCT logs left out"));
                 if (other > 0) parts.Add(other + " that can't be converted");
                 ListSummary = string.Join(" · ", parts) + (folderMode && Filter.IsActive ? "  (" + Filter.Describe() + ")" : "");
             }

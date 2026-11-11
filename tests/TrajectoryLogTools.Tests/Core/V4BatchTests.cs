@@ -39,6 +39,61 @@ namespace TrajectoryLogTools.Tests
             }
         }
 
+        /// <summary>A kV CBCT log as Halcyon writes it: no MU, "Energy: 0k", beam KVCBCT_Setup.</summary>
+        static LogBuilder Cbct(string energy = "0k", string beam = "KVCBCT_Setup", float mu = 0f, string originalMu = "0", string plan = "RA_kV_CBCT")
+        {
+            var b = LogBuilder.V51();
+            b.Subbeams.Clear();
+            b.Subbeams.Add(new Subbeam { ControlPoint = 0, MU = mu, RadTime = 0f, Seq = 0, Name = beam });
+            b.Metadata = "Patient ID:\tPAT001\r\nPlan Name:\t" + plan + "\r\nOriginal MU:\t" + originalMu + "\r\nRemaining MU:\t0\r\nEnergy:\t" + energy + "\r\nBeamName:\t" + beam + "\r\n";
+            return b;
+        }
+
+        static int _n;
+        static bool IsCbct(TempDir dir, LogBuilder b) { return LogHeader.Read(dir.Write("log" + (++_n) + ".bin", b.Build())).IsKvImaging; }
+
+        [Fact]
+        public void KvImaging_NoMuAndKvEnergyOrCbctName()
+        {
+            using (var dir = new TempDir())
+            {
+                Assert.True(IsCbct(dir, Cbct()));
+                Assert.True(IsCbct(dir, Cbct(energy: "6X")));                       // a CBCT name, no MU
+                Assert.True(IsCbct(dir, Cbct(energy: "100 kV", beam: "Setup", plan: "Pelvis")));    // a kV energy, no MU
+                // never a treatment log: it has planned MU
+                Assert.False(IsCbct(dir, Cbct(mu: 150f, originalMu: "150")));
+                Assert.False(IsCbct(dir, Cbct(originalMu: "150")));
+                Assert.False(IsCbct(dir, LogBuilder.V51()));
+                // no MU but nothing says kV imaging: not assumed
+                Assert.False(IsCbct(dir, Cbct(energy: "6xFFF", beam: "Field 1", plan: "Pelvis")));
+            }
+        }
+
+        [Fact]
+        public void Plan_LeavesOutCbctLogs_UnlessAsked_OneFileIsConverted()
+        {
+            using (var dir = new TempDir())
+            {
+                string inDir = dir.Sub("in"), outDir = dir.Sub("out");
+                dir.Write("in/A_20261020081500.bin", LogBuilder.V51().Build());
+                string cbct = dir.Write("in/CBCT_20261020081000.bin", Cbct().Build());
+                var found = LogFinder.Find(new FindSettings { FolderMode = true, Input = inDir });
+
+                var plan = V4Batch.Plan(found, outDir, overwrite: false);
+                V4BatchItem c = plan.Single(i => i.FileName.StartsWith("CBCT"));
+                Assert.Equal(V4BatchState.Imaging, c.State);
+                Assert.Equal("kV imaging (CBCT) log", c.Reason);
+                Assert.True(c.IsKvImaging);
+                Assert.Equal(V4BatchState.Convert, plan.Single(i => i.FileName.StartsWith("A_")).State);
+                Assert.False(plan.Single(i => i.FileName.StartsWith("A_")).IsKvImaging);
+
+                Assert.Equal(V4BatchState.Convert, V4Batch.Plan(found, outDir, false, includeImaging: true).Single(i => i.FileName.StartsWith("CBCT")).State);
+                V4BatchItem one = V4Batch.PlanOne(cbct, outDir, false);
+                Assert.True(one.WillConvert);
+                Assert.True(one.IsKvImaging);
+            }
+        }
+
         [Fact]
         public void Plan_RefusesTheLogsOwnFolder()
         {
