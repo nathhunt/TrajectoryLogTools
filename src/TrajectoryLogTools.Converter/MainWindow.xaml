@@ -5,6 +5,9 @@
         xmlns:wpf="clr-namespace:TrajectoryLogTools.Wpf;assembly=TrajectoryLogTools.Wpf"
         Title="{Binding Title}" Width="1000" Height="860" MinWidth="760" MinHeight="620"
         Background="{DynamicResource ApplicationBackgroundBrush}" ResizeMode="CanResizeWithGrip">
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CollapseListCommand}" />
+    </Window.InputBindings>
     <!--
         One page: where the logs come from (the default folder, filtered, or one file), where they go,
         then the list of what will be converted and Convert. The settings above don't scroll; the list
@@ -41,7 +44,8 @@
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding EnvironmentText}" Style="{StaticResource Secondary}" FontSize="11" Margin="0,6,0,0" Opacity="0.8" />
 
         <!-- ======== From / To ======== -->
-        <Grid DockPanel.Dock="Top" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">
+        <Grid DockPanel.Dock="Top" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}"
+              Visibility="{Binding ListExpanded, Converter={StaticResource InverseBoolToVisibility}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="16" />
@@ -116,6 +120,14 @@
         <!-- ======== The list ======== -->
         <DockPanel Margin="0,14,0,0">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                <!-- the list fills the window (From / To hidden), and back -->
+                <Button DockPanel.Dock="Right" Command="{Binding ToggleListExpandedCommand}" ToolTip="{Binding ExpandText}" AutomationProperties.Name="{Binding ExpandText}"
+                        Padding="8,3" Margin="6,0,0,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="{Binding ExpandIcon}" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ExpandText}" FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">
                     <Button Content="All" Command="{Binding SelectAllCommand}" Style="{StaticResource LinkButton}" FontSize="12" />
                     <Button Content="None" Command="{Binding SelectNoneCommand}" Style="{StaticResource LinkButton}" FontSize="12" Margin="4,0" />

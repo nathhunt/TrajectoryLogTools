@@ -211,6 +211,8 @@ v5.1 logs to v4.0 and nothing else:
   writes `Energy: 0k`) or whose plan, beam or field name contains "CBCT". A treatment log always
   has planned MU, so it is never left out by this. A CBCT log chosen with *Choose file…* is still
   converted (marked as one).
+* **Expand list** (above the list) hides From and To so the list fills the window, for reviewing a
+  long list; *Show From / To* (or Esc) brings them back.
 * **To:** the default output folder, each log keeping its file name. *Replace logs already in
   the output folder* is off by default.
 * **What is written:** the v4.0 log only, always the same way: machine specifier TrueBeam (0),

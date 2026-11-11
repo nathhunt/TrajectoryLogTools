@@ -79,6 +79,12 @@ namespace TrajectoryLogTools.Converter
         public ObservableCollection<LogRow> Rows { get; } = new ObservableCollection<LogRow>();
         List<LogRow> _all = new List<LogRow>();
         [ObservableProperty] private bool _showSkipped;
+        /// <summary>The list fills the window (From / To hidden), for reviewing a long list.</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ExpandIcon), nameof(ExpandText))]
+        private bool _listExpanded;
+        public string ExpandIcon { get { return ListExpanded ? "\uE73F" : "\uE740"; } }   // back to window / full screen
+        public string ExpandText { get { return ListExpanded ? "Show From / To" : "Expand list"; } }
         [ObservableProperty] private bool _isSearching;
         [ObservableProperty] private string _listSummary = "";
         [ObservableProperty] private string _message = "";
@@ -227,6 +233,8 @@ namespace TrajectoryLogTools.Converter
         [RelayCommand] void SelectAll() { foreach (LogRow r in _all.Where(r => r.CanConvert)) r.Include = true; }
         [RelayCommand] void SelectNone() { foreach (LogRow r in _all) r.Include = false; }
         [RelayCommand] void RefreshList() { Refresh(); }
+        [RelayCommand] void ToggleListExpanded() { ListExpanded = !ListExpanded; }
+        [RelayCommand] void CollapseList() { ListExpanded = false; }
 
         // =========================================================================================
         // Folders and file
