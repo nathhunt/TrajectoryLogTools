@@ -77,7 +77,7 @@ namespace TrajectoryLogTools.Core
         {
             get
             {
-                var names = Subbeams.Select(s => s.Name).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+                var names = Subbeams.Select(s => MetaData.DisplayName(s.Name)).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
                 if (Subbeams.Count == 0) return "";
                 if (names.Count == Subbeams.Count && names.Count <= 3) return string.Join(" + ", names);
                 return Subbeams.Count + (Subbeams.Count == 1 ? " field" : " fields");

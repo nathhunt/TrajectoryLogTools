@@ -5,6 +5,18 @@ namespace TrajectoryLogTools.Tests
 {
     public class MetaDataTests
     {
+        [Theory]
+        [InlineData("KVCBCT+AF8-Setup", "KVCBCT_Setup")]   // as Halcyon writes it
+        [InlineData("Arc +-1", "Arc +1")]
+        [InlineData("Arc 1", "Arc 1")]
+        [InlineData("Arc 1+2", "Arc 1+2")]                 // no closing '-': not UTF-7
+        [InlineData("PROS VMAT 7#", "PROS VMAT 7#")]
+        [InlineData("", "")]
+        public void DisplayName_DecodesUtf7(string stored, string shown)
+        {
+            Assert.Equal(shown, MetaData.DisplayName(stored));
+        }
+
         const string Text = "Patient ID:\tPAT001\r\nPlan Name:\tPlan1\r\n";
 
         [Fact]

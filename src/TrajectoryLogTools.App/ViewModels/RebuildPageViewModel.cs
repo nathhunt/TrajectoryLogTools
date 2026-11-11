@@ -202,7 +202,7 @@ namespace TrajectoryLogTools.App.ViewModels
                     {
                         SubbeamInfo i = infos[k];
                         string name = i.Subbeam >= 1 && i.Subbeam <= subbeams.Count && !string.IsNullOrWhiteSpace(subbeams[i.Subbeam - 1].Name)
-                            ? subbeams[i.Subbeam - 1].Name.Trim() : null;
+                            ? Core.MetaData.DisplayName(subbeams[i.Subbeam - 1].Name).Trim() : null;
                         found.Add(new Found { Log = item, Info = i, Name = name, Index = k + 1, InLog = infos.Count });
                     }
                 }

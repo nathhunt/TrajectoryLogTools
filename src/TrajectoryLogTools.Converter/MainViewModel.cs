@@ -45,8 +45,15 @@ namespace TrajectoryLogTools.Converter
         {
             Item = item;
             _include = item.WillConvert;
-            _status = item.WillConvert ? (item.IsKvImaging ? "To convert (kV imaging (CBCT) log)" : "To convert") : char.ToUpper(item.Reason[0]) + item.Reason.Substring(1);
+            _status = item.WillConvert ? (item.IsKvImaging ? "To convert (kV imaging (CBCT) log)" : "To convert") : Capitalise(item.Reason);
             _statusKind = item.WillConvert ? "neutral" : item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.NotV51 || item.State == V4BatchState.Imaging ? "neutral" : "caution";
+        }
+
+        /// <summary>The reason with a capital first letter, except a unit such as "kV".</summary>
+        static string Capitalise(string reason)
+        {
+            if (string.IsNullOrEmpty(reason) || reason.StartsWith("kV", StringComparison.Ordinal)) return reason;
+            return char.ToUpper(reason[0]) + reason.Substring(1);
         }
     }
 
