@@ -14,6 +14,7 @@ namespace TrajectoryLogTools.Converter
         [ObservableProperty] private string _inputFolder;
         [ObservableProperty] private string _outputFolder;
         [ObservableProperty] private bool _includeSubfolders;
+        [ObservableProperty] private bool _leaveOutImaging;
 
         public string FilePath { get { return ConverterSettings.FilePath; } }
 
@@ -23,6 +24,7 @@ namespace TrajectoryLogTools.Converter
             _inputFolder = settings.InputFolder ?? "";
             _outputFolder = settings.OutputFolder ?? "";
             _includeSubfolders = settings.IncludeSubfolders;
+            _leaveOutImaging = settings.LeaveOutImaging;
         }
 
         [RelayCommand]
@@ -53,6 +55,7 @@ namespace TrajectoryLogTools.Converter
             Settings.InputFolder = input;
             Settings.OutputFolder = output;
             Settings.IncludeSubfolders = IncludeSubfolders;
+            Settings.LeaveOutImaging = LeaveOutImaging;
             string error = Settings.Save();
             if (error != null) { Dialogs.Warn(error); return false; }
             return true;

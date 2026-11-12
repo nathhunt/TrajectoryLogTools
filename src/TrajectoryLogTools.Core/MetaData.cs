@@ -117,5 +117,34 @@ namespace TrajectoryLogTools.Core
             if (lines.Count > 0 && lines[lines.Count - 1].Length == 0) lines.RemoveAt(lines.Count - 1);
             return lines;
         }
+
+        static readonly System.Text.RegularExpressions.Regex Utf7Run = new System.Text.RegularExpressions.Regex(@"\+([A-Za-z0-9+/]*)-");
+
+        /// <summary>
+        /// A field (subbeam) name as it should be shown. Halcyon writes names in UTF-7, where a
+        /// character outside plain letters and digits is "+&lt;base64 of UTF-16&gt;-": "KVCBCT+AF8-Setup"
+        /// is "KVCBCT_Setup", "+-" is "+". Only for display: the file keeps its bytes. A run that
+        /// doesn't decode to printable characters is left as it is.
+        /// </summary>
+        public static string DisplayName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.IndexOf('+') < 0) return name;
+            return Utf7Run.Replace(name, m =>
+            {
+                string b64 = m.Groups[1].Value;
+                if (b64.Length == 0) return "+";
+                try
+                {
+                    int bits = b64.Length * 6, chars = bits / 16;
+                    if (chars == 0) return m.Value;
+                    string padded = b64 + new string('=', (4 - b64.Length % 4) % 4);
+                    byte[] bytes = Convert.FromBase64String(padded);
+                    if (bytes.Length < 2 * chars) return m.Value;
+                    string text = Encoding.BigEndianUnicode.GetString(bytes, 0, 2 * chars);
+                    return text.Any(c => char.IsControl(c)) ? m.Value : text;
+                }
+                catch (FormatException) { return m.Value; }
+            });
+        }
     }
 }

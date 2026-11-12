@@ -5,7 +5,9 @@
 //   * it is not a v5.1 log (already v4.0, or not a trajectory log);
 //   * its v4.0 file is already in the output folder (unless overwrite);
 //   * another log in the list has the same file name (from a subfolder): only the first is converted;
-//   * the output folder is the log's own folder (the v4.0 file would replace the original).
+//   * the output folder is the log's own folder (the v4.0 file would replace the original);
+//   * it is a kV imaging (CBCT) log, unless asked to include them (LogHeader.IsKvImaging).
+// One file chosen on its own is converted even when it is a CBCT log (flagged, not refused).
 // Only the v4.0 log is written (no CSV, time-axis file or run log), always the same way:
 //   machine specifier TrueBeam (0), serial number removed, couch axes kept, and nothing else in the
 //   header changed (patient, plan, field names, metadata are copied as they are).
@@ -31,6 +33,8 @@ namespace TrajectoryLogTools.Core
         DuplicateName,
         /// <summary>The output folder is the log's own folder.</summary>
         SameFolder,
+        /// <summary>A kV imaging (CBCT) log, left out.</summary>
+        Imaging,
     }
 
     public sealed class V4BatchItem
@@ -49,12 +53,17 @@ namespace TrajectoryLogTools.Core
         /// <summary>Why it is not converted, in a few words ("" when it is).</summary>
         public string Reason { get; set; } = "";
         public bool WillConvert { get { return State == V4BatchState.Convert; } }
+        /// <summary>A kV imaging (CBCT) log (whether or not it is left out).</summary>
+        public bool IsKvImaging { get; set; }
     }
 
     public static class V4Batch
     {
-        /// <summary>The plan for the logs found (in their order), all going to <paramref name="outputFolder"/>.</summary>
-        public static List<V4BatchItem> Plan(IEnumerable<LogFile> logs, string outputFolder, bool overwrite)
+        /// <summary>
+        /// The plan for the logs found (in their order), all going to <paramref name="outputFolder"/>.
+        /// kV imaging (CBCT) logs are left out unless <paramref name="includeImaging"/>.
+        /// </summary>
+        public static List<V4BatchItem> Plan(IEnumerable<LogFile> logs, string outputFolder, bool overwrite, bool includeImaging = false)
         {
             var result = new List<V4BatchItem>();
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -63,6 +72,11 @@ namespace TrajectoryLogTools.Core
                 V4BatchItem item = Describe(f.FullPath, outputFolder, overwrite);
                 item.RelativeDir = f.RelativeDir ?? "";
                 item.Date = f.Date;
+                if (item.IsKvImaging && !includeImaging && item.State != V4BatchState.Unreadable)
+                {
+                    item.State = V4BatchState.Imaging;
+                    item.Reason = "kV imaging (CBCT) log";
+                }
                 if (item.State == V4BatchState.Convert || item.State == V4BatchState.AlreadyConverted)
                 {
                     if (!names.Add(item.FileName))
@@ -101,6 +115,7 @@ namespace TrajectoryLogTools.Core
             item.PlanName = h.PlanName;
             item.PatientId = h.PatientId;
             item.FieldsText = h.FieldsText;
+            item.IsKvImaging = h.IsKvImaging;
             if (h.Version != "5.1")
             {
                 item.State = V4BatchState.NotV51;

@@ -153,7 +153,7 @@ namespace TrajectoryLogTools.App.ViewModels
             LogSummary s = Item.Summary;
             List<Subbeam> subbeams = d.Log != null ? d.Log.Subbeams : (Item.Header != null ? Item.Header.Subbeams : new List<Subbeam>());
             Func<int, string> fieldName = b => b >= 1 && b <= subbeams.Count && !string.IsNullOrWhiteSpace(subbeams[b - 1].Name)
-                ? subbeams[b - 1].Name : "Field " + b;
+                ? Core.MetaData.DisplayName(subbeams[b - 1].Name) : "Field " + b;
 
             // ---- facts ----
             if (s != null)
@@ -245,7 +245,7 @@ namespace TrajectoryLogTools.App.ViewModels
             LogSummary s = Item.Summary;
             List<Subbeam> subbeams = d.Log != null ? d.Log.Subbeams : (Item.Header != null ? Item.Header.Subbeams : new List<Subbeam>());
             Func<int, string> fieldName = b => b >= 1 && b <= subbeams.Count && !string.IsNullOrWhiteSpace(subbeams[b - 1].Name)
-                ? subbeams[b - 1].Name : "Field " + b;
+                ? Core.MetaData.DisplayName(subbeams[b - 1].Name) : "Field " + b;
             Func<double, double> angle = g => Display.Angle(g, d.AxisScale);
             Fields.Clear(); Holds.Clear(); Timeline.Clear(); TimelineTicks.Clear();
             _anglesShown = Display.Angles;

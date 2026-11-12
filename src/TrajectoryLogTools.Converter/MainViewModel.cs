@@ -45,8 +45,15 @@ namespace TrajectoryLogTools.Converter
         {
             Item = item;
             _include = item.WillConvert;
-            _status = item.WillConvert ? "To convert" : char.ToUpper(item.Reason[0]) + item.Reason.Substring(1);
-            _statusKind = item.WillConvert ? "neutral" : item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.NotV51 ? "neutral" : "caution";
+            _status = item.WillConvert ? (item.IsKvImaging ? "To convert (kV imaging (CBCT) log)" : "To convert") : Capitalise(item.Reason);
+            _statusKind = item.WillConvert ? "neutral" : item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.NotV51 || item.State == V4BatchState.Imaging ? "neutral" : "caution";
+        }
+
+        /// <summary>The reason with a capital first letter, except a unit such as "kV".</summary>
+        static string Capitalise(string reason)
+        {
+            if (string.IsNullOrEmpty(reason) || reason.StartsWith("kV", StringComparison.Ordinal)) return reason;
+            return char.ToUpper(reason[0]) + reason.Substring(1);
         }
     }
 
@@ -59,6 +66,8 @@ namespace TrajectoryLogTools.Converter
         [ObservableProperty] private bool _folderMode = true;
         [ObservableProperty] private string _inputFolder = "";
         [ObservableProperty] private bool _includeSubfolders;
+        /// <summary>Leave kV imaging (CBCT) logs out (they stay listed under the logs that won't be converted).</summary>
+        [ObservableProperty] private bool _leaveOutImaging = true;
         [ObservableProperty] private string _singleFile = "";
         public LogFilter Filter { get; } = new LogFilter();
 
@@ -70,6 +79,12 @@ namespace TrajectoryLogTools.Converter
         public ObservableCollection<LogRow> Rows { get; } = new ObservableCollection<LogRow>();
         List<LogRow> _all = new List<LogRow>();
         [ObservableProperty] private bool _showSkipped;
+        /// <summary>The list fills the window (From / To hidden), for reviewing a long list.</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ExpandIcon), nameof(ExpandText))]
+        private bool _listExpanded;
+        public string ExpandIcon { get { return ListExpanded ? "\uE73F" : "\uE740"; } }   // back to window / full screen
+        public string ExpandText { get { return ListExpanded ? "Show From / To" : "Expand list"; } }
         [ObservableProperty] private bool _isSearching;
         [ObservableProperty] private string _listSummary = "";
         [ObservableProperty] private string _message = "";
@@ -113,6 +128,7 @@ namespace TrajectoryLogTools.Converter
             InputFolder = _settings.InputFolder ?? "";
             OutputFolder = _settings.OutputFolder ?? "";
             IncludeSubfolders = _settings.IncludeSubfolders;
+            LeaveOutImaging = _settings.LeaveOutImaging;
             OnPropertyChanged(nameof(InputIsDefault));
             OnPropertyChanged(nameof(OutputIsDefault));
         }
@@ -127,6 +143,7 @@ namespace TrajectoryLogTools.Converter
         partial void OnFolderModeChanged(bool value) { Refresh(); }
         partial void OnInputFolderChanged(string value) { OnPropertyChanged(nameof(InputIsDefault)); Refresh(); }
         partial void OnIncludeSubfoldersChanged(bool value) { Refresh(); }
+        partial void OnLeaveOutImagingChanged(bool value) { Refresh(); }
         partial void OnSingleFileChanged(string value) { Refresh(); }
         partial void OnOutputFolderChanged(string value) { OnPropertyChanged(nameof(OutputIsDefault)); Refresh(); }
         partial void OnOverwriteChanged(bool value) { Refresh(); }
@@ -146,7 +163,7 @@ namespace TrajectoryLogTools.Converter
             IsDone = false;
             Result = "";
             string input = (InputFolder ?? "").Trim().Trim('"'), output = (OutputFolder ?? "").Trim().Trim('"'), single = (SingleFile ?? "").Trim().Trim('"');
-            bool folderMode = FolderMode, subfolders = IncludeSubfolders, overwrite = Overwrite;
+            bool folderMode = FolderMode, subfolders = IncludeSubfolders, overwrite = Overwrite, includeImaging = !LeaveOutImaging;
             var settings = new FindSettings { FolderMode = true, Input = input, IncludeSubfolders = subfolders, Output = output };
             string error = folderMode ? Filter.ApplyTo(settings) : null;
 
@@ -168,7 +185,7 @@ namespace TrajectoryLogTools.Converter
                         if (!folderMode) return new List<V4BatchItem> { V4Batch.PlanOne(single, output, overwrite) };
                         List<LogFile> found = LogFinder.Find(settings);
                         cts.Token.ThrowIfCancellationRequested();
-                        return V4Batch.Plan(found, output, overwrite);
+                        return V4Batch.Plan(found, output, overwrite, includeImaging);
                     }, cts.Token);
                 }
                 catch (OperationCanceledException) { return; }
@@ -185,10 +202,12 @@ namespace TrajectoryLogTools.Converter
             else
             {
                 int convert = _all.Count(r => r.CanConvert), already = _all.Count(r => r.Item.State == V4BatchState.AlreadyConverted),
-                    v4 = _all.Count(r => r.Item.State == V4BatchState.NotV51), other = _all.Count - convert - already - v4;
+                    v4 = _all.Count(r => r.Item.State == V4BatchState.NotV51), imaging = _all.Count(r => r.Item.State == V4BatchState.Imaging),
+                    other = _all.Count - convert - already - v4 - imaging;
                 var parts = new List<string> { convert + (convert == 1 ? " log to convert" : " logs to convert") };
                 if (already > 0) parts.Add(already + " already converted");
                 if (v4 > 0) parts.Add(v4 + " already v4.0");
+                if (imaging > 0) parts.Add(imaging + (imaging == 1 ? " CBCT log left out" : " CBCT logs left out"));
                 if (other > 0) parts.Add(other + " that can't be converted");
                 ListSummary = string.Join(" · ", parts) + (folderMode && Filter.IsActive ? "  (" + Filter.Describe() + ")" : "");
             }
@@ -214,6 +233,8 @@ namespace TrajectoryLogTools.Converter
         [RelayCommand] void SelectAll() { foreach (LogRow r in _all.Where(r => r.CanConvert)) r.Include = true; }
         [RelayCommand] void SelectNone() { foreach (LogRow r in _all) r.Include = false; }
         [RelayCommand] void RefreshList() { Refresh(); }
+        [RelayCommand] void ToggleListExpanded() { ListExpanded = !ListExpanded; }
+        [RelayCommand] void CollapseList() { ListExpanded = false; }
 
         // =========================================================================================
         // Folders and file

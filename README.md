@@ -204,8 +204,15 @@ v5.1 logs to v4.0 and nothing else:
 * **The list** shows, compactly, every log that will be converted (treated, patient · plan ·
   fields, file, subfolder), each with a tick to leave it out, and a count. Logs that won't be
   converted are hidden unless asked for, with the reason: already v4.0, already in the output
-  folder, same file name as another log in the list, can't be read, or the output folder is
-  the log's own folder.
+  folder, same file name as another log in the list, can't be read, the output folder is
+  the log's own folder, or a kV imaging (CBCT) log.
+* **Leave out kV imaging (CBCT) logs** (on by default; the default is in Settings): a log with no
+  planned MU (every field's MU and the metadata's Original MU are 0) whose energy is kV (Halcyon
+  writes `Energy: 0k`) or whose plan, beam or field name contains "CBCT". A treatment log always
+  has planned MU, so it is never left out by this. A CBCT log chosen with *Choose file…* is still
+  converted (marked as one).
+* **Expand list** (above the list) hides From and To so the list fills the window, for reviewing a
+  long list; *Show From / To* (or Esc) brings them back.
 * **To:** the default output folder, each log keeping its file name. *Replace logs already in
   the output folder* is off by default.
 * **What is written:** the v4.0 log only, always the same way: machine specifier TrueBeam (0),
@@ -222,7 +229,8 @@ Publishing doesn't overwrite the settings file. Example:
 {
   "InputFolder": "\\\\server\\Halcyon\\TrajectoryLogs",
   "OutputFolder": "\\\\server\\Halcyon\\TrajectoryLogs v4",
-  "IncludeSubfolders": false
+  "IncludeSubfolders": false,
+  "LeaveOutImaging": true
 }
 ```
 

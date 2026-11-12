@@ -153,7 +153,7 @@ namespace TrajectoryLogTools.Analysis
             var names = new Dictionary<int, string>();
             if (record.Log != null)
             {
-                for (int k = 0; k < record.Log.Subbeams.Count; k++) names[k + 1] = (record.Log.Subbeams[k].Name ?? "").Trim();
+                for (int k = 0; k < record.Log.Subbeams.Count; k++) names[k + 1] = (MetaData.DisplayName(record.Log.Subbeams[k].Name) ?? "").Trim();
                 var meta = new LogHeader { MetaDataText = record.Log.MetaDataText ?? "" };
                 r.LogPatientId = Blank(meta.PatientId);
                 r.LogPlanName = Blank(meta.PlanName);
