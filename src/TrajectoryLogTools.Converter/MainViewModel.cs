@@ -129,6 +129,17 @@ namespace TrajectoryLogTools.Converter
             OutputFolder = _settings.OutputFolder ?? "";
             IncludeSubfolders = _settings.IncludeSubfolders;
             LeaveOutImaging = _settings.LeaveOutImaging;
+            Overwrite = _settings.Overwrite;
+            ShowSkipped = _settings.ShowSkipped;
+            // the filter the window opens with (by default: today, 00:00 to 23:59)
+            Filter.UseDateRange = _settings.UsePeriod;
+            Filter.FromDate = _settings.PeriodStartDate(DateTime.Today);
+            Filter.ToDate = DateTime.Today;
+            Filter.FromTime = ConverterSettings.Time(_settings.PeriodFrom, TimeSpan.Zero);
+            Filter.ToTime = ConverterSettings.Time(_settings.PeriodTo, new TimeSpan(23, 59, 0));
+            Filter.UseTimeOfDay = _settings.UseTimeOfDay;
+            Filter.DayFromTime = ConverterSettings.Time(_settings.DayFrom, new TimeSpan(8, 0, 0));
+            Filter.DayToTime = ConverterSettings.Time(_settings.DayTo, new TimeSpan(17, 0, 0));
             OnPropertyChanged(nameof(InputIsDefault));
             OnPropertyChanged(nameof(OutputIsDefault));
         }
