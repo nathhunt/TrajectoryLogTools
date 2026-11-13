@@ -219,7 +219,11 @@ v5.1 logs to v4.0 and nothing else:
   serial number removed, couch axes kept, everything else in the header (patient, plan, field
   names, metadata) as it is. No time-axis file, CSV or run log.
 
-**Settings** holds the default input and output folders (and *include subfolders*). They are
+**Settings** holds the default input and output folders (and *include subfolders*, *leave out
+kV imaging logs*) and the filter and list the window opens with: by default **only logs treated
+today, 00:00 to 23:59**; the period can be today, today and yesterday, or the last 3, 7, 14 or 30
+days, with its start and end times; times of day on every day (off by default); *replace logs
+already in the output folder* and *show the logs that won't be converted* (both off). They are
 saved in `TrajectoryLogConverter.settings.json` **in the app's folder**, so everyone using that
 copy gets the same folders; whoever changes them needs write access to the folder. A folder
 chosen in the main window is for that session only (*Back to the default folder* returns).
@@ -230,7 +234,10 @@ Publishing doesn't overwrite the settings file. Example:
   "InputFolder": "\\\\server\\Halcyon\\TrajectoryLogs",
   "OutputFolder": "\\\\server\\Halcyon\\TrajectoryLogs v4",
   "IncludeSubfolders": false,
-  "LeaveOutImaging": true
+  "LeaveOutImaging": true,
+  "UsePeriod": true, "PeriodDays": 1, "PeriodFrom": "00:00", "PeriodTo": "23:59",
+  "UseTimeOfDay": false, "DayFrom": "08:00", "DayTo": "17:00",
+  "Overwrite": false, "ShowSkipped": false
 }
 ```
 
