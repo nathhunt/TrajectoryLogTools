@@ -311,6 +311,15 @@ namespace TrajectoryLogTools.Converter
             ConvertCommand.NotifyCanExecuteChanged();
             int ok = 0, failed = 0, skipped = 0;
             bool overwrite = Overwrite;
+            string from = FolderMode ? (InputFolder ?? "").Trim().Trim('"') + (IncludeSubfolders ? " (with subfolders)" : "") : (SingleFile ?? "").Trim().Trim('"');
+            var notConverted = _all.Where(r => !(r.Include && r.CanConvert)).ToList();
+            AppLog.Info("Convert " + todo.Count + (todo.Count == 1 ? " log" : " logs") + " to v4.0" +
+                        Environment.NewLine + "from " + from + (FolderMode && Filter.IsActive ? ", " + Filter.Describe() : "") +
+                        Environment.NewLine + "to " + output + (overwrite ? " (replacing logs already there)" : "") +
+                        Environment.NewLine + FixedOptions +
+                        (notConverted.Count > 0 ? Environment.NewLine + "Not converted: " + notConverted.Count + " (" +
+                            string.Join(", ", notConverted.GroupBy(r => r.CanConvert ? "unticked" : r.Item.Reason).Select(g => g.Count() + " " + g.Key)) + ")" : ""));
+            var logLines = new List<string>();
             for (int i = 0; i < todo.Count; i++)
             {
                 LogRow row = todo[i];
@@ -329,9 +338,11 @@ namespace TrajectoryLogTools.Converter
                     case ExportOutcome.Skipped: row.Status = "Skipped: " + detail; row.StatusKind = "neutral"; skipped++; break;
                     default: row.Status = "Failed: " + detail; row.StatusKind = "critical"; failed++; break;
                 }
+                logLines.AddRange(lines.Count > 0 ? lines : new List<string> { row.Status + "  " + item.Path });
                 Progress = 100.0 * (i + 1) / todo.Count;
             }
             Result = ok + " converted" + (skipped > 0 ? ", " + skipped + " skipped" : "") + (failed > 0 ? ", " + failed + " failed" : "") + ".";
+            AppLog.Info("Conversion finished: " + Result, logLines);
             IsBusy = false;
             IsDone = true;
             foreach (LogRow r in todo) r.Include = false;   // done; a later Convert won't repeat them

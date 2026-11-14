@@ -184,8 +184,28 @@ log's own scale (its header says which); Save report…'s figure follows the set
 **Dates** are shown and written in the New Zealand format, dd/MM/yyyy with 24-hour times,
 whatever the PC's regional settings (the date pickers too).
 
-**Errors** are logged in full to `%LocalAppData%\TrajectoryLogTools\errors.log`; the message
-shown names the file.
+**Logs.** Each app keeps a log of what it did and of every error, in a **`Logs` folder beside the
+app** (or the folder set in Settings), so all the logs of a deployed copy are in one place:
+* **What:** each start (version, user, computer, Windows, .NET); the main app also logs the logs
+  opened, comparisons (delivery, file, plan) with their verdicts, exports and rebuilds log by
+  log and field by field, reports saved and settings changed; the converter logs each conversion
+  (where from, the filter, where to, the options, what was left out and why) and every log's
+  result, and settings changed. Errors are logged in full (stack trace); the message shown names
+  the file.
+* **One file per user, computer and day:** `<app>_<yyyy-MM-dd>_<user>_<computer>.log`, e.g.
+  `TrajectoryLogConverter_2026-11-14_huntelersn_WS042.log`. Users never write to the same file;
+  the same user with the app open twice waits up to a second for the file.
+* **Old logs are deleted** when an app starts (in the background): its own logs last written
+  more than the retention period ago, 1 month by default (Settings: 1 week to 1 year). Only files
+  named as above are touched; a file that is open, already gone or not this user's to delete is
+  skipped and left for a later start.
+* **Permissions:** everyone using the app needs write access (Modify) to the log folder; the app's
+  own folder can stay read-only. If the folder can't be written to, the log goes to the user's
+  `%LocalAppData%\TrajectoryLogTools\Logs` instead and Settings says so. Logs can hold patient IDs
+  (in file names and messages), and in a shared folder everyone with access can read them.
+* **Settings:** the converter keeps the log folder and retention in its settings file; the main
+  app in `TrajectoryLogTools.settings.json` beside it (for everyone; the rest of its settings are
+  per user). *Open* in Settings opens the folder.
 
 **Settings** (gear icon): theme (light by default, dark, or follow Windows; ◐ toggles), applied when you press Save, optional Compare
 tolerances, and clearing the recent logs list. They are saved per user in
@@ -237,7 +257,8 @@ Publishing doesn't overwrite the settings file. Example:
   "LeaveOutImaging": true,
   "UsePeriod": true, "PeriodDays": 1, "PeriodFrom": "00:00", "PeriodTo": "23:59",
   "UseTimeOfDay": false, "DayFrom": "08:00", "DayTo": "17:00",
-  "Overwrite": false, "ShowSkipped": false
+  "Overwrite": false, "ShowSkipped": false,
+  "LogFolder": "", "LogRetentionDays": 30
 }
 ```
 

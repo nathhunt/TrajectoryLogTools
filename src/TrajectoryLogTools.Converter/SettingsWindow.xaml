@@ -56,6 +56,21 @@
         <CheckBox Content="Replace logs already in the output folder" IsChecked="{Binding Overwrite}" Margin="0,10,0,0" />
         <CheckBox Content="Show the logs that won't be converted" IsChecked="{Binding ShowSkipped}" Margin="0,6,0,0" />
 
+        <TextBlock Text="Logs" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
+        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
+                   Text="Everything the app does (conversions, settings, errors) is logged: one file per user, computer and day. Empty folder = the Logs folder beside the app; everyone using the app must be able to write to it." />
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" ToolTip="Open the folder the log is in now" />
+            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" />
+            <TextBox Text="{Binding LogFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Log folder" ToolTip="{Binding DefaultLogFolder}" />
+        </DockPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="Delete logs older than" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <ComboBox ItemsSource="{Binding RetentionChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding LogRetentionDays}"
+                      MinWidth="140" AutomationProperties.Name="Keep logs for" />
+        </StackPanel>
+        <TextBlock Text="{Binding LogWhere, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap" />
+
         <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0">
             <Run Text="Saved beside the app, so everyone using this copy of the app gets the same settings (they apply when the app opens and when you save here):" />
             <LineBreak /><Run Text="{Binding FilePath, Mode=OneWay}" />

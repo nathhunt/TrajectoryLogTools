@@ -118,6 +118,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 string pa = A.Path, pb = B.Path;
                 Commands.FileComparison c = await Task.Run(() => Commands.CompareFiles(pa, pb, opt));
                 Show(c);
+                AppLog.Info("Compared files" + Environment.NewLine + "A " + A.Path + Environment.NewLine + "B " + B.Path + Environment.NewLine + Verdict);
             }
             catch (Exception ex) { Error = "Could not compare the files: " + ex.Message; }
             finally { IsBusy = false; }

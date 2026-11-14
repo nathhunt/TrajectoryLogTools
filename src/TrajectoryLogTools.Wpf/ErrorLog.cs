@@ -1,35 +1,17 @@
-// ErrorLog.cs - errors, with their full details, appended to
-// %LocalAppData%\TrajectoryLogTools\errors.log, so a problem can be traced after the fact.
+// ErrorLog.cs - errors, with their full details, in the app's log (Core.AppLog: the Logs folder
+// beside the app, one file per user, computer and day), so a problem can be traced after the fact.
 
 using System;
-using System.IO;
-using System.Text;
+using TrajectoryLogTools.Core;
 
 namespace TrajectoryLogTools.Wpf
 {
     public static class ErrorLog
     {
-        public static string FilePath
-        {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TrajectoryLogTools", "errors.log"); }
-        }
+        /// <summary>Today's log file of this user, where the error was written.</summary>
+        public static string FilePath { get { return AppLog.FilePath; } }
 
         /// <summary>Appends the error; never throws (a log that can't be written is let go).</summary>
-        public static void Write(string where, Exception ex)
-        {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
-                var sb = new StringBuilder();
-                var app = (System.Reflection.Assembly.GetEntryAssembly() ?? typeof(ErrorLog).Assembly).GetName();
-                sb.AppendLine("==== " + TrajectoryLogTools.Core.Fmt.DateTimeSeconds(DateTime.Now) + "  " + where + "  (" +
-                              app.Name + " " + AppVersion.Full + ", " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription + ", " +
-                              System.Runtime.InteropServices.RuntimeInformation.OSDescription + ")");
-                sb.AppendLine(ex == null ? "(no details)" : ex.ToString());
-                sb.AppendLine();
-                File.AppendAllText(FilePath, sb.ToString(), Encoding.UTF8);
-            }
-            catch (Exception) { }
-        }
+        public static void Write(string where, Exception ex) { AppLog.Error(where, ex); }
     }
 }

@@ -184,6 +184,8 @@ namespace TrajectoryLogTools.App.ViewModels
                 Progress = 100.0 * (i + 1) / Rows.Count;
             }
             Summary = ok + " done, " + skipped + " skipped, " + failed + " failed" + (_cts.IsCancellationRequested ? " (cancelled)" : "") + ".";
+            AppLog.Info("Export of " + Rows.Count + (Rows.Count == 1 ? " log" : " logs") + " to " + (folder ?? "a 'converted' folder next to each log") + ": " + Summary,
+                        records.SelectMany(r => new[] { r.Log }.Concat(r.Lines.Select(l => "  " + l))));
             if (SaveRunLog && records.Count > 0)
             {
                 var errors = new List<string>();

@@ -145,6 +145,10 @@ namespace TrajectoryLogTools.App.ViewModels
                 string label = A.DisplayName + " " + A.DateText;
                 Result = await Task.Run(() => PlanComparison.Compare(rec, plan, label));
                 Show(Result);
+                Core.AppLog.Info("Compared log " + A.Path + " with plan " + PlanPath + Environment.NewLine +
+                            (IdentityWarning.Length > 0 ? IdentityWarning + Environment.NewLine : "") + Verdict +
+                            (Cards.Count > 0 ? Environment.NewLine + string.Join(" · ", Cards.Select(c => c.Label + ": " + c.Value)) : "") +
+                            string.Concat(Result.Fields.Where(f => !f.Compared).Select(f => Environment.NewLine + f.Label + " not compared: " + f.Error)));
                 if (!Result.AnyCompared)
                     Error = "No field of this log could be compared with this plan: " +
                             string.Join("; ", Result.Fields.Select(f => f.Label + ": " + f.Error)) + ".";
@@ -152,6 +156,7 @@ namespace TrajectoryLogTools.App.ViewModels
             catch (Exception ex)
             {
                 Error = "This log can't be compared with " + (PlanPath == null ? "the plan" : Path.GetFileName(PlanPath)) + ": " + ex.Message;
+                Core.AppLog.Info("Plan comparison failed (" + A?.Path + ", " + PlanPath + "): " + ex.Message);
             }
             finally
             {
@@ -259,6 +264,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 List<string> files = PlanComparison.WriteResults(Result, folder);
                 files.AddRange(PlanCharts.SaveFigures(Result, folder, scale: Display.Angles));
                 _main.ShowNotice("Saved " + files.Count + " files (report, tables and figures) to " + folder, "info");
+                Core.AppLog.Info("Saved the plan comparison of " + A.Path + " with " + PlanPath, files);
             }
             catch (Exception ex) { _main.ShowNotice("Could not save: " + ex.Message, "critical"); }
         }
