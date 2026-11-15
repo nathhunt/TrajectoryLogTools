@@ -1,10 +1,11 @@
-// App.xaml.cs - start-up, and what happens to errors nothing else caught (logged in full to
-// errors.log, then a message; the app carries on).
+// App.xaml.cs - start-up (the log first), and what happens to errors nothing else caught (logged
+// in full in the app's log, then a message; the app carries on).
 
 using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using TrajectoryLogTools.Core;
 using TrajectoryLogTools.Wpf;
 
 namespace TrajectoryLogTools.Converter
@@ -16,6 +17,9 @@ namespace TrajectoryLogTools.Converter
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            string settingsError;
+            ConverterSettings settings = ConverterSettings.Load(out settingsError);
+            AppLog.Start("TrajectoryLogConverter", AppVersion.Full, settings.LogFolder, settings.LogRetentionDays);
             NzCulture.Apply();
             Dialogs.Title = "Trajectory Log Converter";
             DispatcherUnhandledException += OnUnhandledException;

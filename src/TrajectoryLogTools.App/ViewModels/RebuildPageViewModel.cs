@@ -458,11 +458,17 @@ namespace TrajectoryLogTools.App.ViewModels
                 }
                 int ready = all.Count(s => s.Status == RebuildStatus.Ready);
                 string where = folders.Count == 1 ? folders[0] : folders.Count + " folders (next to each log)";
+                AppLog.Info("Rebuilt Eclipse MLC files: " + ready + " of " + all.Count + " fields ready to import, saved to " + where +
+                            " (positions " + (UseActual ? "actual" : "expected") + ", axis " + (AxisMu ? "MU" : "control point") +
+                            ", gantry " + (GantryFromPlan ? "plan" : "actual") + (UseExports ? ", Eclipse exports" : "") + ")",
+                            Results.Select(r => r.StatusText + "  " + r.Name + "  " + (r.Log?.Path ?? "") +
+                                                (string.IsNullOrEmpty(r.Result?.OutputPath) ? "" : "  -> " + r.Result.OutputPath) +
+                                                (string.IsNullOrEmpty(r.Error) ? "" : "  (" + r.Error + ")")));
                 _main.ShowNotice(ready == all.Count
                     ? (ready == 1 ? "The field is" : "All " + ready + " fields are") + " ready to import. Files saved to " + where
                     : ready + " of " + all.Count + " fields ready; see the results.", ready == all.Count ? "info" : "caution");
             }
-            catch (Exception ex) { _main.ShowNotice("Rebuild failed: " + ex.Message, "critical"); }
+            catch (Exception ex) { _main.ShowNotice("Rebuild failed: " + ex.Message, "critical"); AppLog.Error("Rebuild", ex); }
             finally { IsBusy = false; }
         }
 

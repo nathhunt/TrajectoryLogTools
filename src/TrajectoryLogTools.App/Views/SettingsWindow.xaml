@@ -36,6 +36,23 @@
             <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MuTolerance}" Margin="0,8,0,0" AutomationProperties.Name="MU tolerance" />
         </Grid>
 
+        <TextBlock Text="Logs (for everyone using this copy of the app)" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
+        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
+                   Text="Everything the app does (logs opened, comparisons, exports, rebuilds, reports saved, errors) is logged: one file per user, computer and day. Empty folder = the Logs folder beside the app; everyone using the app must be able to write to it." />
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" ToolTip="Open the folder the log is in now" />
+            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" />
+            <TextBox Text="{Binding LogFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Log folder" ToolTip="{Binding DefaultLogFolder}" />
+        </DockPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="Delete logs older than" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <ComboBox ItemsSource="{Binding RetentionChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding LogRetentionDays}"
+                      MinWidth="140" AutomationProperties.Name="Keep logs for" />
+        </StackPanel>
+        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap">
+            <Run Text="{Binding LogWhere, Mode=OneWay}" /><Run Text=" These two settings are saved beside the app, in " /><Run Text="{Binding SharedFilePath, Mode=OneWay}" /><Run Text="." />
+        </TextBlock>
+
         <TextBlock Text="Recent logs" Style="{StaticResource SectionTitle}" Margin="0,18,0,6" />
         <Button Content="Clear the recent logs list" Command="{Binding ClearRecentCommand}" HorizontalAlignment="Left" Padding="12,5" />
 

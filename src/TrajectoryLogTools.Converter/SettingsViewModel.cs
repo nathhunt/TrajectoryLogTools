@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TrajectoryLogTools.Core;
 using TrajectoryLogTools.Wpf;
 
 namespace TrajectoryLogTools.Converter
@@ -28,6 +29,11 @@ namespace TrajectoryLogTools.Converter
         [ObservableProperty] private TimeSpan _dayTo;
         [ObservableProperty] private bool _overwrite;
         [ObservableProperty] private bool _showSkipped;
+        [ObservableProperty] private string _logFolder;
+        [ObservableProperty] private int _logRetentionDays;
+        public IReadOnlyList<KeyValuePair<int, string>> RetentionChoices { get { return AppLog.RetentionChoices; } }
+        public string LogWhere { get { return AppLog.WhereText; } }
+        public string DefaultLogFolder { get { return AppLog.DefaultFolder; } }
 
         /// <summary>The periods offered: the last N days, today included.</summary>
         public IReadOnlyList<KeyValuePair<int, string>> PeriodChoices { get; } = new[]
@@ -58,6 +64,8 @@ namespace TrajectoryLogTools.Converter
             _dayTo = ConverterSettings.Time(settings.DayTo, new TimeSpan(17, 0, 0));
             _overwrite = settings.Overwrite;
             _showSkipped = settings.ShowSkipped;
+            _logFolder = settings.LogFolder ?? "";
+            _logRetentionDays = AppLog.RetentionChoices.Any(c => c.Key == settings.LogRetentionDays) ? settings.LogRetentionDays : AppLog.DefaultRetentionDays;
         }
 
         [RelayCommand]
@@ -66,6 +74,15 @@ namespace TrajectoryLogTools.Converter
             string p = Dialogs.PickFolder("Default folder with the v5.1 logs", InputFolder);
             if (p != null) InputFolder = p;
         }
+
+        [RelayCommand]
+        void BrowseLogFolder()
+        {
+            string p = Dialogs.PickFolder("Folder for the logs (empty = the Logs folder beside the app)", AppLog.Resolve(LogFolder));
+            if (p != null) LogFolder = p;
+        }
+
+        [RelayCommand] void OpenLogFolder() { Dialogs.OpenFolder(AppLog.Folder ?? AppLog.Resolve(LogFolder)); }
 
         [RelayCommand]
         void BrowseOutput()
@@ -103,8 +120,15 @@ namespace TrajectoryLogTools.Converter
             Settings.DayTo = ConverterSettings.Text(DayTo);
             Settings.Overwrite = Overwrite;
             Settings.ShowSkipped = ShowSkipped;
+            bool logChanged = !string.Equals((Settings.LogFolder ?? "").Trim(), (LogFolder ?? "").Trim(), System.StringComparison.OrdinalIgnoreCase)
+                              || Settings.LogRetentionDays != LogRetentionDays;
+            Settings.LogFolder = (LogFolder ?? "").Trim().Trim('"');
+            Settings.LogRetentionDays = LogRetentionDays;
             string error = Settings.Save();
             if (error != null) { Dialogs.Warn(error); return false; }
+            if (logChanged) AppLog.Reconfigure(Settings.LogFolder, Settings.LogRetentionDays);
+            AppLog.Info("Settings saved to " + ConverterSettings.FilePath + Environment.NewLine +
+                        System.Text.Json.JsonSerializer.Serialize(Settings, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
             return true;
         }
     }

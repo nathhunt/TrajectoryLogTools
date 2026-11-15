@@ -148,9 +148,12 @@ namespace TrajectoryLogTools.App.ViewModels
                 DeliveryRecord ra = A.Record, rb = B.Record;
                 Result = await Task.Run(() => DeliveryComparison.Compare(ra, rb, A.DisplayName + " " + A.DateText, B.DisplayName + " " + B.DateText));
                 Show(Result);
+                AppLog.Info("Compared deliveries" + Environment.NewLine + "A " + A.Path + Environment.NewLine + "B " + B.Path +
+                            Environment.NewLine + Verdict + (Cards.Count > 0 ? Environment.NewLine + string.Join(" · ", Cards.Select(c => c.Label + ": " + c.Value)) : ""));
             }
             catch (Exception ex)
             {
+                AppLog.Info("Delivery comparison failed (" + A?.Path + ", " + B?.Path + "): " + ex.Message);
                 Error = "These two logs can't be compared delivery by delivery: " + ex.Message +
                         (CanCompareFiles ? " The file comparison (File differences, below) still works." : "");
             }
@@ -248,6 +251,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 DeliveryCharts.SaveFigure(Result, png, scale: Display.Angles);
                 files.Add(png);
                 _main.ShowNotice("Saved " + files.Count + " files (report, tables and figure) to " + folder, "info");
+                AppLog.Info("Saved the delivery comparison of " + A.Path + " and " + B.Path, files);
             }
             catch (Exception ex) { _main.ShowNotice("Could not save: " + ex.Message, "critical"); }
         }

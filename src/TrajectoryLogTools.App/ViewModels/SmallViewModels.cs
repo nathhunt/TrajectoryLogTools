@@ -86,6 +86,13 @@ namespace TrajectoryLogTools.App.ViewModels
         [ObservableProperty] private string _mlcTolerance;
         [ObservableProperty] private string _gantryTolerance;
         [ObservableProperty] private string _muTolerance;
+        // For everyone using this copy of the app (SharedSettings, beside the app)
+        [ObservableProperty] private string _logFolder;
+        [ObservableProperty] private int _logRetentionDays;
+        public IReadOnlyList<KeyValuePair<int, string>> RetentionChoices { get { return Core.AppLog.RetentionChoices; } }
+        public string LogWhere { get { return Core.AppLog.WhereText; } }
+        public string DefaultLogFolder { get { return Core.AppLog.DefaultFolder; } }
+        public string SharedFilePath { get { return SharedSettings.FilePath; } }
 
         public SettingsViewModel(MainViewModel main)
         {
@@ -96,7 +103,19 @@ namespace TrajectoryLogTools.App.ViewModels
             _mlcTolerance = Text(s.MlcToleranceMm);
             _gantryTolerance = Text(s.GantryToleranceDeg);
             _muTolerance = Text(s.MuTolerance);
+            var shared = SharedSettings.Current;
+            _logFolder = shared.LogFolder ?? "";
+            _logRetentionDays = Core.AppLog.RetentionChoices.Any(c => c.Key == shared.LogRetentionDays) ? shared.LogRetentionDays : Core.AppLog.DefaultRetentionDays;
         }
+
+        [RelayCommand]
+        void BrowseLogFolder()
+        {
+            string p = Dialogs.PickFolder("Folder for the logs (empty = the Logs folder beside the app)", Core.AppLog.Resolve(LogFolder));
+            if (p != null) LogFolder = p;
+        }
+
+        [RelayCommand] void OpenLogFolder() { Dialogs.OpenFolder(Core.AppLog.Folder ?? Core.AppLog.Resolve(LogFolder)); }
 
         static string Text(double? v) { return v.HasValue ? v.Value.ToString(CultureInfo.InvariantCulture) : ""; }
 
@@ -124,6 +143,31 @@ namespace TrajectoryLogTools.App.ViewModels
             s.GantryToleranceDeg = Parse(GantryTolerance);
             s.MuTolerance = Parse(MuTolerance);
             s.Save();
+            Core.AppLog.Info("Settings saved (this user): theme " + s.Theme + ", angles " + Display.AnglesName + ", tolerances MLC " +
+                             (s.MlcToleranceMm?.ToString(CultureInfo.InvariantCulture) ?? "none") + " mm, gantry " +
+                             (s.GantryToleranceDeg?.ToString(CultureInfo.InvariantCulture) ?? "none") + "°, MU " + (s.MuTolerance?.ToString(CultureInfo.InvariantCulture) ?? "none"));
+
+            // the log settings are for everyone: saved only when changed (it needs write access to the app's folder)
+            var shared = SharedSettings.Current;
+            string folder = (LogFolder ?? "").Trim().Trim('"');
+            if (!string.Equals(folder, (shared.LogFolder ?? "").Trim(), StringComparison.OrdinalIgnoreCase) || shared.LogRetentionDays != LogRetentionDays)
+            {
+                string oldFolder = shared.LogFolder;
+                int oldDays = shared.LogRetentionDays;
+                shared.LogFolder = folder;
+                shared.LogRetentionDays = LogRetentionDays;
+                string error = shared.Save();
+                if (error != null)
+                {
+                    shared.LogFolder = oldFolder;
+                    shared.LogRetentionDays = oldDays;
+                    Dialogs.Warn(error + "\n\nYour own settings were saved.");
+                    return true;
+                }
+                Core.AppLog.Reconfigure(shared.LogFolder, shared.LogRetentionDays);
+                Core.AppLog.Info("Settings saved (everyone, " + SharedSettings.FilePath + "): log folder " + Core.AppLog.Resolve(shared.LogFolder) +
+                                 ", logs kept " + shared.LogRetentionDays + " days");
+            }
             return true;
         }
 

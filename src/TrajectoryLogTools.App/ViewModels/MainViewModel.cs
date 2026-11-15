@@ -160,6 +160,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 {
                     LogItem item = LogItem.Create(p);
                     Logs.Add(item);
+                    Core.AppLog.Info("Opened " + item.Path);
                     result.Add(item);
                     AddRecent(item.Path);
                 }

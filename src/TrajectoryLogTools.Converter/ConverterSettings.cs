@@ -11,7 +11,9 @@
 //     "UseTimeOfDay": false,                           and / or times of day on every day
 //     "DayFrom": "08:00", "DayTo": "17:00",
 //     "Overwrite": false,                              replace logs already in the output folder
-//     "ShowSkipped": false                             show the logs that won't be converted
+//     "ShowSkipped": false,                            show the logs that won't be converted
+//     "LogFolder": "",                                 the log folder; empty = the Logs folder beside the app
+//     "LogRetentionDays": 30                           logs older than this are deleted when the app starts
 //   }
 // A file from an earlier version, without some of these, gets their defaults.
 // The file is written by Settings > Save. It is not part of the deployed files, so redeploying the
@@ -20,6 +22,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using TrajectoryLogTools.Core;
 
 namespace TrajectoryLogTools.Converter
 {
@@ -44,6 +47,10 @@ namespace TrajectoryLogTools.Converter
         public string DayTo { get; set; } = "17:00";
         public bool Overwrite { get; set; }
         public bool ShowSkipped { get; set; }
+
+        // ---- the log (Core.AppLog) ----
+        public string LogFolder { get; set; } = "";
+        public int LogRetentionDays { get; set; } = AppLog.DefaultRetentionDays;
 
         /// <summary>The period's first day (today minus PeriodDays - 1).</summary>
         public DateTime PeriodStartDate(DateTime today) { return today.Date.AddDays(-(Math.Max(1, PeriodDays) - 1)); }

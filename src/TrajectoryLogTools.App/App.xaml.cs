@@ -1,5 +1,5 @@
-// App.xaml.cs - start-up: theme, command-line arguments, main window, and what happens to errors
-// nothing else caught (logged in full to errors.log, then a message; the app carries on).
+// App.xaml.cs - start-up: the log, theme, command-line arguments, main window, and what happens to
+// errors nothing else caught (logged in full in the app's log, then a message; the app carries on).
 
 using System;
 using System.Threading.Tasks;
@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Threading;
 using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.App.ViewModels;
+using TrajectoryLogTools.Core;
 
 namespace TrajectoryLogTools.App
 {
@@ -17,6 +18,7 @@ namespace TrajectoryLogTools.App
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            AppLog.Start("TrajectoryLogTools", AppVersion.Full, SharedSettings.Current.LogFolder, SharedSettings.Current.LogRetentionDays);
             NzCulture.Apply();
             Dialogs.Title = "Trajectory Log Tools";
             DispatcherUnhandledException += OnUnhandledException;
