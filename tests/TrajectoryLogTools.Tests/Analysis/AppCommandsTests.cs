@@ -122,9 +122,10 @@ namespace TrajectoryLogTools.Tests
                 // the same as reconstruct-mlc with the exports given in field order
                 var old = new[] { "reconstruct-mlc", dir.File("imrt_A.bin") }.Concat(Enumerable.Range(1, 3).SelectMany(f => new[] { "-t", GoldenCases.TemplatePath(dir.Path, "imrt", f) })).ToArray();
                 Assert.Equal(0, RunMain(out c, old));
+                // (without the "# Exported <time>" line: the two runs can straddle a second)
                 for (int f = 1; f <= 3; f++)
-                    Assert.Equal(File.ReadAllText(dir.File("imrt_A_sub" + f + "_reconstructed_MLC.csv")),
-                                 File.ReadAllText(Path.Combine(dir.File("new"), "imrt_A_sub" + f + "_reconstructed_MLC.csv")));
+                    Assert.Equal(Body(dir.File("imrt_A_sub" + f + "_reconstructed_MLC.csv")),
+                                 Body(Path.Combine(dir.File("new"), "imrt_A_sub" + f + "_reconstructed_MLC.csv")));
             }
         }
 
