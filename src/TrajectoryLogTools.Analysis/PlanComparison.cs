@@ -174,7 +174,11 @@ namespace TrajectoryLogTools.Analysis
                 var f = new PlanFieldComparison { Subbeam = sb, LogName = names.ContainsKey(sb) ? names[sb] : "" };
                 FieldData d = null;
                 try { d = FieldData.From(record, sb, geom, varian); }
-                catch (Exception ex) { f.Error = ex.Message; }
+                catch (Exception ex)
+                {
+                    f.Error = ex.Message;
+                    AppLog.Warn("Plan comparison: field " + f.Label + " of the log can't be compared: " + ex.Message, ex, "Log", r.LogPath, "Plan", plan.Path, "Subbeam", sb);
+                }
                 fields.Add(Tuple.Create(f, d));
                 r.Fields.Add(f);
             }
@@ -205,7 +209,12 @@ namespace TrajectoryLogTools.Analysis
                 if (f.Error != null) continue;
                 if (f.Beam == null) { f.Error = "No treatment beam of the plan fits this field (by name, or by number of control points)."; continue; }
                 try { CompareField(f, t.Item2, f.Beam, geom); }
-                catch (Exception ex) { f.Error = ex.Message; }
+                catch (Exception ex)
+                {
+                    f.Error = ex.Message;
+                    AppLog.Warn("Plan comparison: field " + f.Label + " against plan beam " + f.Beam.Label + " failed: " + ex.Message, ex,
+                                "Log", r.LogPath, "Plan", plan.Path, "Subbeam", f.Subbeam);
+                }
             }
             r.BeamsNotInLog.AddRange(beams.Where(b => !used.Contains(b)));
             return r;
@@ -566,7 +575,7 @@ namespace TrajectoryLogTools.Analysis
             Directory.CreateDirectory(folder);
             var files = new List<string>();
             string rep = Path.Combine(folder, "plan_comparison_report.txt");
-            File.WriteAllText(rep, Report(r), Encoding.UTF8);
+            FileUtil.WriteText(rep, Report(r), Encoding.UTF8, "the plan comparison report");
             files.Add(rep);
             foreach (PlanFieldComparison f in r.Compared)
             {
@@ -591,7 +600,7 @@ namespace TrajectoryLogTools.Analysis
                 }
                 string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
                 string path = Path.Combine(folder, "plan_comparison_" + name + ".csv");
-                File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+                FileUtil.WriteText(path, sb.ToString(), Encoding.UTF8, "the plan comparison table");
                 files.Add(path);
             }
             return files;

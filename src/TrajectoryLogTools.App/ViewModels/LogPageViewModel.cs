@@ -118,7 +118,11 @@ namespace TrajectoryLogTools.App.ViewModels
             if (Item.Record != null && Item.Summary != null && _anglesShown.HasValue)
             {
                 try { BuildAngleTables(); }
-                catch (Exception ex) { Error = "Could not analyse this log: " + ex.Message; }
+                catch (Exception ex)
+                {
+                    Error = "Could not analyse this log: " + ex.Message;
+                    Core.AppLog.Error("Could not build the angle tables of the log page", ex, "Log", Item.Path, "Angles", Display.AnglesName);
+                }
             }
             OnPropertyChanged(nameof(FieldsTitle));
             OnPropertyChanged(nameof(HoldsTitle));
@@ -139,11 +143,15 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             await Item.LoadAsync();
             IsLoading = false;
-            if (Item.LoadError != null) { Error = "This log can't be read: " + Item.LoadError; return; }
+            if (Item.LoadError != null) { Error = "This log can't be read: " + Item.LoadError; return; }   // logged by LogItem
             if (Item.CrcFailed)
                 CrcWarning = "The file's CRC does not verify, so it may be damaged. It is shown anyway; check the Raw tab before relying on it.";
             try { Build(); }
-            catch (Exception ex) { Error = "Could not analyse this log: " + ex.Message; }
+            catch (Exception ex)
+            {
+                Error = "Could not analyse this log: " + ex.Message;
+                Core.AppLog.Error("Could not analyse the log for its page", ex, "Log", Item.Path, "Version", Item.Version);
+            }
             RaiseCharts();
         }
 
@@ -343,7 +351,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 RawDump = await Task.Run(() =>
                 {
                     var warnings = new List<string>();
-                    string text = Core.RawDump.ToText(File.ReadAllBytes(path), path, warnings);
+                    string text = Core.RawDump.ToText(Core.FileUtil.ReadAll(path, "the log"), path, warnings);
                     string head = warnings.Count > 0 ? "WARNINGS:\r\n  " + string.Join("\r\n  ", warnings) + "\r\n\r\n" : "";
                     if (text.Length > MaxDumpChars)
                         text = text.Substring(0, MaxDumpChars) + "\r\n\r\n... (shown up to " + MaxDumpChars / 1000000 +
@@ -351,7 +359,11 @@ namespace TrajectoryLogTools.App.ViewModels
                     return head + text;
                 });
             }
-            catch (Exception ex) { RawDump = "Could not dump the file: " + ex.Message; }
+            catch (Exception ex)
+            {
+                RawDump = "Could not dump the file: " + ex.Message;
+                Core.AppLog.Error("Could not show the Raw tab", ex, "Log", Item.Path);
+            }
             finally { RawLoading = false; }
         }
 

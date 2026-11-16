@@ -71,6 +71,7 @@ namespace TrajectoryLogTools.App.Views
             catch (Exception ex)
             {
                 var target = tab == 2 ? MlcPlot : AxisPlot;
+                Core.AppLog.Error("The log page's charts could not be drawn", ex, "Log", _vm?.Item?.Path, "Tab", tab);
                 ChartStyle.Empty(target.Plot, "Chart error: " + ex.Message);
                 target.Refresh();
             }

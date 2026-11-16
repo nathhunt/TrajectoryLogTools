@@ -474,7 +474,7 @@ namespace TrajectoryLogTools.Analysis
             Action<string, StringBuilder> save = (name, sb) =>
             {
                 string p = Path.Combine(folder, name);
-                File.WriteAllText(p, sb.ToString(), new UTF8Encoding(false));
+                Core.FileUtil.WriteText(p, sb.ToString(), new UTF8Encoding(false), "the comparison table");
                 written.Add(p);
             };
 

@@ -81,7 +81,11 @@ namespace TrajectoryLogTools.Analysis
                 t.GantryIec = f.Cps[0][5];
                 t.MlcModel = f.MlcModel;
             }
-            catch (Exception ex) { t.Error = ex.Message; }
+            catch (Exception ex)
+            {
+                t.Error = ex.Message;
+                AppLog.Warn("The Eclipse MLC export can't be used: " + path, ex, "Eclipse export", path);
+            }
             return t;
         }
 

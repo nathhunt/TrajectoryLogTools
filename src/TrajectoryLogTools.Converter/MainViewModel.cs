@@ -200,7 +200,12 @@ namespace TrajectoryLogTools.Converter
                     }, cts.Token);
                 }
                 catch (OperationCanceledException) { return; }
-                catch (Exception ex) { problem = ex.Message; }
+                catch (Exception ex)
+                {
+                    problem = ex.Message;
+                    AppLog.Error("Finding the logs to convert failed: " + ex.Message, ex,
+                                 "Mode", folderMode ? "folder" : "one file", "Input", folderMode ? input : single, "Include subfolders", subfolders, "Output folder", output);
+                }
                 finally { if (version == _searchVersion) IsSearching = false; }
             }
             if (version != _searchVersion) return;   // a newer search has started
@@ -303,7 +308,12 @@ namespace TrajectoryLogTools.Converter
         {
             string output = (OutputFolder ?? "").Trim().Trim('"');
             try { Directory.CreateDirectory(output); }
-            catch (Exception ex) { Dialogs.Warn("The output folder can't be used: " + ex.Message); return; }
+            catch (Exception ex)
+            {
+                AppLog.Error("The output folder can't be used, nothing converted: " + ex.Message, ex, "Output folder", output);
+                Dialogs.Warn("The output folder can't be used: " + ex.Message + "\n\nThe details are in the log: " + AppLog.FilePath);
+                return;
+            }
 
             var todo = _all.Where(r => r.Include && r.CanConvert).ToList();
             IsBusy = true;
@@ -328,7 +338,12 @@ namespace TrajectoryLogTools.Converter
                 V4BatchItem item = row.Item;
                 ExportOutcome outcome;
                 try { outcome = await Task.Run(() => V4Batch.Convert(item, overwrite, lines)); }
-                catch (Exception ex) { outcome = ExportOutcome.Failed; lines.Add("FAIL " + ex.Message); }
+                catch (Exception ex)
+                {
+                    outcome = ExportOutcome.Failed;
+                    lines.Add("FAIL " + item.FileName + ": " + ex.Message);
+                    AppLog.Error("Conversion of " + item.FileName + " failed: " + ex.Message, ex, "Log", item.Path, "Target", item.OutputPath);
+                }
                 string detail = lines.FirstOrDefault(l => l.StartsWith("FAIL", StringComparison.Ordinal) || l.StartsWith("SKIP", StringComparison.Ordinal)) ?? "";
                 int colon = detail.IndexOf(": ", StringComparison.Ordinal);
                 if (colon > 0) detail = detail.Substring(colon + 2);
@@ -341,7 +356,8 @@ namespace TrajectoryLogTools.Converter
                 logLines.AddRange(lines.Count > 0 ? lines : new List<string> { row.Status + "  " + item.Path });
                 Progress = 100.0 * (i + 1) / todo.Count;
             }
-            Result = ok + " converted" + (skipped > 0 ? ", " + skipped + " skipped" : "") + (failed > 0 ? ", " + failed + " failed" : "") + ".";
+            Result = ok + " converted" + (skipped > 0 ? ", " + skipped + " skipped" : "") + (failed > 0 ? ", " + failed + " failed" : "") + "." +
+                     (failed > 0 ? " The details are in the log (Settings > Logs > Open)." : "");
             AppLog.Info("Conversion finished: " + Result, logLines);
             IsBusy = false;
             IsDone = true;

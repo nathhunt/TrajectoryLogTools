@@ -52,17 +52,88 @@ namespace TrajectoryLogTools.Tests
             {
                 string folder = dir.Sub("Logs");
                 AppLog.Start("TestApp", "1.2.3", folder, 30);
-                Assert.Equal(folder, AppLog.Folder);
-                Assert.False(AppLog.UsingFallback);
-                AppLog.Info("Converted 2 logs", new[] { "OK a.bin", "FAIL b.bin: broken" });
-                AppLog.Error("Somewhere", new InvalidOperationException("boom"));
-                string text = File.ReadAllText(AppLog.FilePath);
-                Assert.Contains("Started TestApp 1.2.3", text);
-                Assert.Contains("Converted 2 logs" + Environment.NewLine + "    OK a.bin" + Environment.NewLine + "    FAIL b.bin: broken", text);
-                Assert.Contains("ERROR Somewhere", text);
-                Assert.Contains("System.InvalidOperationException: boom", text);
-                Assert.Equal(folder, Path.GetDirectoryName(AppLog.FilePath));
+                try
+                {
+                    Assert.Equal(folder, AppLog.Folder);
+                    Assert.False(AppLog.UsingFallback);
+                    AppLog.Info("Converted 2 logs", new[] { "OK a.bin", "FAIL b.bin: broken" });
+                    AppLog.Error("Somewhere", new InvalidOperationException("boom"));
+                    string text = File.ReadAllText(AppLog.FilePath);
+                    Assert.Contains("INFO   Started TestApp 1.2.3", text);
+                    Assert.Contains("INFO   Converted 2 logs" + Environment.NewLine + "        OK a.bin" + Environment.NewLine + "        FAIL b.bin: broken", text);
+                    Assert.Contains("ERROR  Somewhere", text);
+                    Assert.Contains("System.InvalidOperationException: boom", text);
+                    Assert.Matches(@"\d\d/\d\d/\d{4} \d\d:\d\d:\d\d\.\d{3}  ERROR", text);   // NZ date, milliseconds
+                    Assert.Equal(folder, Path.GetDirectoryName(AppLog.FilePath));
+                }
+                finally { AppLog.Stop(); }
             }
+        }
+
+        [Fact]
+        public void Error_SaysWhatWasBeingDone_TheContext_TheWholeException_AndChecksThePaths()
+        {
+            using (var dir = new TempDir())
+            {
+                AppLog.Start("TestApp", "1", dir.Sub("Logs"), 30);
+                try
+                {
+                    string source = dir.Write("in/A.bin", new byte[] { 1, 2, 3 });
+                    string outDir = dir.Sub("out");
+                    string blocker = dir.Write("blocker", new byte[] { 1 });
+                    using (AppLog.Scope("Convert to v4.0", "Source", source))
+                    using (AppLog.Scope("Write the v4.0 file", "Output folder", outDir))
+                    {
+                        // a write that fails the way a real one does: the folder can't be created
+                        var ex = Assert.Throws<IOException>(() => FileUtil.WriteAtomic(Path.Combine(blocker, "A.bin"), new byte[] { 1 }));
+                        Assert.Contains("Could not write " + Path.Combine(blocker, "A.bin"), ex.Message);
+                        Assert.Contains("while trying to create the folder " + blocker, ex.Message);
+                        AppLog.Error("Conversion of A.bin failed", ex, "Target", Path.Combine(blocker, "A.bin"));
+                    }
+                    string text = File.ReadAllText(AppLog.FilePath);
+                    Assert.Contains("ERROR  Conversion of A.bin failed", text);
+                    Assert.Contains("While: Convert to v4.0 › Write the v4.0 file", text);
+                    Assert.Contains("Source: " + source, text);
+                    Assert.Contains("Output folder: " + outDir, text);
+                    Assert.Contains("Exception:", text);
+                    Assert.Contains("System.IO.IOException: Could not write", text);
+                    Assert.Contains("---> ", text);                                  // the inner exception, in full
+                    Assert.Contains("at TrajectoryLogTools.Core.FileUtil.WriteAtomic", text);   // stack trace
+                    Assert.Contains("Path checks, as ", text);
+                    Assert.Contains(source + ": file, 3 bytes", text);
+                    Assert.Contains(outDir + ": folder exists, this user CAN create files in it", text);
+                    // no test files left behind by the checks
+                    Assert.Empty(Directory.GetFiles(outDir));
+                }
+                finally { AppLog.Stop(); }
+            }
+        }
+
+        [Fact]
+        public void EntriesBeforeStart_AreWrittenWhenItStarts_NothingWhenStopped()
+        {
+            using (var dir = new TempDir())
+            {
+                AppLog.Stop();
+                AppLog.Warn("Settings file unreadable", new FormatException("bad json"), "Settings file", "C:\\x\\s.json");
+                AppLog.Start("TestApp", "1", dir.Sub("Logs"), 30);
+                string file = AppLog.FilePath;
+                AppLog.Stop();
+                AppLog.Info("dropped");
+                string text = File.ReadAllText(file);
+                Assert.Contains("WARN   Settings file unreadable", text);
+                Assert.Contains("System.FormatException: bad json", text);
+                Assert.DoesNotContain("dropped", text);
+            }
+        }
+
+        [Fact]
+        public void WindowsError_InWords()
+        {
+            Assert.Equal("5 (0x80070005): access denied: this user isn't allowed to do this to the file or folder (permissions), or the file is read-only",
+                         AppLog.WindowsError(new IOException("outer", new UnauthorizedAccessException("Access to the path is denied."))));
+            Assert.StartsWith("32 (0x80070020): sharing violation", AppLog.WindowsError(new IOException("busy", unchecked((int)0x80070020))));
+            Assert.Null(AppLog.WindowsError(new InvalidOperationException("x")));
         }
 
         [Fact]
@@ -72,6 +143,7 @@ namespace TrajectoryLogTools.Tests
             {
                 string blocker = dir.Write("a-file", new byte[] { 1 });   // a "folder" inside a file can't be created
                 AppLog.Start("TestAppFallback", "1.0", Path.Combine(blocker, "Logs"), 30);
+                AppLog.Stop();
                 try
                 {
                     Assert.True(AppLog.UsingFallback);

@@ -164,7 +164,11 @@ namespace TrajectoryLogTools.App.ViewModels
                     result.Add(item);
                     AddRecent(item.Path);
                 }
-                catch (Exception ex) { bad.Add(System.IO.Path.GetFileName(p) + ": " + ex.Message); }
+                catch (Exception ex)
+                {
+                    bad.Add(System.IO.Path.GetFileName(p) + ": " + ex.Message);
+                    Core.AppLog.Error("Could not open " + p, ex, "Log", p);
+                }
             }
             if (bad.Count > 0) ShowNotice("Not opened: " + string.Join("; ", bad), "caution");
             if (result.Count > 0) ShowLog(result[result.Count - 1]);

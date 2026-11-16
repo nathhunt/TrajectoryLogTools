@@ -88,7 +88,7 @@ namespace TrajectoryLogTools.Analysis
         {
             if (string.Equals(Path.GetExtension(path), ".bin", StringComparison.OrdinalIgnoreCase))
             {
-                var r = FromLog(TrajectoryLog.Parse(File.ReadAllBytes(path), ignoreCrc));
+                var r = FromLog(TrajectoryLog.Parse(FileUtil.ReadAll(path, "the log"), ignoreCrc));
                 r.SourcePath = path;
                 return r;
             }

@@ -153,7 +153,7 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             catch (Exception ex)
             {
-                AppLog.Info("Delivery comparison failed (" + A?.Path + ", " + B?.Path + "): " + ex.Message);
+                AppLog.Error("Delivery comparison failed: " + ex.Message, ex, "Log A", A?.Path, "Log B", B?.Path);
                 Error = "These two logs can't be compared delivery by delivery: " + ex.Message +
                         (CanCompareFiles ? " The file comparison (File differences, below) still works." : "");
             }
@@ -253,7 +253,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 _main.ShowNotice("Saved " + files.Count + " files (report, tables and figure) to " + folder, "info");
                 AppLog.Info("Saved the delivery comparison of " + A.Path + " and " + B.Path, files);
             }
-            catch (Exception ex) { _main.ShowNotice("Could not save: " + ex.Message, "critical"); }
+            catch (Exception ex)
+            {
+                _main.ShowNotice("Could not save: " + ex.Message, "critical");
+                AppLog.Error("Could not save the delivery comparison", ex, "Folder", folder, "Log A", A?.Path, "Log B", B?.Path);
+            }
         }
     }
 }

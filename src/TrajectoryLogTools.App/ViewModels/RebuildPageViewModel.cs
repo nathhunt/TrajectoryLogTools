@@ -188,7 +188,11 @@ namespace TrajectoryLogTools.App.ViewModels
                     {
                         DeliveryRecord d = item.Record;
                         try { infos = await Task.Run(() => TemplateMatcher.Describe(d)); }
-                        catch (Exception ex) { reason = ex.Message; }
+                        catch (Exception ex)
+                        {
+                            reason = ex.Message;
+                            AppLog.Warn("Rebuild: the fields of the log can't be found, it is left out", ex, "Log", item.Path);
+                        }
                         if (infos != null && infos.Count == 0) reason = "No field with the beam on was found in it.";
                     }
                     if (reason != null)
@@ -211,7 +215,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 BuildGroups(found);
                 if (Items.Count == 1 && Skipped.Count == 1) { Error = Skipped[0].Reason; Skipped.Clear(); }
             }
-            catch (Exception ex) { Error = ex.Message; }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+                AppLog.Error("Rebuild: finding the fields failed", ex, "Logs", Items.Select(i => i.Path).ToList());
+            }
             finally
             {
                 IsBusy = false;
@@ -436,7 +444,9 @@ namespace TrajectoryLogTools.App.ViewModels
                     try
                     {
                         Directory.CreateDirectory(folder);
-                        MlcReconstructionResult r = await Task.Run(() => MlcReconstructor.Run(record, path, o));
+                        MlcReconstructionResult r;
+                        using (AppLog.Scope("Rebuild Eclipse MLC", "Log", path, "Output folder", folder, "Fields", o.Subbeams))
+                            r = await Task.Run(() => MlcReconstructor.Run(record, path, o));
                         if (!folders.Contains(folder, StringComparer.OrdinalIgnoreCase)) folders.Add(folder);
                         foreach (SubbeamResult s in r.Subbeams)
                         {
@@ -448,6 +458,8 @@ namespace TrajectoryLogTools.App.ViewModels
                     catch (Exception ex)
                     {
                         // The whole log failed (e.g. a template that doesn't fit); its fields are shown as failed and the others carry on.
+                        AppLog.Error("Rebuild of " + Path.GetFileName(path) + " failed: " + ex.Message, ex, "Log", path, "Output folder", folder,
+                                     "Fields", o.Subbeams, "Eclipse exports", o.Templates.Count > 0 ? (object)o.Templates : "(none)");
                         foreach (MlcSubbeamRow f in rows)
                         {
                             var s = new SubbeamResult { Subbeam = f.Subbeam, Ok = false, Error = ex.Message, Status = RebuildStatus.Failed };
@@ -468,7 +480,11 @@ namespace TrajectoryLogTools.App.ViewModels
                     ? (ready == 1 ? "The field is" : "All " + ready + " fields are") + " ready to import. Files saved to " + where
                     : ready + " of " + all.Count + " fields ready; see the results.", ready == all.Count ? "info" : "caution");
             }
-            catch (Exception ex) { _main.ShowNotice("Rebuild failed: " + ex.Message, "critical"); AppLog.Error("Rebuild", ex); }
+            catch (Exception ex)
+            {
+                _main.ShowNotice("Rebuild failed: " + ex.Message + " (details in the log)", "critical");
+                AppLog.Error("Rebuild failed", ex, "Logs", Items.Select(i => i.Path).ToList());
+            }
             finally { IsBusy = false; }
         }
 

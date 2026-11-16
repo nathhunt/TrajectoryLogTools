@@ -48,7 +48,7 @@ namespace TrajectoryLogTools.App.Views
             }
             catch (Exception ex)
             {
-                ErrorLog.Write("Plan comparison charts", ex);
+                Core.AppLog.Error("The plan comparison charts could not be drawn", ex, "Log", _vm?.A?.Path, "Plan", _vm?.PlanPath, "Field", _vm?.SelectedField?.Label);
                 ChartStyle.Empty(LeafPlot.Plot, "Chart error: " + ex.Message);
             }
             foreach (var p in new[] { LeafPlot, GantryPlot, MuPlot, TransferPlot }) p.Refresh();

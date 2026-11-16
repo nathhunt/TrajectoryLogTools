@@ -102,6 +102,7 @@ namespace TrajectoryLogTools.App.ViewModels
                     try { r = DeliveryRecord.Load(path); }
                     catch (InvalidDataException ex) when (ex.Message.Contains("CRC"))
                     {
+                        Core.AppLog.Warn("The log's CRC does not verify; it is opened anyway, marked CRC failed: " + path, ex, "Log", path);
                         r = DeliveryRecord.Load(path, ignoreCrc: true);
                         crcFailed = true;
                     }
@@ -116,6 +117,7 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             catch (Exception ex)
             {
+                Core.AppLog.Error("The log can't be read: " + Path, ex, "Log", Path);
                 LoadError = ex.Message;
                 Badge = "Can't read";
                 BadgeKind = "critical";

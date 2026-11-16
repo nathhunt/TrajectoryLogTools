@@ -23,8 +23,8 @@ namespace TrajectoryLogTools.Converter
             NzCulture.Apply();
             Dialogs.Title = "Trajectory Log Converter";
             DispatcherUnhandledException += OnUnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled (closing)", a.ExceptionObject as Exception);
-            TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Background task", a.Exception); a.SetObserved(); };
+            AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled error: the app is closing", a.ExceptionObject as Exception);
+            TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Unhandled error in a background task (the app carried on)", a.Exception); a.SetObserved(); };
             WheelScrolling.Register();
             var window = new MainWindow();
             MainWindow = window;
@@ -35,7 +35,7 @@ namespace TrajectoryLogTools.Converter
         void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             e.Handled = true;
-            ErrorLog.Write("Unhandled", e.Exception);
+            ErrorLog.Write("Unhandled error, shown to the user (the app carried on): " + e.Exception.Message, e.Exception);
             if (_showingError) return;
             _showingError = true;
             string message = e.Exception.Message;

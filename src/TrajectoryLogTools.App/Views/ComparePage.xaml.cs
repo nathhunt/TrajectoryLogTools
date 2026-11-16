@@ -48,7 +48,7 @@ namespace TrajectoryLogTools.App.Views
             }
             catch (Exception ex)
             {
-                ErrorLog.Write("Compare charts", ex);
+                Core.AppLog.Error("The Compare charts could not be drawn", ex, "Log A", _vm?.A?.Path, "Log B", _vm?.B?.Path);
                 ChartStyle.Empty(ActualPlot.Plot, "Chart error: " + ex.Message);
             }
             foreach (var p in new[] { ActualPlot, GantryPlot, MuPlot, ExpectedPlot }) p.Refresh();

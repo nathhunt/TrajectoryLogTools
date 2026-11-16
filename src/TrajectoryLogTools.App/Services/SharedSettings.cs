@@ -31,7 +31,7 @@ namespace TrajectoryLogTools.App.Services
             {
                 if (File.Exists(FilePath)) return JsonSerializer.Deserialize<SharedSettings>(File.ReadAllText(FilePath)) ?? new SharedSettings();
             }
-            catch (Exception) { }   // unreadable: the defaults
+            catch (Exception ex) { AppLog.Error("The settings for everyone could not be read; using the defaults", ex, "Settings file", FilePath); }
             return new SharedSettings();
         }
 
@@ -45,6 +45,7 @@ namespace TrajectoryLogTools.App.Services
             }
             catch (Exception ex)
             {
+                AppLog.Error("The settings for everyone could not be saved", ex, "Settings file", FilePath);
                 return "The settings for everyone (log folder, how long logs are kept) could not be saved to " + FilePath + ": " + ex.Message +
                        ". The app's folder must be writable for whoever changes them.";
             }

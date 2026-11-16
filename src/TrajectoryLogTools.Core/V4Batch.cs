@@ -109,6 +109,7 @@ namespace TrajectoryLogTools.Core
             {
                 item.State = V4BatchState.Unreadable;
                 item.Reason = "can't be read: " + ex.Message;
+                AppLog.Warn("Left out of the list, its header can't be read: " + item.Path, ex, "Log", item.Path);
                 return item;
             }
             item.Version = h.Version;
@@ -149,6 +150,7 @@ namespace TrajectoryLogTools.Core
         /// <summary>Converts one log of the plan to v4.0 in its output folder (see <see cref="Options"/>); nothing else is written.</summary>
         public static ExportOutcome Convert(V4BatchItem item, bool overwrite, List<string> lines)
         {
+            using (AppLog.Scope("Convert to v4.0", "Log", item.Path, "Target", item.OutputPath, "Replace an existing file", overwrite))
             return Exporter.Run(item.Path, System.IO.Path.GetDirectoryName(item.OutputPath), Options(overwrite), lines);
         }
     }
