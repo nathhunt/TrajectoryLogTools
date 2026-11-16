@@ -78,7 +78,7 @@ namespace TrajectoryLogTools.Tests
                 AppLog.Start("TestApp", "1", dir.Sub("Logs"), 30);
                 try
                 {
-                    string source = dir.Write("in/A.bin", new byte[] { 1, 2, 3 });
+                    string source = dir.Write(Path.Combine("in", "A.bin"), new byte[] { 1, 2, 3 });
                     string outDir = dir.Sub("out");
                     string blocker = dir.Write("blocker", new byte[] { 1 });
                     using (AppLog.Scope("Convert to v4.0", "Source", source))
@@ -100,8 +100,9 @@ namespace TrajectoryLogTools.Tests
                     Assert.Contains("---> ", text);                                  // the inner exception, in full
                     Assert.Contains("at TrajectoryLogTools.Core.FileUtil.WriteAtomic", text);   // stack trace
                     Assert.Contains("Path checks, as ", text);
-                    Assert.Contains(source + ": file, 3 bytes", text);
-                    Assert.Contains(outDir + ": folder exists, this user CAN create files in it", text);
+                    // the path checks show full, normalised paths
+                    Assert.Contains(Path.GetFullPath(source) + ": file, 3 bytes", text);
+                    Assert.Contains(Path.GetFullPath(outDir) + ": folder exists, this user CAN create files in it", text);
                     // no test files left behind by the checks
                     Assert.Empty(Directory.GetFiles(outDir));
                 }
