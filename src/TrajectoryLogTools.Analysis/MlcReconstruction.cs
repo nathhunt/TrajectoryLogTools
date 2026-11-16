@@ -338,6 +338,8 @@ namespace TrajectoryLogTools.Analysis
                     res.Error = ex.Message;
                     res.Summary = "Subbeam " + sb + ": FAILED - " + ex.Message;
                     say("ERROR (subbeam " + sb + "): " + ex.Message);
+                    AppLog.Error("Rebuild of field (subbeam) " + sb + " of " + Path.GetFileName(logPath) + " failed: " + ex.Message, ex,
+                                 "Log", logPath, "Subbeam", sb, "Eclipse export", tpl ?? "(none)", "MLC file", outP, "Positions", o.Positions, "Axis", o.Axis);
                 }
                 result.Subbeams.Add(res);
             }
@@ -540,7 +542,7 @@ namespace TrajectoryLogTools.Analysis
             }
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(outPath)));
             if (o.WriteReport) Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(reportPath)));
-            File.WriteAllText(outPath, string.Join("\r\n", outLines) + "\r\n", new UTF8Encoding(true));
+            FileUtil.WriteText(outPath, string.Join("\r\n", outLines) + "\r\n", new UTF8Encoding(true), "the Eclipse MLC file");
             say("Wrote " + outPath);
 
             // ---------------- QA report ----------------
@@ -593,7 +595,7 @@ namespace TrajectoryLogTools.Analysis
             double gActMax = 0;
             for (int cp = 0; cp < nCp; cp++) gActMax = Math.Max(gActMax, Math.Abs(fitSel[nLeaf][cp] - fitExp[nLeaf][cp]));
             rep.AppendLine(Fmt("Max actual-vs-expected gantry at control points: {0:F3} deg", gActMax));
-            if (o.WriteReport) File.WriteAllText(reportPath, rep.ToString(), new UTF8Encoding(false));
+            if (o.WriteReport) FileUtil.WriteText(reportPath, rep.ToString(), new UTF8Encoding(false), "the QA report");
             say(rep.ToString().TrimEnd());
             if (o.WriteReport) say("Report: " + reportPath);
             res.OutputPath = outPath; res.ReportPath = o.WriteReport ? reportPath : null; res.Report = rep.ToString();

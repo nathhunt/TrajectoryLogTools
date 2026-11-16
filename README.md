@@ -190,8 +190,21 @@ app** (or the folder set in Settings), so all the logs of a deployed copy are in
   opened, comparisons (delivery, file, plan) with their verdicts, exports and rebuilds log by
   log and field by field, reports saved and settings changed; the converter logs each conversion
   (where from, the filter, where to, the options, what was left out and why) and every log's
-  result, and settings changed. Errors are logged in full (stack trace); the message shown names
-  the file.
+  result, and settings changed.
+* **Entries** read `dd/MM/yyyy HH:mm:ss.fff  LEVEL  message` (INFO, WARN, ERROR). Every error that
+  is caught anywhere in the apps is logged with:
+  * what was being done (e.g. *While: Convert to v4.0 › Write the v4.0 log*) and its context
+    (the log, the target file, the output folder, the options);
+  * the exception in full: type, message, every inner exception and the stack trace with source
+    line numbers (the `.pdb` files are deployed with the apps);
+  * the Windows error code in words (e.g. *5: access denied*, *32: the file is open in another
+    program*, *53: the network path was not found*);
+  * for a file or folder problem, a check of each path involved, as the user running the app:
+    does it exist, its size and date, read-only or not, and whether this user can create files
+    in its folder.
+
+  File operations say which file and which step failed (e.g. *Could not write X (while trying to
+  write the temporary file X.tmp)*), and the message on screen says the details are in the log.
 * **One file per user, computer and day:** `<app>_<yyyy-MM-dd>_<user>_<computer>.log`, e.g.
   `TrajectoryLogConverter_2026-11-14_huntelersn_WS042.log`. Users never write to the same file;
   the same user with the app open twice waits up to a second for the file.

@@ -22,8 +22,8 @@ namespace TrajectoryLogTools.App
             NzCulture.Apply();
             Dialogs.Title = "Trajectory Log Tools";
             DispatcherUnhandledException += OnUnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled (closing)", a.ExceptionObject as Exception);
-            TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Background task", a.Exception); a.SetObserved(); };
+            AppDomain.CurrentDomain.UnhandledException += (s, a) => ErrorLog.Write("Unhandled error: the app is closing", a.ExceptionObject as Exception);
+            TaskScheduler.UnobservedTaskException += (s, a) => { ErrorLog.Write("Unhandled error in a background task (the app carried on)", a.Exception); a.SetObserved(); };
             Theme.Apply(AppSettings.Current.Theme);
             WheelScrolling.Register();
             var window = new MainWindow();
@@ -35,7 +35,7 @@ namespace TrajectoryLogTools.App
         void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             e.Handled = true;
-            ErrorLog.Write("Unhandled", e.Exception);
+            ErrorLog.Write("Unhandled error, shown to the user (the app carried on): " + e.Exception.Message, e.Exception);
             // The message is shown after the handler returns: the error may come from inside layout or
             // rendering, where opening a message box would itself fail. One message at a time.
             if (_showingError) return;

@@ -59,7 +59,7 @@ namespace TrajectoryLogTools.Core
             string name = Path.GetFileName(input);
             string output = OutputFile(input, folderInput, opt, "v4.0");
 
-            var log = TrajectoryLog.Parse(File.ReadAllBytes(input), opt.IgnoreCrc);
+            var log = TrajectoryLog.Parse(FileUtil.ReadAll(input, "the log"), opt.IgnoreCrc);
             if (log.Version == "4.0") throw new SkipException("already version 4.0");
 
             var notes = new List<string>();
@@ -92,7 +92,7 @@ namespace TrajectoryLogTools.Core
             string name = Path.GetFileName(input);
             string output = OutputFile(input, folderInput, opt, "v5.1");
 
-            var log = TrajectoryLog.Parse(File.ReadAllBytes(input), opt.IgnoreCrc);
+            var log = TrajectoryLog.Parse(FileUtil.ReadAll(input, "the log"), opt.IgnoreCrc);
             if (log.Version == "5.1") throw new SkipException("already version 5.1");
 
             var notes = new List<string>();
@@ -112,7 +112,7 @@ namespace TrajectoryLogTools.Core
             if (!opt.Overwrite && File.Exists(dataPath))
                 throw new IOException("Output exists (use --overwrite): " + dataPath);
 
-            var log = TrajectoryLog.Parse(File.ReadAllBytes(input), opt.IgnoreCrc);
+            var log = TrajectoryLog.Parse(FileUtil.ReadAll(input, "the log"), opt.IgnoreCrc);
             string csv = opt.Full ? CsvExporter.FullCsv(log, input) : CsvExporter.DataCsv(log, opt);
             FileUtil.WriteAtomic(dataPath, Encoding.UTF8.GetBytes(csv));
 
@@ -157,8 +157,8 @@ namespace TrajectoryLogTools.Core
 
         public static FileComparison CompareFiles(string fileA, string fileB, Options opt)
         {
-            var a = TrajectoryLog.Parse(File.ReadAllBytes(fileA), opt.IgnoreCrc);
-            var b = TrajectoryLog.Parse(File.ReadAllBytes(fileB), opt.IgnoreCrc);
+            var a = TrajectoryLog.Parse(FileUtil.ReadAll(fileA, "log A"), opt.IgnoreCrc);
+            var b = TrajectoryLog.Parse(FileUtil.ReadAll(fileB, "log B"), opt.IgnoreCrc);
             CompareResult r = LogComparer.Compare(a, b, opt.Tolerance, opt.IgnoreVersion, opt.MaxDiffs);
             return new FileComparison { A = a, B = b, Result = r, Lines = CompareLines(fileA, fileB, a, b, r) };
         }
@@ -192,7 +192,7 @@ namespace TrajectoryLogTools.Core
                 throw new IOException("Output exists (use --overwrite): " + dst);
 
             var warnings = new List<string>();
-            string text = RawDump.ToText(File.ReadAllBytes(input), input, warnings);
+            string text = RawDump.ToText(FileUtil.ReadAll(input, "the log"), input, warnings);
             FileUtil.WriteAtomic(dst, new UTF8Encoding(false).GetBytes(text));
             var notes = new List<string> { "OK   " + Path.GetFileName(input) + " -> " + dst };
             notes.AddRange(warnings.Select(w => "     WARNING: " + w));

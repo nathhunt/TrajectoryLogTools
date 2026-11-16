@@ -156,7 +156,7 @@ namespace TrajectoryLogTools.App.ViewModels
             catch (Exception ex)
             {
                 Error = "This log can't be compared with " + (PlanPath == null ? "the plan" : Path.GetFileName(PlanPath)) + ": " + ex.Message;
-                Core.AppLog.Info("Plan comparison failed (" + A?.Path + ", " + PlanPath + "): " + ex.Message);
+                Core.AppLog.Error("Plan comparison failed: " + ex.Message, ex, "Log", A?.Path, "Plan", PlanPath);
             }
             finally
             {
@@ -266,7 +266,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 _main.ShowNotice("Saved " + files.Count + " files (report, tables and figures) to " + folder, "info");
                 Core.AppLog.Info("Saved the plan comparison of " + A.Path + " with " + PlanPath, files);
             }
-            catch (Exception ex) { _main.ShowNotice("Could not save: " + ex.Message, "critical"); }
+            catch (Exception ex)
+            {
+                _main.ShowNotice("Could not save: " + ex.Message, "critical");
+                Core.AppLog.Error("Could not save the plan comparison", ex, "Folder", folder, "Log", A?.Path, "Plan", PlanPath);
+            }
         }
     }
 

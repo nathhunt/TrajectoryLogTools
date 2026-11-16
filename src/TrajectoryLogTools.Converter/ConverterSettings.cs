@@ -80,7 +80,11 @@ namespace TrajectoryLogTools.Converter
                 if (File.Exists(FilePath))
                     return JsonSerializer.Deserialize<ConverterSettings>(File.ReadAllText(FilePath)) ?? new ConverterSettings();
             }
-            catch (Exception ex) { error = "The settings file could not be read (" + ex.Message + "): " + FilePath; }
+            catch (Exception ex)
+            {
+                error = "The settings file could not be read (" + ex.Message + "): " + FilePath;
+                AppLog.Error("The settings file could not be read; using the defaults", ex, "Settings file", FilePath);
+            }
             return new ConverterSettings();
         }
 
@@ -94,6 +98,7 @@ namespace TrajectoryLogTools.Converter
             }
             catch (Exception ex)
             {
+                AppLog.Error("The settings could not be saved", ex, "Settings file", FilePath);
                 return "The settings could not be saved to " + FilePath + ": " + ex.Message +
                        "\n\nThe settings file lives beside the app, so the app's folder must be writable for whoever changes the settings.";
             }

@@ -54,7 +54,7 @@ namespace TrajectoryLogTools.App.Services
                     return s;
                 }
             }
-            catch (Exception) { }   // unreadable settings: start fresh
+            catch (Exception ex) { Core.AppLog.Error("Your settings could not be read; starting from the defaults", ex, "Settings file", FilePath); }
             return new AppSettings();
         }
 
@@ -65,7 +65,7 @@ namespace TrajectoryLogTools.App.Services
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
                 File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
             }
-            catch (Exception) { }   // settings are a convenience; never fail because of them
+            catch (Exception ex) { Core.AppLog.Error("Your settings could not be saved (the app carries on)", ex, "Settings file", FilePath); }   // settings are a convenience; never fail because of them
         }
 
         public void AddRecent(string path)

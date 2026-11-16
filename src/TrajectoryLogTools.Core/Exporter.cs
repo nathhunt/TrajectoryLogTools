@@ -88,7 +88,11 @@ namespace TrajectoryLogTools.Core
                     File.WriteAllText(file, sb.ToString(), System.Text.Encoding.UTF8);
                     written.Add(file);
                 }
-                catch (Exception ex) { errors.Add(g.Key + ": " + ex.Message); }
+                catch (Exception ex)
+                {
+                    errors.Add(g.Key + ": " + ex.Message);
+                    AppLog.Error("Could not save the run log", ex, "Run log", file, "Output folder", g.Key);
+                }
             }
             return written;
         }
@@ -101,11 +105,19 @@ namespace TrajectoryLogTools.Core
         public static ExportOutcome Run(string path, string outDir, ExportOptions j, List<string> lines)
         {
             bool anyOk = false, anyFail = false;
-            Action<Func<List<string>>> run = f =>
+            Action<string, Func<List<string>>> run = (what, f) =>
             {
-                try { lines.AddRange(f()); anyOk = true; }
-                catch (SkipException ex) { lines.Add("SKIP " + Path.GetFileName(path) + ": " + ex.Message); }
-                catch (Exception ex) { lines.Add("FAIL " + Path.GetFileName(path) + ": " + ex.Message); anyFail = true; }
+                using (AppLog.Scope(what, "Log", path, "Output folder", outDir ?? "(next to the log)"))
+                {
+                    try { lines.AddRange(f()); anyOk = true; }
+                    catch (SkipException ex) { lines.Add("SKIP " + Path.GetFileName(path) + ": " + ex.Message); }
+                    catch (Exception ex)
+                    {
+                        lines.Add("FAIL " + Path.GetFileName(path) + ": " + ex.Message);
+                        anyFail = true;
+                        AppLog.Error(what + " of " + Path.GetFileName(path) + " failed: " + ex.Message, ex);
+                    }
+                }
             };
             if (string.Equals(Path.GetExtension(path), ".csv", StringComparison.OrdinalIgnoreCase))
             {
@@ -123,17 +135,17 @@ namespace TrajectoryLogTools.Core
                 o.TimeCsv = j.TimeCsv;
                 o.MetaEdits = j.MetaEdits;
                 o.SubbeamNames = j.SubbeamNames;
-                run(() => Commands.RunToV4(path, true, o));
+                run("Write the v4.0 log", () => Commands.RunToV4(path, true, o));
             }
             if (j.ToCsv)
             {
                 Options o = opt(Command.ToCsv);
                 o.NoMlc = j.NoMlc;
                 o.ActualOnly = j.ActualOnly;
-                run(() => Commands.RunToCsv(path, o));
+                run("Write the CSV", () => Commands.RunToCsv(path, o));
             }
-            if (j.FullCsv) { Options o = opt(Command.ToCsv); o.Full = true; run(() => Commands.RunToCsv(path, o)); }
-            if (j.Dump) run(() => Commands.RunDump(path, opt(Command.Dump)));
+            if (j.FullCsv) { Options o = opt(Command.ToCsv); o.Full = true; run("Write the full CSV", () => Commands.RunToCsv(path, o)); }
+            if (j.Dump) run("Write the raw dump", () => Commands.RunDump(path, opt(Command.Dump)));
             return anyFail ? ExportOutcome.Failed : anyOk ? ExportOutcome.Done : ExportOutcome.Skipped;
         }
     }

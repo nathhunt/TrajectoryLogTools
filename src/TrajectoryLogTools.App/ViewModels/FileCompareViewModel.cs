@@ -120,7 +120,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 Show(c);
                 AppLog.Info("Compared files" + Environment.NewLine + "A " + A.Path + Environment.NewLine + "B " + B.Path + Environment.NewLine + Verdict);
             }
-            catch (Exception ex) { Error = "Could not compare the files: " + ex.Message; }
+            catch (Exception ex)
+            {
+                Error = "Could not compare the files: " + ex.Message;
+                AppLog.Error("File comparison failed: " + ex.Message, ex, "Log A", A.Path, "Log B", B.Path, "Ignore v4.0 / v5.1 differences", IgnoreVersion);
+            }
             finally { IsBusy = false; }
         }
 
@@ -199,7 +203,11 @@ namespace TrajectoryLogTools.App.ViewModels
         void CopyText()
         {
             try { System.Windows.Clipboard.SetText(RawText); }
-            catch (Exception ex) { Dialogs.Warn("Could not copy: " + ex.Message); }
+            catch (Exception ex)
+            {
+                Dialogs.Warn("Could not copy: " + ex.Message);
+                AppLog.Warn("Could not copy the file comparison to the clipboard", ex);
+            }
         }
     }
 }

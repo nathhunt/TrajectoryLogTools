@@ -73,15 +73,67 @@ namespace TrajectoryLogTools.Core
             return false;
         }
 
-        /// <summary>Write via a temp file so a failure never leaves a half-written output behind.</summary>
+        /// <summary>
+        /// Write via a temp file so a failure never leaves a half-written output behind. A failure
+        /// says which file and which step (create the folder, write the temporary file, remove the
+        /// file being replaced, rename) in an IOException around the original, and the temporary
+        /// file is removed.
+        /// </summary>
         public static void WriteAtomic(string path, byte[] data)
         {
-            string dir = Path.GetDirectoryName(Path.GetFullPath(path));
-            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            string tmp = path + ".tmp";
-            File.WriteAllBytes(tmp, data);
-            if (File.Exists(path)) File.Delete(path);
-            File.Move(tmp, path);
+            string full = Path.GetFullPath(path);
+            string dir = Path.GetDirectoryName(full);
+            string tmp = full + ".tmp";
+            string step = "create the folder " + dir;
+            try
+            {
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                step = "write the temporary file " + tmp;
+                File.WriteAllBytes(tmp, data);
+                if (File.Exists(full))
+                {
+                    step = "remove the existing " + full + " to replace it";
+                    File.Delete(full);
+                }
+                step = "rename " + Path.GetFileName(tmp) + " to " + Path.GetFileName(full);
+                File.Move(tmp, full);
+            }
+            catch (Exception ex) when (IsFileError(ex))
+            {
+                try { if (File.Exists(tmp)) File.Delete(tmp); } catch (Exception) { }
+                throw new IOException("Could not write " + full + " (while trying to " + step + "): " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>The whole file, or an IOException that names the file (and what it is) around the original.</summary>
+        public static byte[] ReadAll(string path, string what = "the file")
+        {
+            try { return File.ReadAllBytes(path); }
+            catch (Exception ex) when (IsFileError(ex))
+            {
+                throw new IOException("Could not read " + what + " " + path + ": " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>Writes text (replacing the file), or an IOException that names the file (and what it is) around the original.</summary>
+        public static void WriteText(string path, string text, Encoding encoding, string what = "the file")
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(Path.GetFullPath(path));
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(path, text, encoding);
+            }
+            catch (Exception ex) when (IsFileError(ex))
+            {
+                throw new IOException("Could not write " + what + " " + path + ": " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>A file or folder problem (not found, access denied, in use, ...).</summary>
+        public static bool IsFileError(Exception ex)
+        {
+            return ex is IOException || ex is UnauthorizedAccessException || ex is System.Security.SecurityException || ex is NotSupportedException;
         }
     }
 

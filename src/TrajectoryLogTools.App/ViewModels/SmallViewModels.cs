@@ -67,7 +67,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 Result = Found.Count == 0 ? "No logs found." : Found.Count + (Found.Count == 1 ? " log found." : " logs found.");
                 if (Found.Count > 200) Result += " That's a lot to open at once; consider a date range.";
             }
-            catch (Exception ex) { Result = ex.Message; }
+            catch (Exception ex)
+            {
+                Result = ex.Message;
+                Core.AppLog.Error("Add from folder: finding the logs failed", ex, "Folder", f, "Include subfolders", IncludeSubfolders, "Filter", Filter.Describe());
+            }
             OnPropertyChanged(nameof(CanAdd));
         }
 
