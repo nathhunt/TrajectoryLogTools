@@ -85,7 +85,7 @@ namespace TrajectoryLogTools.Tests
                     using (AppLog.Scope("Write the v4.0 file", "Output folder", outDir))
                     {
                         // a write that fails the way a real one does: the folder can't be created
-                        var ex = Assert.Throws<IOException>(() => FileUtil.WriteAtomic(Path.Combine(blocker, "A.bin"), new byte[] { 1 }));
+                        var ex = Assert.Throws<IOException>(() => FileUtil.WriteVerified(Path.Combine(blocker, "A.bin"), new byte[] { 1 }, false));
                         Assert.Contains("Could not write " + Path.Combine(blocker, "A.bin"), ex.Message);
                         Assert.Contains("while trying to create the folder " + blocker, ex.Message);
                         AppLog.Error("Conversion of A.bin failed", ex, "Target", Path.Combine(blocker, "A.bin"));
@@ -98,7 +98,7 @@ namespace TrajectoryLogTools.Tests
                     Assert.Contains("Exception:", text);
                     Assert.Contains("System.IO.IOException: Could not write", text);
                     Assert.Contains("---> ", text);                                  // the inner exception, in full
-                    Assert.Contains("at TrajectoryLogTools.Core.FileUtil.WriteAtomic", text);   // stack trace
+                    Assert.Contains("at TrajectoryLogTools.Core.FileUtil.WriteVerified", text);   // stack trace
                     Assert.Contains("Path checks, as ", text);
                     // the path checks show full, normalised paths
                     Assert.Contains(Path.GetFullPath(source) + ": file, 3 bytes", text);

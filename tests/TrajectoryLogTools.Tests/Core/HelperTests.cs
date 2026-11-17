@@ -299,25 +299,42 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
-        public void WriteAtomic_CreatesFoldersAndLeavesNoTempFile()
+        public void WriteVerified_WritesDirectly_CreatesFolders_NoTempFile()
         {
             using (var dir = new TempDir())
             {
                 string path = Path.Combine(dir.Path, "a", "b", "out.bin");
-                FileUtil.WriteAtomic(path, new byte[] { 1, 2, 3 });
+                Assert.Null(FileUtil.WriteVerified(path, new byte[] { 1, 2, 3 }, false));   // null = read back and checked
                 Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(path));
-                Assert.False(File.Exists(path + ".tmp"));
+                Assert.Equal(new[] { path }, Directory.GetFiles(Path.GetDirectoryName(path)));   // nothing else (no .tmp)
             }
         }
 
         [Fact]
-        public void WriteAtomic_ReplacesExistingFile()
+        public void WriteVerified_NeverReplacesUnlessAsked()
         {
             using (var dir = new TempDir())
             {
                 string path = dir.Write("out.bin", new byte[] { 9, 9, 9, 9 });
-                FileUtil.WriteAtomic(path, new byte[] { 1 });
+                var ex = Assert.Throws<IOException>(() => FileUtil.WriteVerified(path, new byte[] { 1 }, false));
+                Assert.Contains("Could not write " + Path.GetFullPath(path) + " (while trying to create", ex.Message);
+                Assert.Contains("it must not exist yet", ex.Message);
+                Assert.Equal(new byte[] { 9, 9, 9, 9 }, File.ReadAllBytes(path));   // untouched
+
+                Assert.Null(FileUtil.WriteVerified(path, new byte[] { 1 }, true));   // replaced in place
                 Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(path));
+            }
+        }
+
+        [Fact]
+        public void WriteVerified_LockedWhileWriting_SaysWhichStepFailed()
+        {
+            using (var dir = new TempDir())
+            {
+                string blocker = dir.Write("blocker", new byte[] { 1 });   // a file where the folder should be
+                var ex = Assert.Throws<IOException>(() => FileUtil.WriteVerified(Path.Combine(blocker, "x.bin"), new byte[] { 1 }, false));
+                Assert.Contains("while trying to create the folder " + blocker, ex.Message);
+                Assert.NotNull(ex.InnerException);
             }
         }
 

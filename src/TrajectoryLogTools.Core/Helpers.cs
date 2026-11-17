@@ -74,34 +74,83 @@ namespace TrajectoryLogTools.Core
         }
 
         /// <summary>
-        /// Write via a temp file so a failure never leaves a half-written output behind. A failure
-        /// says which file and which step (create the folder, write the temporary file, remove the
-        /// file being replaced, rename) in an IOException around the original, and the temporary
-        /// file is removed.
+        /// Writes an output file directly under its own name, with safeguards, so it works in a folder
+        /// where users may create and write files but not rename or delete them (Write without Modify,
+        /// as a drop folder is often set up):
+        ///   * created only if it doesn't exist, unless <paramref name="overwrite"/> (then replaced in place);
+        ///   * locked while being written (no other program can open it until it is complete);
+        ///   * written through to the disk / server and flushed before it counts as written;
+        ///   * read back and compared byte for byte.
+        /// A failure says which file and which step, in an IOException around the original. If an
+        /// incomplete or wrong file was left, it is removed when that is allowed; otherwise the message
+        /// says it is there and what to do. Returns null when the file was checked, or a note when it
+        /// couldn't be read back to check (e.g. no read permission) - written, but unverified.
         /// </summary>
-        public static void WriteAtomic(string path, byte[] data)
+        public static string WriteVerified(string path, byte[] data, bool overwrite)
         {
             string full = Path.GetFullPath(path);
             string dir = Path.GetDirectoryName(full);
-            string tmp = full + ".tmp";
             string step = "create the folder " + dir;
+            bool created = false;
             try
             {
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                step = "write the temporary file " + tmp;
-                File.WriteAllBytes(tmp, data);
-                if (File.Exists(full))
+                step = overwrite ? "create (or replace) " + full : "create " + full + " (it must not exist yet)";
+                using (var f = new FileStream(full, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                                              81920, FileOptions.WriteThrough))
                 {
-                    step = "remove the existing " + full + " to replace it";
-                    File.Delete(full);
+                    created = true;
+                    step = "write " + data.Length.ToString("N0", CultureInfo.InvariantCulture) + " bytes to " + full;
+                    f.Write(data, 0, data.Length);
+                    step = "flush " + full + " to the disk";
+                    f.Flush(true);
                 }
-                step = "rename " + Path.GetFileName(tmp) + " to " + Path.GetFileName(full);
-                File.Move(tmp, full);
             }
             catch (Exception ex) when (IsFileError(ex))
             {
-                try { if (File.Exists(tmp)) File.Delete(tmp); } catch (Exception) { }
-                throw new IOException("Could not write " + full + " (while trying to " + step + "): " + ex.Message, ex);
+                throw new IOException("Could not write " + full + " (while trying to " + step + "): " + ex.Message + (created ? Leftover(full) : ""), ex);
+            }
+
+            // read it back and compare
+            byte[] back;
+            try { back = File.ReadAllBytes(full); }
+            catch (Exception ex) when (IsFileError(ex))
+            {
+                string note = "Written, but it could not be read back to check it (" + ex.GetType().Name + ": " + ex.Message + "): " + full;
+                AppLog.Warn(note, ex, "File", full);
+                return note;
+            }
+            if (back.Length != data.Length || !BytesEqual(back, data))
+            {
+                int at = 0;
+                while (at < Math.Min(back.Length, data.Length) && back[at] == data[at]) at++;
+                throw new IOException("Wrote " + full + " but it does not read back the same: " +
+                                      back.Length.ToString("N0", CultureInfo.InvariantCulture) + " bytes read, " +
+                                      data.Length.ToString("N0", CultureInfo.InvariantCulture) + " written, first difference at byte " +
+                                      at.ToString("N0", CultureInfo.InvariantCulture) + "." + Leftover(full));
+            }
+            return null;
+        }
+
+        static bool BytesEqual(byte[] a, byte[] b)
+        {
+            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+            return true;
+        }
+
+        /// <summary>Removes an incomplete or wrong output if allowed; says what happened, for the error message.</summary>
+        static string Leftover(string full)
+        {
+            try
+            {
+                if (!File.Exists(full)) return "";
+                File.Delete(full);
+                return " The incomplete file was removed.";
+            }
+            catch (Exception ex)
+            {
+                return " An incomplete file was left at " + full + " and could not be removed (" + ex.Message + "): it must be removed by someone allowed to, " +
+                       "or the log converted again with 'Replace logs already in the output folder' ticked.";
             }
         }
 

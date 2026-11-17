@@ -3,7 +3,8 @@
 //
 // Every log goes to the same output folder, under its own file name. A log is not converted when:
 //   * it is not a v5.1 log (already v4.0, or not a trajectory log);
-//   * its v4.0 file is already in the output folder (unless overwrite);
+//   * its v4.0 file is already in the output folder (unless overwrite); a file there that is damaged
+//     (shorter than its header says, or unreadable: a write that failed part-way) is reported as such;
 //   * another log in the list has the same file name (from a subfolder): only the first is converted;
 //   * the output folder is the log's own folder (the v4.0 file would replace the original);
 //   * it is a kV imaging (CBCT) log, unless asked to include them (LogHeader.IsKvImaging).
@@ -35,6 +36,8 @@ namespace TrajectoryLogTools.Core
         SameFolder,
         /// <summary>A kV imaging (CBCT) log, left out.</summary>
         Imaging,
+        /// <summary>The output folder holds a damaged (incomplete or unreadable) file under this log's name.</summary>
+        DamagedOutput,
     }
 
     public sealed class V4BatchItem
@@ -77,7 +80,7 @@ namespace TrajectoryLogTools.Core
                     item.State = V4BatchState.Imaging;
                     item.Reason = "kV imaging (CBCT) log";
                 }
-                if (item.State == V4BatchState.Convert || item.State == V4BatchState.AlreadyConverted)
+                if (item.State == V4BatchState.Convert || item.State == V4BatchState.AlreadyConverted || item.State == V4BatchState.DamagedOutput)
                 {
                     if (!names.Add(item.FileName))
                     {
@@ -129,11 +132,38 @@ namespace TrajectoryLogTools.Core
             }
             else if (!overwrite && File.Exists(item.OutputPath))
             {
-                item.State = V4BatchState.AlreadyConverted;
-                item.Reason = "already in the output folder";
+                string damage = Damage(item.OutputPath);
+                if (damage == null)
+                {
+                    item.State = V4BatchState.AlreadyConverted;
+                    item.Reason = "already in the output folder";
+                }
+                else
+                {
+                    item.State = V4BatchState.DamagedOutput;
+                    item.Reason = "the file in the output folder is damaged (" + damage + "): tick Replace to convert it again";
+                    AppLog.Warn("A damaged v4.0 file is in the output folder: " + item.OutputPath + " (" + damage + ")", null, "Log", item.Path, "Target", item.OutputPath);
+                }
             }
             else item.State = V4BatchState.Convert;
             return item;
+        }
+
+        /// <summary>
+        /// Why the output file already there is not a good conversion, or null: its header can't be read,
+        /// or it is shorter or longer than its header says (a write that failed part-way). The header and
+        /// length are checked, not every byte, so a long list stays quick.
+        /// </summary>
+        static string Damage(string output)
+        {
+            try
+            {
+                LogHeader h = LogHeader.Read(output);
+                if (!h.IsComplete)
+                    return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0} of the {1:N0} bytes its header says", h.FileLength, h.ExpectedLength);
+                return null;
+            }
+            catch (Exception ex) { return "can't be read: " + ex.Message; }
         }
 
         /// <summary>The converter's fixed v4.0 options: TrueBeam, serial number removed, couch axes kept, nothing else.</summary>

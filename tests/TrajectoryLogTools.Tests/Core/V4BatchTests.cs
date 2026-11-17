@@ -95,6 +95,39 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
+        public void Plan_DamagedFileInTheOutputFolder_IsReported_ReplaceConvertsAgain()
+        {
+            using (var dir = new TempDir())
+            {
+                string log = dir.Write("in/A_20261020081500.bin", LogBuilder.V51().Build());
+                string outDir = dir.Sub("out");
+                // a good v4.0 file: already converted
+                V4BatchItem first = V4Batch.PlanOne(log, outDir, false);
+                Assert.Equal(ExportOutcome.Done, V4Batch.Convert(first, false, new List<string>()));
+                Assert.Equal(V4BatchState.AlreadyConverted, V4Batch.PlanOne(log, outDir, false).State);
+
+                // cut short, as a write that failed part-way would leave it
+                byte[] good = File.ReadAllBytes(first.OutputPath);
+                File.WriteAllBytes(first.OutputPath, good.Take(good.Length / 2).ToArray());
+                V4BatchItem damaged = V4Batch.PlanOne(log, outDir, false);
+                Assert.Equal(V4BatchState.DamagedOutput, damaged.State);
+                Assert.Contains("damaged", damaged.Reason);
+                Assert.Contains("tick Replace", damaged.Reason);
+
+                // not a log at all
+                File.WriteAllBytes(first.OutputPath, new byte[] { 1, 2, 3 });
+                Assert.Equal(V4BatchState.DamagedOutput, V4Batch.PlanOne(log, outDir, false).State);
+
+                // Replace: converted again, in place, and complete
+                V4BatchItem again = V4Batch.PlanOne(log, outDir, true);
+                Assert.Equal(V4BatchState.Convert, again.State);
+                Assert.Equal(ExportOutcome.Done, V4Batch.Convert(again, true, new List<string>()));
+                Assert.Equal(good, File.ReadAllBytes(first.OutputPath));
+                Assert.True(LogHeader.Read(first.OutputPath).IsComplete);
+            }
+        }
+
+        [Fact]
         public void Plan_RefusesTheLogsOwnFolder()
         {
             using (var dir = new TempDir())

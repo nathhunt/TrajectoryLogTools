@@ -54,6 +54,9 @@ namespace TrajectoryLogTools.Core
             return output;
         }
 
+        /// <summary>Adds WriteVerified's note (written but not read back) to the notes.</summary>
+        static void Unverified(List<string> notes, string note) { if (note != null) notes.Add("NOTE: " + note); }
+
         public static List<string> RunToV4(string input, bool folderInput, Options opt)
         {
             string name = Path.GetFileName(input);
@@ -64,7 +67,7 @@ namespace TrajectoryLogTools.Core
 
             var notes = new List<string>();
             byte[] converted = V4Converter.Convert(log, opt, notes);
-            FileUtil.WriteAtomic(output, converted);
+            Unverified(notes, FileUtil.WriteVerified(output, converted, opt.Overwrite));
 
             if (opt.TimeCsv && log.TimeAxisIndex >= 0)
             {
@@ -79,7 +82,7 @@ namespace TrajectoryLogTools.Core
                       .Append(',').Append(Fmt.Exact(t)).Append(',').Append(Fmt.Exact(log.Actual(s, log.TimeAxisIndex, 0)))
                       .Append("\r\n");
                 }
-                FileUtil.WriteAtomic(csvPath, Encoding.UTF8.GetBytes(sb.ToString()));
+                Unverified(notes, FileUtil.WriteVerified(csvPath, Encoding.UTF8.GetBytes(sb.ToString()), true));
                 notes.Add("Time axis saved to " + csvPath);
             }
 
@@ -97,7 +100,7 @@ namespace TrajectoryLogTools.Core
 
             var notes = new List<string>();
             byte[] converted = V5Converter.Convert(log, opt, input, notes);
-            FileUtil.WriteAtomic(output, converted);
+            Unverified(notes, FileUtil.WriteVerified(output, converted, opt.Overwrite));
 
             notes.Insert(0, "OK   " + name + " -> " + output);
             return notes.Select((n, i) => i == 0 ? n : "     " + n).ToList();
@@ -114,7 +117,7 @@ namespace TrajectoryLogTools.Core
 
             var log = TrajectoryLog.Parse(FileUtil.ReadAll(input, "the log"), opt.IgnoreCrc);
             string csv = opt.Full ? CsvExporter.FullCsv(log, input) : CsvExporter.DataCsv(log, opt);
-            FileUtil.WriteAtomic(dataPath, Encoding.UTF8.GetBytes(csv));
+            string unverified = FileUtil.WriteVerified(dataPath, Encoding.UTF8.GetBytes(csv), opt.Overwrite);
 
             var notes = new List<string>
             {
@@ -127,6 +130,7 @@ namespace TrajectoryLogTools.Core
                                                    .Select(i => TrajectoryLog.AxisName(log.AxisIds[i])));
             if (empty.Length > 0) notes.Add("     Axes with no data " + (opt.Full ? "(all \"no value\"): " : "left out: ") + empty);
             if (log.CrcWarning != null) notes.Add("     WARNING: " + log.CrcWarning);
+            if (unverified != null) notes.Add("     NOTE: " + unverified);
             return notes;
         }
 
@@ -193,8 +197,9 @@ namespace TrajectoryLogTools.Core
 
             var warnings = new List<string>();
             string text = RawDump.ToText(FileUtil.ReadAll(input, "the log"), input, warnings);
-            FileUtil.WriteAtomic(dst, new UTF8Encoding(false).GetBytes(text));
+            string unverified = FileUtil.WriteVerified(dst, new UTF8Encoding(false).GetBytes(text), opt.Overwrite);
             var notes = new List<string> { "OK   " + Path.GetFileName(input) + " -> " + dst };
+            if (unverified != null) notes.Add("     NOTE: " + unverified);
             notes.AddRange(warnings.Select(w => "     WARNING: " + w));
             return notes;
         }

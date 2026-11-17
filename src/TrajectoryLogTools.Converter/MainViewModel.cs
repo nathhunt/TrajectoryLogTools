@@ -219,11 +219,13 @@ namespace TrajectoryLogTools.Converter
             {
                 int convert = _all.Count(r => r.CanConvert), already = _all.Count(r => r.Item.State == V4BatchState.AlreadyConverted),
                     v4 = _all.Count(r => r.Item.State == V4BatchState.NotV51), imaging = _all.Count(r => r.Item.State == V4BatchState.Imaging),
-                    other = _all.Count - convert - already - v4 - imaging;
+                    damaged = _all.Count(r => r.Item.State == V4BatchState.DamagedOutput),
+                    other = _all.Count - convert - already - v4 - imaging - damaged;
                 var parts = new List<string> { convert + (convert == 1 ? " log to convert" : " logs to convert") };
                 if (already > 0) parts.Add(already + " already converted");
                 if (v4 > 0) parts.Add(v4 + " already v4.0");
                 if (imaging > 0) parts.Add(imaging + (imaging == 1 ? " CBCT log left out" : " CBCT logs left out"));
+                if (damaged > 0) parts.Add(damaged + (damaged == 1 ? " damaged file in the output folder (tick Replace)" : " damaged files in the output folder (tick Replace)"));
                 if (other > 0) parts.Add(other + " that can't be converted");
                 ListSummary = string.Join(" · ", parts) + (folderMode && Filter.IsActive ? "  (" + Filter.Describe() + ")" : "");
             }
