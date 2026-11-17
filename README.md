@@ -204,7 +204,7 @@ app** (or the folder set in Settings), so all the logs of a deployed copy are in
     in its folder.
 
   File operations say which file and which step failed (e.g. *Could not write X (while trying to
-  write the temporary file X.tmp)*), and the message on screen says the details are in the log.
+  write 3,957,922 bytes to X)*), and the message on screen says the details are in the log.
 * **One file per user, computer and day:** `<app>_<yyyy-MM-dd>_<user>_<computer>.log`, e.g.
   `TrajectoryLogConverter_2026-11-14_huntelersn_WS042.log`. Users never write to the same file;
   the same user with the app open twice waits up to a second for the file.
@@ -237,8 +237,9 @@ v5.1 logs to v4.0 and nothing else:
 * **The list** shows, compactly, every log that will be converted (treated, patient · plan ·
   fields, file, subfolder), each with a tick to leave it out, and a count. Logs that won't be
   converted are hidden unless asked for, with the reason: already v4.0, already in the output
-  folder, same file name as another log in the list, can't be read, the output folder is
-  the log's own folder, or a kV imaging (CBCT) log.
+  folder, a **damaged** file in the output folder (shorter than its header says, or unreadable:
+  tick *Replace* to convert it again), same file name as another log in the list, can't be read,
+  the output folder is the log's own folder, or a kV imaging (CBCT) log.
 * **Leave out kV imaging (CBCT) logs** (on by default; the default is in Settings): a log with no
   planned MU (every field's MU and the metadata's Original MU are 0) whose energy is kV (Halcyon
   writes `Energy: 0k`) or whose plan, beam or field name contains "CBCT". A treatment log always
@@ -248,6 +249,15 @@ v5.1 logs to v4.0 and nothing else:
   long list; *Show From / To* (or Esc) brings them back.
 * **To:** the default output folder, each log keeping its file name. *Replace logs already in
   the output folder* is off by default.
+* **How files are written** (both apps: v4.0 / v5.1 logs, CSVs, dumps): directly under their own
+  name, so it works in a folder where users can create and write files but not rename or delete
+  them (Write without Modify, as a drop folder often is). Safeguards: a file is only created if it
+  isn't there yet (unless *Replace*, which overwrites it in place); it is locked while being
+  written, so nothing else can open it half-written; it is written through and flushed to the
+  disk or server; then it is read back and compared byte for byte. If a write fails part-way, the
+  incomplete file is removed if that is allowed; if not, the error says it is there and that it
+  must be removed or converted again with *Replace* (and the list shows it as damaged). A file
+  that can't be read back (no read permission) is reported as written but not checked.
 * **What is written:** the v4.0 log only, always the same way: machine specifier TrueBeam (0),
   serial number removed, couch axes kept, everything else in the header (patient, plan, field
   names, metadata) as it is. No time-axis file, CSV or run log.

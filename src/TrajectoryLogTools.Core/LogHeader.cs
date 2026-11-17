@@ -21,6 +21,10 @@ namespace TrajectoryLogTools.Core
         public string MetaDataText = "";
         public string MachineSerial = "";
         public List<Subbeam> Subbeams = new List<Subbeam>();
+        /// <summary>The file's length, and the length its header says it has (header, subbeams, snapshots, CRC).</summary>
+        public long FileLength, ExpectedLength;
+        /// <summary>The file is as long as its header says: not cut short (e.g. by a write that failed part-way).</summary>
+        public bool IsComplete { get { return FileLength == ExpectedLength; } }
         /// <summary>Treatment date and time: from the file name's time stamp, else the file's modified time.</summary>
         public DateTime Date;
         public bool DateFromName;
@@ -99,7 +103,9 @@ namespace TrajectoryLogTools.Core
             h.SamplingIntervalMs = BinUtil.ReadInt(head, ref p);
             int numAxes = BinUtil.ReadInt(head, ref p);
             if (numAxes <= 0 || numAxes > 64) throw new InvalidDataException("Implausible number of axes: " + numAxes);
-            p += numAxes * 8;
+            p += numAxes * 4;   // axis ids
+            long samples = 0;
+            for (int i = 0; i < numAxes; i++) samples += BinUtil.ReadInt(head, ref p);
             h.AxisScale = BinUtil.ReadInt(head, ref p);
             int numSubbeams = BinUtil.ReadInt(head, ref p);
             p += 4; // truncated
@@ -111,6 +117,9 @@ namespace TrajectoryLogTools.Core
                 int mi = p + TrajectoryLog.MetaDataBytes;
                 h.MachineSerial = BinUtil.UpToNull(Encoding.ASCII.GetString(head, mi + 1, 6));
             }
+
+            h.ExpectedLength = (long)H + (long)numSubbeams * TrajectoryLog.SubbeamBytes + (long)h.NumSnapshots * samples * 2 * 4 + TrajectoryLog.CrcBytes;
+            h.FileLength = new FileInfo(path).Length;
 
             if (numSubbeams > 0 && numSubbeams < 1000)
             {
