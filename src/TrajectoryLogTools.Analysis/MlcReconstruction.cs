@@ -471,6 +471,17 @@ namespace TrajectoryLogTools.Analysis
             double[][] fitSel = FitPiecewiseLinear(coord, ys.Take(nLeaf).Concat(new[] { gA }).ToArray(), nCp);
             double[][] fitExp = FitPiecewiseLinear(cpOfRow, ys.Skip(nLeaf).Concat(new[] { gE }).ToArray(), nCp);
 
+            // Jaws (TrueBeam): the log's planned jaw positions at each control point, IEC 61217 mm (X1 and
+            // Y1 are positive when open in the machine scales, negative in IEC; checked against RT Plans).
+            // Halcyon / Ethos record none (Eclipse uses +/-140 mm), nor are they read from IEC-scale logs.
+            double[][] jaws = null;
+            string[] jawCols = { "X1_cm_Expected", "X2_cm_Expected", "Y1_cm_Expected", "Y2_cm_Expected" };
+            if (scale == "varian" && jawCols.All(log.Has) && rows.All(r => jawCols.All(c => !double.IsNaN(r[log.Col[c]]))))
+            {
+                double[] sign = { -1, 1, -1, 1 };
+                jaws = FitPiecewiseLinear(cpOfRow, Enumerable.Range(0, 4).Select(q => rows.Select(r => sign[q] * r[log.Col[jawCols[q]]] * 10.0).ToArray()).ToArray(), nCp);
+            }
+
             double[,] recon = LeafToIec(fitSel, nCp, geom);   // [cp, value index in Eclipse order]
             double[,] reconExp = LeafToIec(fitExp, nCp, geom);
             int nClosed, nOpened, nTmp1, nTmp2; double gapShift, tmpShift;
@@ -532,8 +543,10 @@ namespace TrajectoryLogTools.Analysis
                     double mw = cp == 0 ? 0.0 : (cp == nCp - 1 ? 1.0 : muKnots[cp] / muTotal);
                     var sb = new StringBuilder();
                     sb.Append(F(mw)).Append(',');
-                    // No jaw data in the log. Halcyon/Ethos have no jaws (Eclipse uses +/-140 mm).
-                    sb.Append(F(-140)).Append(',').Append(F(140)).Append(',').Append(F(-140)).Append(',').Append(F(140)).Append(',');
+                    if (jaws != null)
+                        for (int q = 0; q < 4; q++) sb.Append(F(Math.Round(jaws[q][cp], 1))).Append(',');   // the plan's 0.1 mm steps
+                    else   // no jaw data in the log: Halcyon / Ethos have no jaws (Eclipse uses +/-140 mm)
+                        sb.Append(F(-140)).Append(',').Append(F(140)).Append(',').Append(F(-140)).Append(',').Append(F(140)).Append(',');
                     sb.Append(F(gantryOut[cp])).Append(',').Append(F(coll)).Append(',');
                     AppendLeaves(sb, recon, cp, nLeaf);
                     outLines.Add(sb.ToString());
@@ -616,7 +629,11 @@ namespace TrajectoryLogTools.Analysis
             res.GantryActualVsExpectedMaxDeg = gActMax;
             res.GantryStartIec = template != null ? template.Cps[0][5] : gantryOut[0];
             res.GantryNote = template != null ? "from the template" : gantryHow;
-            for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0) res.EmptyIntervals.Add(k);
+            // An interval with no planned MU (a step-and-shoot transition: the leaves move with the beam
+            // off) has no beam-on samples by design; only intervals that should have delivered dose count.
+            // (The MU at the control points is fitted, so a transition shows as a few thousandths of an MU.)
+            double transitionMu = Math.Max(0.01, 1e-4 * muTotal);
+            for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0 && muKnots[k + 1] - muKnots[k] > transitionMu) res.EmptyIntervals.Add(k);
             res.RemainingGapProblems = nGapViol + nDynViol;
             res.GapsClosed = nClosed; res.GapsOpened = nOpened;
             DiffStats(recon, reconExp, nCp, nLeaf, geom, res);

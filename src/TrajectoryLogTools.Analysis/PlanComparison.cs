@@ -89,7 +89,8 @@ namespace TrajectoryLogTools.Analysis
             get
             {
                 return Compared && TransferLeafMaxMm <= PlanComparison.TransferLeafTolMm && TransferGantryMaxDeg <= PlanComparison.TransferGantryTolDeg
-                       && TransferMuMax <= PlanComparison.TransferMuTol && !(Math.Abs(TransferCollimatorDeg) > PlanComparison.TransferGantryTolDeg);
+                       && TransferMuMax <= PlanComparison.TransferMuTol && !(Math.Abs(TransferCollimatorDeg) > PlanComparison.TransferGantryTolDeg)
+                       && !(TransferJawMaxMm > PlanComparison.TransferJawTolMm);
             }
         }
 
@@ -98,6 +99,15 @@ namespace TrajectoryLogTools.Analysis
         public DiffStat Leaves = new DiffStat(), Gantry = new DiffStat();
         /// <summary>At the control points (fitted actual positions).</summary>
         public DiffStat CpLeaves = new DiffStat();
+
+        // ---- jaws (TrueBeam: the plan's X / ASYMX and Y / ASYMY against the log's X1 X2 Y1 Y2) ----
+        /// <summary>Jaws compared (the plan has them and the log records them); false for Halcyon / Ethos.</summary>
+        public bool JawsCompared;
+        /// <summary>Transfer check of the jaws: largest |log expected - plan|, mid-interval snapshots, mm (NaN when not compared).</summary>
+        public double TransferJawMaxMm = double.NaN;
+        public string TransferJawMaxAt = "";
+        /// <summary>Every beam-on snapshot's actual jaws against the plan at the MU delivered so far.</summary>
+        public DiffStat Jaws = new DiffStat();
         /// <summary>RMS of actual - plan per value (Eclipse order) over the beam-on snapshots, mm.</summary>
         public double[] LeafRms;
 
@@ -173,6 +183,8 @@ namespace TrajectoryLogTools.Analysis
         public DiffStat Leaves { get { return PlanComparison.Combine(Compared.Select(f => f.Leaves)); } }
         public DiffStat Gantry { get { return PlanComparison.Combine(Compared.Select(f => f.Gantry)); } }
         public DiffStat CpLeaves { get { return PlanComparison.Combine(Compared.Select(f => f.CpLeaves)); } }
+        public bool AnyJaws { get { return Compared.Any(f => f.JawsCompared); } }
+        public DiffStat Jaws { get { return PlanComparison.Combine(Compared.Where(f => f.JawsCompared).Select(f => f.Jaws)); } }
     }
 
     public static class PlanComparison
@@ -185,6 +197,9 @@ namespace TrajectoryLogTools.Analysis
         public const double TransferLeafTolMm = 0.05;
         public const double TransferGantryTolDeg = 0.05;
         public const double TransferMuTol = 0.05;
+        /// <summary>Jaws: the log stores cm as float32 and the plan has 0.1 mm steps.</summary>
+        public const double TransferJawTolMm = 0.05;
+        static readonly string[] JawNames = { "X1", "X2", "Y1", "Y2" };
 
         public static PlanComparisonResult Compare(DeliveryRecord record, RtPlan plan, string logLabel = null)
         {
@@ -360,6 +375,7 @@ namespace TrajectoryLogTools.Analysis
             // beam-on snapshots: local control point, local MU (expected / actual), gantry IEC, leaves IEC mm
             public double[] Cp, MuE, MuA, GantryE, GantryA, CollE, CollA;
             public double[][] LeafE, LeafA;   // [value][snapshot], Eclipse order
+            public double[][] JawE, JawA;     // [X1 X2 Y1 Y2][snapshot], IEC 61217 mm; null when the log has none
             public double ExpectedGantryStart = double.NaN;
 
             public static FieldData From(DeliveryRecord rec, int subbeam, MlcGeometry geom, bool varian)
@@ -412,6 +428,19 @@ namespace TrajectoryLogTools.Analysis
                 d.GantryA = Unwrap(on.Select(s => iec(gA[s])).ToArray());
                 d.CollE = cE == null ? null : on.Select(s => iec(cE[s])).ToArray();
                 d.CollA = cA == null ? null : on.Select(s => iec(cA[s])).ToArray();
+                // Jaws, cm in the machine scales: X1 and Y1 are positive when open, which is negative in
+                // IEC 61217 (checked against TrueBeam RT Plans). Not read from IEC-scale logs (axis scale 2),
+                // whose jaw convention hasn't been checked against data.
+                if (varian)
+                {
+                    var jaw = new[] { "X1", "X2", "Y1", "Y2" }.Select(n => new { E = rec.TryColumn(n + "_cm_Expected"), A = rec.TryColumn(n + "_cm_Actual") }).ToArray();
+                    if (jaw.All(j => j.E != null && j.A != null) && on.All(s => jaw.All(j => !double.IsNaN(j.E[s]) && !double.IsNaN(j.A[s]))))
+                    {
+                        double[] sign = { -1, 1, -1, 1 };
+                        d.JawE = Enumerable.Range(0, 4).Select(q => on.Select(s => sign[q] * jaw[q].E[s] * 10.0).ToArray()).ToArray();
+                        d.JawA = Enumerable.Range(0, 4).Select(q => on.Select(s => sign[q] * jaw[q].A[s] * 10.0).ToArray()).ToArray();
+                    }
+                }
                 d.LeafE = new double[nLeaf][];
                 d.LeafA = new double[nLeaf][];
                 for (int j = 0; j < nLeaf; j++)
@@ -518,6 +547,28 @@ namespace TrajectoryLogTools.Analysis
             if (!double.IsNaN(f.PlanCollimator) && !double.IsNaN(f.ExpectedCollimator))
                 f.TransferCollimatorDeg = Angles.WrapDifference(f.ExpectedCollimator - f.PlanCollimator);
 
+            // jaws, where the plan has them and the log records them: transfer check as the leaves
+            double[,] planJaws = d.JawE != null ? beam.Jaws() : null;
+            if (planJaws != null)
+            {
+                f.JawsCompared = true;
+                double jmax = 0; int jk = 0, jq = 0;
+                for (int s = 0; s < d.Cp.Length; s++)
+                {
+                    double c = d.Cp[s];
+                    int k = Math.Max(0, Math.Min((int)Math.Floor(c), n - 2));
+                    double t = c - k;
+                    if (t < 0.25 || t > 0.75) continue;
+                    for (int q = 0; q < 4; q++)
+                    {
+                        double e = Math.Abs(d.JawE[q][s] - (planJaws[o0 + k, q] * (1 - t) + planJaws[o0 + k + 1, q] * t));
+                        if (e > jmax) { jmax = e; jk = k; jq = q; }
+                    }
+                }
+                f.TransferJawMaxMm = jmax;
+                f.TransferJawMaxAt = Fmt("{0}, between control points {1} and {2}", JawNames[jq], o0 + jk, o0 + jk + 1);
+            }
+
             // ---- 3a. every beam-on snapshot against the plan at the MU delivered so far ----
             var coord = new double[d.Cp.Length];
             var abs = new List<double>(d.Cp.Length * nv);
@@ -530,10 +581,16 @@ namespace TrajectoryLogTools.Analysis
                 double c = coord[s] = MlcReconstructor.InverseInterp(f.PlanMu, d.MuA[s]);
                 int k = Math.Min((int)Math.Floor(c), n - 2);
                 double t = c - k;
+                // At a step-and-shoot transition (control points with no MU between them, while the leaves
+                // move to the next segment) the plan allows any position along the move: a snapshot within
+                // TransitionMu of such a transition is compared with the whole move, not one end of it.
+                int lo, hi;
+                bool transition = Transition(f.PlanMu, d.MuA[s], out lo, out hi);
                 for (int v = 0; v < nv; v++)
                 {
                     double p = f.PlanLeaves[k, v] * (1 - t) + f.PlanLeaves[k + 1, v] * t;
                     double e = d.LeafA[v][s] - p;
+                    if (transition) e = OutsideRange(d.LeafA[v][s], f.PlanLeaves, v, lo, hi, e);
                     double a = Math.Abs(e);
                     sum2[v] += e * e;
                     abs.Add(a);
@@ -541,6 +598,7 @@ namespace TrajectoryLogTools.Analysis
                 }
                 double pg = f.PlanGantry[k] * (1 - t) + f.PlanGantry[k + 1] * t;
                 double ge = Math.Abs(Angles.WrapDifference(d.GantryA[s] - pg));
+                if (transition) ge = Math.Min(ge, Enumerable.Range(lo, hi - lo + 1).Min(j => Math.Abs(Angles.WrapDifference(d.GantryA[s] - f.PlanGantry[j]))));
                 gSum2 += ge * ge;
                 gAbs.Add(ge);
                 if (ge > gMax) { gMax = ge; gMaxS = s; }
@@ -549,8 +607,35 @@ namespace TrajectoryLogTools.Analysis
             f.Leaves = Stat(abs, sum2.Sum(), Where(geom, maxV, o0 + (int)Math.Round(coord[maxS])));
             f.Gantry = Stat(gAbs, gSum2, Fmt("control point {0}", o0 + (int)Math.Round(coord[gMaxS])));
 
+            if (planJaws != null)
+            {
+                var jAbs = new List<double>(d.Cp.Length * 4);
+                double jSum2 = 0, jMax = -1; int jMaxS = 0, jMaxQ = 0;
+                for (int s = 0; s < d.Cp.Length; s++)
+                {
+                    int k = Math.Min((int)Math.Floor(coord[s]), n - 2);
+                    double t = coord[s] - k;
+                    int lo, hi;
+                    bool transition = Transition(f.PlanMu, d.MuA[s], out lo, out hi);
+                    for (int q = 0; q < 4; q++)
+                    {
+                        double e = Math.Abs(d.JawA[q][s] - (planJaws[o0 + k, q] * (1 - t) + planJaws[o0 + k + 1, q] * t));
+                        if (transition)
+                            for (int j = lo; j <= hi; j++) e = Math.Min(e, Math.Abs(d.JawA[q][s] - planJaws[o0 + j, q]));
+                        jSum2 += e * e;
+                        jAbs.Add(e);
+                        if (e > jMax) { jMax = e; jMaxS = s; jMaxQ = q; }
+                    }
+                }
+                f.Jaws = Stat(jAbs, jSum2, Fmt("{0}, control point {1}", JawNames[jMaxQ], o0 + (int)Math.Round(coord[jMaxS])));
+            }
+
             // ---- 3b. at the control points: fitted actual positions (on the plan's MU axis) ----
-            double[][] fitA = MlcReconstructor.FitPiecewiseLinear(coord, d.LeafA.Concat(new[] { d.GantryA }).ToArray(), n);
+            // With step-and-shoot transitions (control points with no MU between them) the delivered MU
+            // can't tell the two ends of a leaf move apart; the log's own control-point counter, which
+            // runs on through the move, can: use it then.
+            bool stepAndShoot = Enumerable.Range(0, n - 1).Any(k => f.PlanMu[k + 1] - f.PlanMu[k] <= 1e-6);
+            double[][] fitA = MlcReconstructor.FitPiecewiseLinear(stepAndShoot ? d.Cp : coord, d.LeafA.Concat(new[] { d.GantryA }).ToArray(), n);
             double[][] fitMuA = MlcReconstructor.FitPiecewiseLinear(d.Cp, new[] { d.MuA }, n);
             f.ActualLeaves = new double[n, nv];
             f.ActualGantry = new double[n];
@@ -583,6 +668,38 @@ namespace TrajectoryLogTools.Analysis
                 return f.TransferLeafMaxMm + f.TransferGantryMaxDeg;
             }
             catch (Exception) { return double.PositiveInfinity; }
+        }
+
+        /// <summary>MU within which a snapshot counts as at a step-and-shoot transition (delivered MU is a little noisy).</summary>
+        public const double TransitionMu = 0.05;
+
+        /// <summary>
+        /// True when <paramref name="mu"/> is within TransitionMu of control points with no MU between
+        /// them (a step-and-shoot transition): <paramref name="lo"/>..<paramref name="hi"/> are those
+        /// control points. Never true for a plan whose MU rises at every control point (VMAT, dynamic IMRT).
+        /// </summary>
+        static bool Transition(double[] planMu, double mu, out int lo, out int hi)
+        {
+            lo = hi = -1;
+            for (int k = 0; k + 1 < planMu.Length; k++)
+            {
+                if (planMu[k + 1] - planMu[k] > 1e-6) continue;                 // MU rises: not a transition
+                if (Math.Abs(planMu[k] - mu) > TransitionMu) continue;
+                int a = k, b = k + 1;
+                while (b + 1 < planMu.Length && planMu[b + 1] - planMu[b] <= 1e-6) b++;
+                lo = a; hi = b;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>How far <paramref name="value"/> is outside the plan's positions of value <paramref name="v"/> over control points lo..hi (0 inside); the signed <paramref name="fallback"/> if that is smaller.</summary>
+        static double OutsideRange(double value, double[,] plan, int v, int lo, int hi, double fallback)
+        {
+            double min = double.PositiveInfinity, max = double.NegativeInfinity;
+            for (int j = lo; j <= hi; j++) { min = Math.Min(min, plan[j, v]); max = Math.Max(max, plan[j, v]); }
+            double e = value < min ? value - min : value > max ? value - max : 0;
+            return Math.Abs(e) < Math.Abs(fallback) ? e : fallback;
         }
 
         static DiffStat Stat(List<double> abs, double sum2, string maxAt)
@@ -696,10 +813,12 @@ namespace TrajectoryLogTools.Analysis
                 L("  Transfer check (log expected vs plan, between control points): " + (f.TransferOk ? "MATCHES" : "DIFFERS"));
                 L("    leaves max " + Mm(f.TransferLeafMaxMm) + " (" + f.TransferLeafMaxAt + "), gantry max " + Deg(f.TransferGantryMaxDeg) +
                   ", MU max " + Mu(f.TransferMuMax) + ", collimator " + Deg(f.TransferCollimatorDeg));
+                if (f.JawsCompared) L("    jaws max " + Mm(f.TransferJawMaxMm) + " (" + f.TransferJawMaxAt + ")");
                 L("  Delivery (log actual vs plan):");
                 L(Fmt("    every beam-on snapshot ({0}), against the plan at the MU delivered:", f.Snapshots));
                 L("      leaves  max " + Mm(f.Leaves.Max) + " (" + f.Leaves.MaxAt + "), RMS " + Mm(f.Leaves.Rms) + ", 95% under " + Mm(f.Leaves.P95));
                 L("      gantry  max " + Deg(f.Gantry.Max) + " (" + f.Gantry.MaxAt + "), RMS " + Deg(f.Gantry.Rms));
+                if (f.JawsCompared) L("      jaws    max " + Mm(f.Jaws.Max) + " (" + f.Jaws.MaxAt + "), RMS " + Mm(f.Jaws.Rms));
                 L("    at control points (fitted actual positions):");
                 L("      leaves  max " + Mm(f.CpLeaves.Max) + " (" + f.CpLeaves.MaxAt + "), RMS " + Mm(f.CpLeaves.Rms) + ", 95% under " + Mm(f.CpLeaves.P95));
                 L("    collimator actual " + Deg(f.ActualCollimator) + ", plan " + Deg(f.PlanCollimator));

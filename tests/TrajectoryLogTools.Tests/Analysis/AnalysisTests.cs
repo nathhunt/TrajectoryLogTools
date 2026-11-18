@@ -25,18 +25,39 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
+        public void TrueBeam120_Mapping()
+        {
+            foreach (MlcGeometry g in new[] { MlcGeometry.Millennium120, MlcGeometry.Hd120 })
+            {
+                Assert.Equal(60, g.PairCount);
+                Assert.Equal(2, g.BankSamples);
+                LeafMapping a1 = g.ToIec(0), b1 = g.ToIec(60), a60 = g.ToIec(59);
+                Assert.Equal(1, a1.EclipseIndex);    // bank A leaf 1 -> X2 of pair 1, same sign
+                Assert.Equal(1.0, a1.Sign);
+                Assert.Equal(0, b1.EclipseIndex);    // bank B leaf 1 -> X1 of pair 1, sign flipped
+                Assert.Equal(-1.0, b1.Sign);
+                Assert.Equal(119, a60.EclipseIndex);
+                Assert.Equal("", g.LayerOfPair(10));
+            }
+        }
+
+        [Fact]
         public void Detect()
         {
             Assert.Same(MlcGeometry.Sx2, MlcGeometry.FromLeafCount(114));
-            Assert.Null(MlcGeometry.FromLeafCount(120));   // e.g. TrueBeam Millennium: not defined yet
+            Assert.Same(MlcGeometry.Millennium120, MlcGeometry.FromLeafCount(120));      // TrueBeam: Millennium unless the header says HD120
+            Assert.Same(MlcGeometry.Hd120, MlcGeometry.FromLeafCount(120, MlcGeometry.Hd120Model));
+            Assert.Same(MlcGeometry.Millennium120, MlcGeometry.FromLeafCount(120, 2));
+            Assert.Null(MlcGeometry.FromLeafCount(80));
             Assert.Same(MlcGeometry.Sx2, MlcGeometry.FromLog(LogBuilder.Parse(LogBuilder.V51().Build())));
-            Assert.Contains("not supported yet", MlcGeometry.UnsupportedMessage(120));
+            Assert.Same(MlcGeometry.Millennium120, MlcGeometry.FromLog(LogBuilder.Parse(LogBuilder.V40(5).SetSamples(50, 122).Build())));
+            Assert.Contains("not supported yet", MlcGeometry.UnsupportedMessage(80));
         }
 
         [Fact]
         public void Reconstruction_RefusesAnUnknownMlc()
         {
-            var b = LogBuilder.V51(20).SetSamples(50, 122);
+            var b = LogBuilder.V51(20).SetSamples(50, 82);   // 80 leaves: no such MLC defined
             var r = DeliveryRecord.FromLog(LogBuilder.Parse(b.Build()));
             var ex = Assert.Throws<InvalidDataException>(() => MlcReconstructor.Run(r, "x.bin", new MlcReconstructionOptions()));
             Assert.Contains("not supported yet", ex.Message);

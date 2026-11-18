@@ -189,6 +189,7 @@
                                 <DataGridTextColumn Header="MLC 95% (mm)" Binding="{Binding Mlc95}" />
                                 <DataGridTextColumn Header="MLC max at CPs (mm)" Binding="{Binding MlcCpMax}" />
                                 <DataGridTextColumn Header="Gantry max (°)" Binding="{Binding GantryMax}" />
+                                <DataGridTextColumn Header="Jaws max (mm)" Binding="{Binding JawsMax}" />
                                 <DataGridTextColumn Header="Note" Binding="{Binding Note}" />
                             </DataGrid.Columns>
                         </DataGrid>

@@ -267,6 +267,11 @@ namespace TrajectoryLogTools.App.ViewModels
                 Cards.Add(Card("MLC, actual − plan", leaves.Max.ToString("F2", Inv) + " mm max",
                                string.Format(Inv, "RMS {0:F3} mm · 95% under {1:F3} mm", leaves.Rms, leaves.P95), leaves.Max, settings.MlcToleranceMm, "mm"));
                 Cards.Add(Card("Gantry, actual − plan", gantry.Max.ToString("F2", Inv) + "° max", "RMS " + gantry.Rms.ToString("F3", Inv) + "°", gantry.Max, settings.GantryToleranceDeg, "°"));
+                if (r.AnyJaws)   // TrueBeam: the jaws too (Halcyon / Ethos have none)
+                {
+                    DiffStat jaws = r.Jaws;
+                    Cards.Add(new Fact { Label = "Jaws, actual − plan", Value = jaws.Max.ToString("F2", Inv) + " mm max", Detail = "RMS " + jaws.Rms.ToString("F3", Inv) + " mm · " + jaws.MaxAt });
+                }
                 // one log: the MU of what it covers; several: the plan's total against all delivered
                 double planned = several ? r.MuPlanTotal : compared.Sum(f => f.MuPlanCovered), delivered = several ? r.MuDeliveredTotal : compared.Sum(f => f.MuDelivered);
                 Cards.Add(Card("MU, delivered − plan", (delivered - planned).ToString("+0.000;−0.000;0.000", Inv) + " MU",
@@ -275,7 +280,8 @@ namespace TrajectoryLogTools.App.ViewModels
                 {
                     Label = "Plan check (log planned vs plan)",
                     Value = r.TransferOk ? "Matches" : "Differs",
-                    Detail = string.Format(Inv, "Leaves {0:F3} mm, gantry {1:F3}° max", compared.Max(f => f.TransferLeafMaxMm), compared.Max(f => f.TransferGantryMaxDeg)),
+                    Detail = string.Format(Inv, "Leaves {0:F3} mm, gantry {1:F3}°{2} max", compared.Max(f => f.TransferLeafMaxMm), compared.Max(f => f.TransferGantryMaxDeg),
+                                           r.AnyJaws ? string.Format(Inv, ", jaws {0:F3} mm", compared.Where(f => f.JawsCompared).Max(f => f.TransferJawMaxMm)) : ""),
                     Kind = r.TransferOk ? "ok" : "critical",
                 });
                 int beams = r.Plan.TreatmentBeams.Count();
@@ -396,6 +402,7 @@ namespace TrajectoryLogTools.App.ViewModels
         public string Mlc95 { get; set; }
         public string MlcCpMax { get; set; }
         public string GantryMax { get; set; }
+        public string JawsMax { get; set; }
         public string Note { get; set; }
 
         static string A(double iec) { return Fmt.N(Analysis.Angles.Convert(iec, AngleScale.Iec, Display.Angles), 1); }
@@ -417,6 +424,7 @@ namespace TrajectoryLogTools.App.ViewModels
             row.Mlc95 = Fmt.N(f.Leaves.P95, 3);
             row.MlcCpMax = Fmt.N(f.CpLeaves.Max, 3);
             row.GantryMax = Fmt.N(f.Gantry.Max, 3);
+            row.JawsMax = f.JawsCompared ? Fmt.N(f.Jaws.Max, 3) : "";
             row.Note = "Matched by " + f.MatchedBy + "; largest leaf difference: " + f.Leaves.MaxAt;
             return row;
         }
