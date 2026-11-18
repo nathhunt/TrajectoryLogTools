@@ -501,17 +501,22 @@ or a 4.8 tool if ever needed.
 TrueBeam logs (TrueBeam 2.7 MR2 and later, version 4.0) are read, shown and analysed like Halcyon
 logs: the log page, Compare, File comparison, Rebuild Eclipse MLC and Compare with plan.
 
-* **MLC**: Millennium 120 and HD120 (the log header's MLC model: 2 and 3; 2 carriage values, then
+* **MLC**: Millennium 120 and HD120 (the log header's MLC model: 2 and 3; HD120 is defined the
+  same way but hasn't been tested with a real HD120 log; 2 carriage values, then
   bank A leaves 1–60, then bank B leaves 1–60). Bank A is X2 (same sign), bank B is X1 (sign
   flipped), leaf n is pair n from Y = −200 mm — checked against RT Plans of TrueBeam deliveries:
   the log's planned leaf positions equal the plan's at the control points.
 * **Jaws**: X1 and Y1 are positive when open in the log (machine scale), negative in IEC 61217;
   checked the same way. Compared with the plan in Compare with plan; an MLC rebuilt without an
   Eclipse export takes the log's planned jaws at each control point (Halcyon has none: ±140 mm).
-* **Rebuild**: without an Eclipse export, the file's *MLC Model* line is `Millennium 120` or
-  `HD120`. Eclipse only imports a file whose model name matches the machine's exactly, so check
-  it against an Eclipse export of a TrueBeam beam, or give the export (*Use Eclipse exports*),
-  which copies its header.
+* **Rebuild**: without an Eclipse export, the file's *MLC Model* line is `Millennium 120` (as
+  Eclipse writes it: checked against an Eclipse export of a TrueBeam beam, whose values and layout
+  the rebuilt file matches) or `HD120` (not checked: no HD120 machine here; give an Eclipse export,
+  *Use Eclipse exports*, which copies its header, until one has been compared).
+* **Method check** (with an Eclipse export): the log's planned leaf positions are compared with the
+  export between control points, where they lie on its lines; at the control points the machine
+  rounds the corners where a leaf turns back (~0.1 mm on TrueBeam), which is normal. The QA report
+  still lists the difference at the control points.
 * **Converter / Export to v4.0**: TrueBeam logs are already v4.0 (listed as such); the v5.1 →
   v4.0 conversion is for Halcyon / Ethos logs.
 * **Not yet**: version 3.0 logs (TrueBeam before 2.7 MR2); the couch angle against the plan;

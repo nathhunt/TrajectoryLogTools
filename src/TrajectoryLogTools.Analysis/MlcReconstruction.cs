@@ -586,7 +586,7 @@ namespace TrajectoryLogTools.Analysis
                 double[,] plan = new double[nCp, nLeaf];
                 for (int cp = 0; cp < nCp; cp++)
                     for (int k = 0; k < nLeaf; k++) plan[cp, k] = template.Cps[cp][EclipseMlcFile.NonLeafFields + k];
-                rep.AppendLine("Method check - reconstructed EXPECTED vs template plan (should be ~0):");
+                rep.AppendLine("Method check - reconstructed EXPECTED vs template plan (should be ~0):");   // as LogToEclipseMlc wrote it (golden files)
                 rep.AppendLine(DiffSummary(reconExp, plan, nCp, nLeaf, geom));
                 rep.AppendLine("Written file vs template plan:");
                 rep.AppendLine(DiffSummary(recon, plan, nCp, nLeaf, geom));
@@ -639,10 +639,26 @@ namespace TrajectoryLogTools.Analysis
             DiffStats(recon, reconExp, nCp, nLeaf, geom, res);
             if (template != null)
             {
+                // The method check: do the log's planned (expected) leaf positions follow the export? Checked on
+                // the snapshots in the middle half of each control-point interval, where the machine's planned
+                // path lies on the export's straight lines. At the control points themselves the machine rounds
+                // the corners where a leaf turns back (by up to ~0.1-0.6 mm), so the fit there (in the report)
+                // differs by that much from the export even when everything is right.
                 double mc = 0;
-                for (int cp = 0; cp < nCp; cp++)
-                    for (int k = 0; k < nLeaf; k++)
-                        mc = Math.Max(mc, Math.Abs(reconExp[cp, k] - template.Cps[cp][EclipseMlcFile.NonLeafFields + k]));
+                const int nf = EclipseMlcFile.NonLeafFields;
+                for (int sIdx = 0; sIdx < rows.Count; sIdx++)
+                {
+                    double c = cpOfRow[sIdx];
+                    int kk = Math.Max(0, Math.Min((int)Math.Floor(c), nCp - 2));
+                    double t = c - kk;
+                    if (t < 0.25 || t > 0.75) continue;
+                    for (int j = 0; j < nLeaf; j++)
+                    {
+                        LeafMapping m = geom.ToIec(j);
+                        double plan = template.Cps[kk][nf + m.EclipseIndex] * (1 - t) + template.Cps[kk + 1][nf + m.EclipseIndex] * t;
+                        mc = Math.Max(mc, Math.Abs(m.Sign * ys[nLeaf + j][sIdx] - plan));
+                    }
+                }
                 res.MethodCheckMaxMm = mc;
                 double gMax = 0, mwMax = 0;
                 for (int cp = 0; cp < nCp; cp++)
@@ -655,7 +671,7 @@ namespace TrajectoryLogTools.Analysis
                 if (Math.Abs(AngleDiff(template.Cps[0][6], coll)) > 0.5)
                     res.Problems.Add(Fmt("The collimator in the log ({0:F1} deg) differs from the Eclipse export ({1:F1} deg).", coll, template.Cps[0][6]));
                 if (mc > MethodCheckLimitMm)
-                    res.Problems.Add(Fmt("Method check: rebuilding the planned positions differs from the Eclipse export by up to {0:F3} mm (expected about 0).", mc));
+                    res.Problems.Add(Fmt("Method check: the log's planned leaf positions differ from the Eclipse export by up to {0:F3} mm between control points (expected about 0): is it this beam, and this plan version?", mc));
             }
             if (res.RemainingGapProblems > 0)
                 res.Problems.Add(res.RemainingGapProblems + " leaf gap(s) remain that Eclipse may reject (see the report).");
