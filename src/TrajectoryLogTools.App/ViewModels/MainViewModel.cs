@@ -81,6 +81,7 @@ namespace TrajectoryLogTools.App.ViewModels
             CompareCheckedCommand.NotifyCanExecuteChanged();
             ExportCommand.NotifyCanExecuteChanged();
             RebuildCommand.NotifyCanExecuteChanged();
+            ComparePlanCommand.NotifyCanExecuteChanged();
             CloseCommand.NotifyCanExecuteChanged();
         }
 
@@ -118,9 +119,22 @@ namespace TrajectoryLogTools.App.ViewModels
         }
 
         /// <summary>Log <paramref name="a"/> against a DICOM RT Plan (not opened as a log, not in Recent logs).</summary>
-        public void ShowPlanCompare(LogItem a, string planPath)
+        public void ShowPlanCompare(LogItem a, string planPath) { ShowPlanCompare(new[] { a }, planPath); }
+
+        /// <summary>Logs against a DICOM RT Plan, together (e.g. one log per field of the plan).</summary>
+        public void ShowPlanCompare(IEnumerable<LogItem> logs, string planPath)
         {
-            CurrentPage = new PlanComparePageViewModel(a, planPath, this);
+            CurrentPage = new PlanComparePageViewModel(logs, planPath, this);
+        }
+
+        /// <summary>The ticked logs (or the shown log) against a DICOM RT Plan chosen now.</summary>
+        [RelayCommand(CanExecute = nameof(CanExport))]
+        void ComparePlan()
+        {
+            var logs = Targets();
+            if (logs.Count == 0) return;
+            string p = Dialogs.OpenFile("RT Plan to compare " + (logs.Count == 1 ? logs[0].DisplayName : logs.Count + " logs") + " with", Dialogs.PlanFilter, logs[0].Folder);
+            if (p != null) ShowPlanCompare(logs, p);
         }
 
         public void ShowRebuild(IEnumerable<LogItem> items)
@@ -175,7 +189,7 @@ namespace TrajectoryLogTools.App.ViewModels
             if (plan != null)
             {
                 LogItem log = result.Count > 0 ? result[result.Count - 1] : CurrentLog;
-                if (log != null) ShowPlanCompare(log, plan);
+                if (log != null) ShowPlanCompare(WithChecked(log), plan);
                 else ShowNotice(System.IO.Path.GetFileName(plan) + " is a DICOM file: open a log first, then compare it with the plan (Compare with…, or drop the plan on the log).", "caution");
             }
             return result;

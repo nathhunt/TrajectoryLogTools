@@ -67,7 +67,7 @@ namespace TrajectoryLogTools.App.Views
         {
             e.Handled = true;   // not also opened by the window
             var files = e.Data.GetData(DataFormats.FileDrop) as string[];
-            if (_vm != null && files != null && files.Length > 0) _vm.Replace(isA, files[0]);
+            if (_vm != null && files != null && files.Length > 0) _vm.Drop(isA, files);
         }
     }
 }

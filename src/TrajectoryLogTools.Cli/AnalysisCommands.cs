@@ -105,13 +105,17 @@ namespace TrajectoryLogTools.Cli
                         inputs.Add(a); break;
                 }
             }
-            if (inputs.Count != 2) throw new ArgumentException("compare-plan needs a log and an RT Plan");
             foreach (string p in inputs)
                 if (!File.Exists(p)) { Console.Error.WriteLine("Input not found: " + p); return 1; }
+            // the plan is the DICOM file (by content), the rest are logs; one plan, any number of logs
+            var plans = inputs.Where(RtPlan.IsDicom).ToList();
+            var logs = inputs.Where(p => !RtPlan.IsDicom(p)).ToList();
+            if (plans.Count != 1 || logs.Count == 0) throw new ArgumentException("compare-plan needs one RT Plan (.dcm) and one or more logs");
 
-            DeliveryRecord log = DeliveryRecord.Load(inputs[0], ignoreCrc);
-            RtPlan plan = RtPlan.Load(inputs[1]);
-            PlanComparisonResult r = PlanComparison.Compare(log, plan);
+            RtPlan plan = RtPlan.Load(plans[0]);
+            var records = logs.Select(p => DeliveryRecord.Load(p, ignoreCrc)).ToList();
+            PlanComparisonResult r = records.Count == 1 ? PlanComparison.Compare(records[0], plan)
+                                                        : PlanComparison.Compare(records, logs.Select(p => Path.GetFileNameWithoutExtension(p)).ToList(), plan);
             Console.Write(PlanComparison.Report(r));
             if (save)
             {
@@ -121,7 +125,8 @@ namespace TrajectoryLogTools.Cli
                 Console.WriteLine("Wrote " + files.Count + " files to " + Path.GetFullPath(outDir));
             }
             // 0 = compared and the plan matches; 1 = a field not compared, a transfer difference or another patient / plan
-            bool ok = r.AnyCompared && r.Fields.All(f => f.Compared) && r.TransferOk && r.SamePatient != false && r.SamePlanUid != false;
+            bool ok = r.AnyCompared && r.Fields.All(f => f.Compared) && r.TransferOk && r.SamePatient != false && r.SamePlanUid != false &&
+                      (!r.MultipleLogs || r.Beams.All(b => b.Complete && !b.Repeated));
             return ok ? 0 : 1;
         }
 

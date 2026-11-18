@@ -170,6 +170,105 @@ namespace TrajectoryLogTools.Tests
             }
         }
 
+        /// <summary>A plan of just field <paramref name="i"/> (as a log of that one field holds it).</summary>
+        static SimPlan Only(SimPlan p, int i)
+        {
+            var r = new SimPlan();
+            r.Fields.Add(p.Fields[i]);
+            return r;
+        }
+
+        static PlanComparisonResult Several(RtPlan plan, params SimPlan[] logs)
+        {
+            var records = logs.Select((l, i) => Log(l, new SimDelivery { Seed = 10 + i, PlanUid = SimRtPlan.Uid })).ToList();
+            return PlanComparison.Compare(records, logs.Select((l, i) => "log " + (i + 1)).ToList(), plan);
+        }
+
+        [Fact]
+        public void SeveralLogs_OneFieldEach_EveryBeamComplete()
+        {
+            using (var dir = new TempDir())
+            {
+                SimPlan imrt = SimPlan.Imrt();
+                PlanComparisonResult r = Several(Plan(imrt, dir), Only(imrt, 0), Only(imrt, 1), Only(imrt, 2));
+                Assert.True(r.MultipleLogs);
+                Assert.Equal(3, r.Logs.Count);
+                Assert.Equal(3, r.Fields.Count(f => f.Compared));
+                Assert.Empty(r.BeamsNotInLog);
+                Assert.All(r.Beams, b => { Assert.True(b.Complete); Assert.False(b.Repeated); Assert.Equal("Complete", b.Status); Assert.Single(b.Fields); });
+                Assert.Equal(new[] { "log 1", "log 2", "log 3" }, r.Beams.Select(b => b.Fields[0].LogLabel).ToArray());
+                Assert.Equal(imrt.Fields.Sum(f => f.Mu), r.MuPlanTotal, 6);
+                Assert.InRange(r.MuDeliveredTotal, 0.99 * r.MuPlanTotal, 1.01 * r.MuPlanTotal);
+                Assert.True(r.TransferOk);
+                Assert.True(r.SamePatient);
+                Assert.True(r.SamePlanUid);
+                string report = PlanComparison.Report(r);
+                Assert.Contains("BEAMS", report);
+                Assert.Contains("All 3 logs:", report);
+                Assert.Contains("Total MU: plan", report);
+            }
+        }
+
+        [Fact]
+        public void SeveralLogs_ResumedDelivery_IsOneCompleteBeam_ARepeatIsFlagged_AMissingBeamToo()
+        {
+            using (var dir = new TempDir())
+            {
+                SimPlan vmat = SimPlan.Vmat();   // Arc 1 and Arc 2, 41 control points each
+                RtPlan plan = Plan(vmat, dir);
+
+                // Arc 1 interrupted at control point 20 and resumed in a second log; Arc 2 in a third
+                PlanComparisonResult r = Several(plan, Slice(vmat, 0, 0, 20), Slice(vmat, 0, 20, 40), Only(vmat, 1));
+                PlanBeamSummary arc1 = r.Beams.Single(b => b.Beam.Name == "Arc 1");
+                Assert.Equal(2, arc1.Fields.Count);
+                Assert.True(arc1.Complete, arc1.Status);
+                Assert.False(arc1.Repeated);
+                Assert.Equal("Complete (2 logs)", arc1.Status);
+                Assert.True(r.Beams.Single(b => b.Beam.Name == "Arc 2").Complete);
+
+                // Arc 1 delivered twice, Arc 2 not at all
+                r = Several(plan, Only(vmat, 0), Only(vmat, 0));
+                arc1 = r.Beams.Single(b => b.Beam.Name == "Arc 1");
+                Assert.True(arc1.Repeated);
+                Assert.StartsWith("Delivered more than once", arc1.Status);
+                PlanBeamSummary arc2 = r.Beams.Single(b => b.Beam.Name == "Arc 2");
+                Assert.False(arc2.Delivered);
+                Assert.Equal("Not delivered", arc2.Status);
+                Assert.Equal(new[] { "Arc 2" }, r.BeamsNotInLog.Select(b => b.Name).ToArray());
+
+                // only the first part of Arc 1: partial, with the missing control points named
+                r = Several(plan, Slice(vmat, 0, 0, 20), Only(vmat, 1));
+                arc1 = r.Beams.Single(b => b.Beam.Name == "Arc 1");
+                Assert.False(arc1.Complete);
+                Assert.Equal("Partial: control points 21-40 not delivered", arc1.Status);
+            }
+        }
+
+        [Fact]
+        public void Cli_ComparePlan_SeveralLogs()
+        {
+            using (var dir = new TempDir())
+            {
+                SimPlan vmat = SimPlan.Vmat();
+                string a = dir.Write("arc1.bin", DeliverySimulator.Build(Only(vmat, 0), new SimDelivery { Seed = 3, PlanUid = SimRtPlan.Uid }));
+                string b = dir.Write("arc2.bin", DeliverySimulator.Build(Only(vmat, 1), new SimDelivery { Seed = 4, PlanUid = SimRtPlan.Uid }));
+                string plan = SimRtPlan.Save(SimRtPlan.Build(vmat), dir.File("RP.vmat.dcm"));
+                string outDir = dir.File("out");
+                int code;
+                string printed;
+                using (var c = new ConsoleCapture()) { code = Program.Main(new[] { "compare-plan", a, plan, b, "-o", outDir }); printed = c.Out; }
+                Assert.Equal(0, code);
+                Assert.Contains("Logs : 2", printed);
+                Assert.Contains("Arc 1          Complete", printed);
+                Assert.True(File.Exists(Path.Combine(outDir, "plan_comparison_Arc_2.png")));
+
+                // only Arc 1: Arc 2 not delivered -> exit code 1
+                string single = dir.Write("arc1b.bin", File.ReadAllBytes(a));
+                using (new ConsoleCapture()) code = Program.Main(new[] { "compare-plan", a, single, plan });
+                Assert.Equal(1, code);   // Arc 1 twice, Arc 2 missing
+            }
+        }
+
         /// <summary>Control points a..b of one field, as a plan of its own (as a log of a resumed delivery holds it).</summary>
         static SimPlan Slice(SimPlan p, int field, int a, int b)
         {

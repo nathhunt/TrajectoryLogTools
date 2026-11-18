@@ -3,8 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:TrajectoryLogTools.App.ViewModels"
              xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
-    <!-- A log compared with its DICOM RT Plan (B). Laid out as the Compare page: what was compared,
-         the verdict, cards, charts, then folded details. -->
+    <!-- Logs (A: one, or several, e.g. one per field) compared with their DICOM RT Plan (B). Laid out
+         as the Compare page: what was compared, the verdict, cards, (with several logs) the beams,
+         charts, then folded details. -->
     <DockPanel>
         <!-- A / B -->
         <DockPanel DockPanel.Dock="Top" Margin="22,18,22,0">
@@ -18,15 +19,29 @@
             <StackPanel Margin="0,0,16,0">
                 <TextBlock Text="Compare with plan" Style="{StaticResource PageTitle}" Margin="0,0,0,8" />
                 <Border x:Name="DropA" AllowDrop="True" Drop="DropA_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2"
-                        ToolTip="Drop a log here to compare it with the plan">
+                        ToolTip="Drop logs here to add them to the comparison (e.g. one log per field of the plan)">
                     <DockPanel>
-                        <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0">
+                        <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,10,0" VerticalAlignment="Top">
                             <TextBlock Text="A" Foreground="{DynamicResource SolidBackgroundFillColorBaseBrush}" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-                        <Button DockPanel.Dock="Right" Content="Change…" Command="{Binding BrowseACommand}" Style="{StaticResource LinkButton}" FontSize="12" />
-                        <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding PathA}">
-                            <Run Text="{Binding A.PatientId, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding A.PatientId, Mode=OneWay, Converter={StaticResource NotEmptyToSeparator}}" /><Run Text="{Binding DateA, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding PathA, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
-                        </TextBlock>
+                        <Button DockPanel.Dock="Right" Content="Add logs…" Command="{Binding AddLogsBrowseCommand}" Style="{StaticResource LinkButton}" FontSize="12" VerticalAlignment="Top"
+                                ToolTip="Add more logs of this plan (e.g. the other fields, or a delivery resumed in another log)" />
+                        <ItemsControl ItemsSource="{Binding Logs}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:LogItem}">
+                                    <DockPanel Margin="0,0,0,2">
+                                        <Button DockPanel.Dock="Left" Command="{Binding DataContext.RemoveLogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                Padding="4,1" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="Leave this log out of the comparison" AutomationProperties.Name="Remove log"
+                                                Visibility="{Binding DataContext.SeveralLogs, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="9" />
+                                        </Button>
+                                        <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}">
+                                            <Run Text="{Binding PatientId, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="{Binding PatientId, Mode=OneWay, Converter={StaticResource NotEmptyToSeparator}}" /><Run Text="{Binding DisplayName, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" · " /><Run Text="{Binding DateText, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding Path, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" />
+                                        </TextBlock>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </DockPanel>
                 </Border>
                 <Border x:Name="DropB" AllowDrop="True" Drop="DropB_Drop" DragOver="Drop_DragOver" Background="Transparent" Padding="0,2" Margin="0,4,0,0"
@@ -82,6 +97,40 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
+                <!-- Several logs: every beam of the plan, and how the logs delivered it -->
+                <StackPanel Margin="0,0,0,12" Visibility="{Binding ShowBeams, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="Beams of the plan" Style="{StaticResource SectionTitle}" Margin="0,0,0,6" />
+                    <DataGrid ItemsSource="{Binding Beams}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                              CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Beam" Binding="{Binding Beam}" />
+                            <DataGridTemplateColumn Header="Delivery">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:PlanBeamRow}">
+                                        <TextBlock Text="{Binding Status}" Margin="4,0" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding StatusKind}" Value="caution">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Control points delivered" Binding="{Binding ControlPoints}" />
+                            <DataGridTextColumn Header="MU plan" Binding="{Binding MuPlan}" />
+                            <DataGridTextColumn Header="MU delivered" Binding="{Binding MuDelivered}" />
+                            <DataGridTextColumn Header="Delivered in" Binding="{Binding DeliveredIn}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+
                 <!-- Field picker (a log with several fields) -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Visibility="{Binding ShowFieldPicker, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock Text="Charts for" VerticalAlignment="Center" Margin="0,0,8,0" />
@@ -125,6 +174,7 @@
                         <DataGrid ItemsSource="{Binding Fields}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                                   CanUserAddRows="False" HorizontalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
+                                <DataGridTextColumn Header="Log" Binding="{Binding Log}" />
                                 <DataGridTextColumn Header="Field" Binding="{Binding Field}" />
                                 <DataGridTextColumn Header="Plan beam" Binding="{Binding PlanBeam}" />
                                 <DataGridTextColumn Header="Plan control points" Binding="{Binding ControlPoints}" />

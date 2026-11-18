@@ -51,6 +51,8 @@ namespace TrajectoryLogTools.Analysis
 
     public sealed class PlanFieldComparison
     {
+        /// <summary>The log the field is in (path and label, e.g. "CW 12/11/2026 11:03").</summary>
+        public string LogPath = "", LogLabel = "";
         public int Subbeam;
         public string LogName = "";
         /// <summary>The plan beam this field was paired with; null when none fits (see <see cref="Error"/>).</summary>
@@ -103,18 +105,65 @@ namespace TrajectoryLogTools.Analysis
         public string Label { get { return LogName.Length > 0 ? LogName : "Field " + Subbeam; } }
     }
 
+    /// <summary>One log of a comparison and what it says about itself.</summary>
+    public sealed class PlanLogInfo
+    {
+        public string Path = "", Label = "";
+        public string PatientId, PlanName, PlanUid;
+        /// <summary>Null when the log doesn't say (e.g. a CSV export).</summary>
+        public bool? SamePatient, SamePlanUid;
+        /// <summary>Why none of the log could be compared (e.g. an MLC not supported), or null.</summary>
+        public string Error;
+    }
+
+    /// <summary>One treatment beam of the plan and how the logs delivered it.</summary>
+    public sealed class PlanBeamSummary
+    {
+        public RtBeam Beam;
+        /// <summary>The compared fields of the logs paired with this beam, in log order.</summary>
+        public List<PlanFieldComparison> Fields = new List<PlanFieldComparison>();
+        /// <summary>Plan control points delivered by at least one log, of the beam's.</summary>
+        public int CoveredControlPoints, ControlPoints;
+        /// <summary>Control points delivered by more than one log (beyond the one a resumed delivery starts on).</summary>
+        public int RepeatedControlPoints;
+        public double MuPlan = double.NaN, MuDelivered;
+        /// <summary>The control-point ranges not delivered, e.g. "87-179" ("" when complete).</summary>
+        public string Missing = "";
+        public bool Delivered { get { return Fields.Count > 0; } }
+        public bool Complete { get { return Delivered && CoveredControlPoints == ControlPoints; } }
+        public bool Repeated { get { return RepeatedControlPoints > 0; } }
+        /// <summary>"Complete", "Complete (2 logs)", "Partial: control points 87-179 not delivered", "Delivered more than once", "Not delivered".</summary>
+        public string Status
+        {
+            get
+            {
+                if (!Delivered) return "Not delivered";
+                if (Repeated) return "Delivered more than once (" + RepeatedControlPoints + " control points in more than one log)";
+                if (!Complete) return "Partial: control points " + Missing + " not delivered";
+                return Fields.Count == 1 ? "Complete" : "Complete (" + Fields.Count + " logs)";
+            }
+        }
+    }
+
     public sealed class PlanComparisonResult
     {
         public RtPlan Plan;
+        /// <summary>The logs compared, in the order given (the first one's details are also below, for one log).</summary>
+        public List<PlanLogInfo> Logs = new List<PlanLogInfo>();
         public string LogPath = "", LogLabel = "";
         public MlcGeometry Mlc;
         public int AxisScale;
         public string LogPatientId, LogPlanName, LogPlanUid;
-        /// <summary>Null when the log doesn't say (e.g. a CSV export).</summary>
+        /// <summary>False when any log names another patient / plan; true when all say this one; null when none say.</summary>
         public bool? SamePatient, SamePlanUid;
         public List<PlanFieldComparison> Fields = new List<PlanFieldComparison>();
-        /// <summary>Treatment beams of the plan with no field in this log.</summary>
+        /// <summary>Treatment beams of the plan with no field in the logs.</summary>
         public List<RtBeam> BeamsNotInLog = new List<RtBeam>();
+        /// <summary>Every treatment beam of the plan: delivered by which fields, complete or not, MU.</summary>
+        public List<PlanBeamSummary> Beams = new List<PlanBeamSummary>();
+        public bool MultipleLogs { get { return Logs.Count > 1; } }
+        public double MuPlanTotal { get { return Beams.Where(b => !double.IsNaN(b.MuPlan)).Sum(b => b.MuPlan); } }
+        public double MuDeliveredTotal { get { return Beams.Sum(b => b.MuDelivered); } }
 
         public IEnumerable<PlanFieldComparison> Compared { get { return Fields.Where(f => f.Compared); } }
         public bool AnyCompared { get { return Fields.Any(f => f.Compared); } }
@@ -139,14 +188,58 @@ namespace TrajectoryLogTools.Analysis
 
         public static PlanComparisonResult Compare(DeliveryRecord record, RtPlan plan, string logLabel = null)
         {
-            MlcGeometry geom = record.Mlc;
-            if (geom == null) throw new InvalidDataException(MlcGeometry.UnsupportedMessage(record.LeafCount));
-            var r = new PlanComparisonResult
+            if (record.Mlc == null) throw new InvalidDataException(MlcGeometry.UnsupportedMessage(record.LeafCount));
+            return Compare(new[] { record }, new[] { logLabel }, plan);
+        }
+
+        /// <summary>
+        /// Several logs (e.g. one per field, as Halcyon and TrueBeam write them, or a delivery interrupted
+        /// and resumed in another log) against one plan. Each field of each log is paired with a
+        /// treatment beam and compared as for one log; the result also says, beam by beam, which logs
+        /// delivered it, whether every control point was delivered (and none twice), and the MU.
+        /// </summary>
+        public static PlanComparisonResult Compare(IList<DeliveryRecord> records, IList<string> labels, RtPlan plan)
+        {
+            var r = new PlanComparisonResult { Plan = plan };
+            var beams = plan.TreatmentBeams.ToList();
+            var usedAnywhere = new HashSet<RtBeam>();
+            for (int i = 0; i < records.Count; i++)
             {
-                Plan = plan, Mlc = geom, AxisScale = record.AxisScale,
-                LogPath = record.SourcePath ?? "",
-                LogLabel = logLabel ?? DeliveryComparison.ShortLabel(record.SourcePath),
-            };
+                DeliveryRecord record = records[i];
+                string label = labels != null && i < labels.Count && labels[i] != null ? labels[i] : DeliveryComparison.ShortLabel(record.SourcePath);
+                var info = new PlanLogInfo { Path = record.SourcePath ?? "", Label = label };
+                r.Logs.Add(info);
+                using (AppLog.Scope("Compare with the plan", "Log", info.Path, "Plan", plan.Path))
+                    CompareLog(r, info, record, plan, beams, usedAnywhere);
+            }
+            PlanLogInfo first = r.Logs.FirstOrDefault();
+            if (first != null)
+            {
+                r.LogPath = first.Path; r.LogLabel = first.Label;
+                r.LogPatientId = first.PatientId; r.LogPlanName = first.PlanName; r.LogPlanUid = first.PlanUid;
+            }
+            r.SamePatient = Together(r.Logs.Select(l => l.SamePatient));
+            r.SamePlanUid = Together(r.Logs.Select(l => l.SamePlanUid));
+            DeliveryRecord any = records.FirstOrDefault(x => x.Mlc != null);
+            r.Mlc = any != null ? any.Mlc : null;
+            r.AxisScale = records.Count > 0 ? records[0].AxisScale : 0;
+
+            foreach (RtBeam beam in beams) r.Beams.Add(Summarise(beam, r.Fields.Where(f => f.Compared && f.Beam == beam).ToList()));
+            r.BeamsNotInLog.AddRange(r.Beams.Where(b => !b.Delivered).Select(b => b.Beam));
+            return r;
+        }
+
+        /// <summary>False if any is false, true if all known ones are true (and one is known), else null.</summary>
+        static bool? Together(IEnumerable<bool?> values)
+        {
+            var known = values.Where(v => v.HasValue).Select(v => v.Value).ToList();
+            if (known.Count == 0) return null;
+            return known.All(v => v);
+        }
+
+        static void CompareLog(PlanComparisonResult r, PlanLogInfo info, DeliveryRecord record, RtPlan plan, List<RtBeam> beams, HashSet<RtBeam> usedAnywhere)
+        {
+            MlcGeometry geom = record.Mlc;
             bool varian = record.AxisScale != 2;
 
             // ---- 1. identity ----
@@ -155,43 +248,51 @@ namespace TrajectoryLogTools.Analysis
             {
                 for (int k = 0; k < record.Log.Subbeams.Count; k++) names[k + 1] = (MetaData.DisplayName(record.Log.Subbeams[k].Name) ?? "").Trim();
                 var meta = new LogHeader { MetaDataText = record.Log.MetaDataText ?? "" };
-                r.LogPatientId = Blank(meta.PatientId);
-                r.LogPlanName = Blank(meta.PlanName);
-                r.LogPlanUid = Blank(meta.PlanUid);
+                info.PatientId = Blank(meta.PatientId);
+                info.PlanName = Blank(meta.PlanName);
+                info.PlanUid = Blank(meta.PlanUid);
                 // a one-field log may name its field only in the metadata
                 string beamName = Blank(meta.Meta("BeamName") ?? meta.Meta("Beam Name"));
                 if (record.Log.Subbeams.Count <= 1 && beamName != null && (!names.ContainsKey(1) || names[1].Length == 0)) names[1] = beamName.Trim();
             }
-            if (r.LogPatientId != null && plan.PatientId.Length > 0) r.SamePatient = string.Equals(r.LogPatientId.Trim(), plan.PatientId, StringComparison.OrdinalIgnoreCase);
-            if (r.LogPlanUid != null && plan.SopInstanceUid.Length > 0) r.SamePlanUid = r.LogPlanUid.Trim() == plan.SopInstanceUid;
+            if (info.PatientId != null && plan.PatientId.Length > 0) info.SamePatient = string.Equals(info.PatientId.Trim(), plan.PatientId, StringComparison.OrdinalIgnoreCase);
+            if (info.PlanUid != null && plan.SopInstanceUid.Length > 0) info.SamePlanUid = info.PlanUid.Trim() == plan.SopInstanceUid;
 
-            // ---- fields, paired with plan beams ----
-            var beams = plan.TreatmentBeams.ToList();
+            if (geom == null)
+            {
+                info.Error = MlcGeometry.UnsupportedMessage(record.LeafCount);
+                r.Fields.Add(new PlanFieldComparison { LogPath = info.Path, LogLabel = info.Label, Subbeam = 1, Error = info.Error });
+                AppLog.Warn("Plan comparison: the log can't be compared: " + info.Error, null, "Log", info.Path);
+                return;
+            }
+
+            // ---- fields, paired with plan beams (a beam once per log; across logs it may come again: a resumed delivery) ----
             var used = new HashSet<RtBeam>();
             var fields = new List<Tuple<PlanFieldComparison, FieldData>>();
             foreach (int sb in MlcReconstructor.SubbeamsIn(record))
             {
-                var f = new PlanFieldComparison { Subbeam = sb, LogName = names.ContainsKey(sb) ? names[sb] : "" };
+                var f = new PlanFieldComparison { LogPath = info.Path, LogLabel = info.Label, Subbeam = sb, LogName = names.ContainsKey(sb) ? names[sb] : "" };
                 FieldData d = null;
                 try { d = FieldData.From(record, sb, geom, varian); }
                 catch (Exception ex)
                 {
                     f.Error = ex.Message;
-                    AppLog.Warn("Plan comparison: field " + f.Label + " of the log can't be compared: " + ex.Message, ex, "Log", r.LogPath, "Plan", plan.Path, "Subbeam", sb);
+                    AppLog.Warn("Plan comparison: field " + f.Label + " of the log can't be compared: " + ex.Message, ex, "Subbeam", sb);
                 }
                 fields.Add(Tuple.Create(f, d));
                 r.Fields.Add(f);
             }
-            // by name first, then by control points and gantry
+            // by name first
             foreach (var t in fields)
             {
                 if (t.Item1.LogName.Length == 0) continue;
                 RtBeam b = beams.FirstOrDefault(x => !used.Contains(x) && string.Equals(x.Name.Trim(), t.Item1.LogName, StringComparison.OrdinalIgnoreCase));
-                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "name"; used.Add(b); }
+                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "name"; used.Add(b); usedAnywhere.Add(b); }
             }
             // Without a name: the beams with enough control points, the one whose plan values the
             // log's expected values match best (same number of control points first; the starting
-            // gantry alone can't tell apart arcs that start at the same angle).
+            // gantry alone can't tell apart arcs that start at the same angle; then a beam no other
+            // log has delivered).
             foreach (var t in fields)
             {
                 if (t.Item1.Beam != null || t.Item2 == null) continue;
@@ -199,9 +300,10 @@ namespace TrajectoryLogTools.Analysis
                 RtBeam b = beams.Where(x => !used.Contains(x) && x.ControlPoints.Count >= d.ControlPoints)
                                 .OrderBy(x => x.ControlPoints.Count == d.ControlPoints ? 0 : 1)
                                 .ThenBy(x => TrialScore(d, x, geom))
+                                .ThenBy(x => usedAnywhere.Contains(x) ? 1 : 0)
                                 .ThenBy(x => Math.Abs(Angles.WrapDifference(x.ControlPoints[0].GantryIec - d.ExpectedGantryStart)))
                                 .FirstOrDefault();
-                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "control points and plan values"; used.Add(b); }
+                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "control points and plan values"; used.Add(b); usedAnywhere.Add(b); }
             }
             foreach (var t in fields)
             {
@@ -212,12 +314,37 @@ namespace TrajectoryLogTools.Analysis
                 catch (Exception ex)
                 {
                     f.Error = ex.Message;
-                    AppLog.Warn("Plan comparison: field " + f.Label + " against plan beam " + f.Beam.Label + " failed: " + ex.Message, ex,
-                                "Log", r.LogPath, "Plan", plan.Path, "Subbeam", f.Subbeam);
+                    AppLog.Warn("Plan comparison: field " + f.Label + " against plan beam " + f.Beam.Label + " failed: " + ex.Message, ex, "Subbeam", f.Subbeam);
                 }
             }
-            r.BeamsNotInLog.AddRange(beams.Where(b => !used.Contains(b)));
-            return r;
+            if (r.Mlc == null) { r.Mlc = geom; r.AxisScale = record.AxisScale; }
+        }
+
+        /// <summary>How the fields delivered a beam: control points covered (and covered twice), MU.</summary>
+        static PlanBeamSummary Summarise(RtBeam beam, List<PlanFieldComparison> fields)
+        {
+            int n = beam.ControlPoints.Count;
+            var s = new PlanBeamSummary { Beam = beam, Fields = fields, ControlPoints = n, MuPlan = beam.Mu };
+            var count = new int[n];
+            foreach (PlanFieldComparison f in fields)
+            {
+                for (int k = f.FirstPlanCp; k < f.FirstPlanCp + f.ControlPoints && k < n; k++) count[k]++;
+                if (!double.IsNaN(f.MuDelivered)) s.MuDelivered += f.MuDelivered;
+            }
+            s.CoveredControlPoints = count.Count(c => c > 0);
+            // a delivery resumed in another log starts on the control point the first one stopped at: one shared control point per extra log is expected
+            s.RepeatedControlPoints = Math.Max(0, count.Count(c => c > 1) - Math.Max(0, fields.Count - 1));
+            var gaps = new List<string>();
+            for (int k = 0; k < n; k++)
+            {
+                if (count[k] > 0) continue;
+                int e = k;
+                while (e + 1 < n && count[e + 1] == 0) e++;
+                gaps.Add(e > k ? k + "-" + e : k.ToString(Inv));
+                k = e;
+            }
+            s.Missing = string.Join(", ", gaps);
+            return s;
         }
 
         static string Blank(string s) { return string.IsNullOrWhiteSpace(s) ? null : s.Trim(); }
@@ -525,21 +652,42 @@ namespace TrajectoryLogTools.Analysis
             Action<string> L = s => sb.AppendLine(s);
             RtPlan p = r.Plan;
             L("LOG VS PLAN COMPARISON");
-            L("Log  : " + r.LogLabel + (r.LogPath.Length > 0 ? "  (" + r.LogPath + ")" : ""));
+            if (r.MultipleLogs)
+            {
+                L("Logs : " + r.Logs.Count);
+                foreach (PlanLogInfo l in r.Logs) L("       " + l.Label + (l.Path.Length > 0 ? "  (" + l.Path + ")" : "") + (l.Error != null ? "  NOT COMPARED: " + l.Error : ""));
+            }
+            else L("Log  : " + r.LogLabel + (r.LogPath.Length > 0 ? "  (" + r.LogPath + ")" : ""));
             L("Plan : " + p.DisplayName + (p.Name.Length > 0 && p.Name != p.Label ? " / " + p.Name : "") +
               (p.ApprovalStatus.Length > 0 ? "  [" + p.ApprovalStatus + "]" : "") + "  (" + p.Path + ")");
-            L("Positions IEC 61217 mm (X1, X2 per leaf pair; " + r.Mlc.Description + "), angles IEC 61217 degrees.");
+            L("Positions IEC 61217 mm (X1, X2 per leaf pair; " + (r.Mlc != null ? r.Mlc.Description : "MLC not supported") + "), angles IEC 61217 degrees.");
             L("");
             L("IDENTITY");
-            L("  Patient ID : log " + (r.LogPatientId ?? "(not recorded)") + ", plan " + (p.PatientId.Length > 0 ? p.PatientId : "(none)") +
-              (r.SamePatient == true ? "  -> same" : r.SamePatient == false ? "  -> DIFFERENT PATIENTS" : ""));
-            L("  Plan UID   : log " + (r.LogPlanUid ?? "(not recorded)") + ", plan " + p.SopInstanceUid +
-              (r.SamePlanUid == true ? "  -> same plan" : r.SamePlanUid == false ? "  -> DIFFERENT PLAN (or plan version)" : ""));
-            L("  Plan name  : log " + (r.LogPlanName ?? "(not recorded)") + ", plan " + p.DisplayName);
+            // logs that all say the same are reported once
+            bool alike = r.Logs.Select(l => (l.PatientId ?? "") + "|" + (l.PlanUid ?? "") + "|" + (l.PlanName ?? "")).Distinct().Count() == 1;
+            foreach (PlanLogInfo l in alike ? r.Logs.Take(1) : r.Logs)
+            {
+                if (r.MultipleLogs) L("  " + (alike ? "All " + r.Logs.Count + " logs" : l.Label) + ":");
+                string pad = r.MultipleLogs ? "    " : "  ";
+                L(pad + "Patient ID : log " + (l.PatientId ?? "(not recorded)") + ", plan " + (p.PatientId.Length > 0 ? p.PatientId : "(none)") +
+                  (l.SamePatient == true ? "  -> same" : l.SamePatient == false ? "  -> DIFFERENT PATIENTS" : ""));
+                L(pad + "Plan UID   : log " + (l.PlanUid ?? "(not recorded)") + ", plan " + p.SopInstanceUid +
+                  (l.SamePlanUid == true ? "  -> same plan" : l.SamePlanUid == false ? "  -> DIFFERENT PLAN (or plan version)" : ""));
+                L(pad + "Plan name  : log " + (l.PlanName ?? "(not recorded)") + ", plan " + p.DisplayName);
+            }
             L("");
+            if (r.MultipleLogs)
+            {
+                L("BEAMS");
+                foreach (PlanBeamSummary b in r.Beams)
+                    L(Fmt("  {0,-14} {1}; control points {2} of {3}; MU plan {4}, delivered {5}{6}", b.Beam.Label, b.Status, b.CoveredControlPoints, b.ControlPoints,
+                        Mu(b.MuPlan), Mu(b.MuDelivered), b.Fields.Count > 0 ? "; in " + string.Join(", ", b.Fields.Select(f => f.LogLabel)) : ""));
+                L(Fmt("  Total MU: plan {0}, delivered {1}", Mu(r.MuPlanTotal), Mu(r.MuDeliveredTotal)));
+                L("");
+            }
             foreach (PlanFieldComparison f in r.Fields)
             {
-                L("FIELD " + f.Label + (f.Beam != null ? "  <->  plan beam " + f.Beam.Label + " (matched by " + f.MatchedBy + ")" : ""));
+                L("FIELD " + f.Label + (r.MultipleLogs ? " of " + f.LogLabel : "") + (f.Beam != null ? "  <->  plan beam " + f.Beam.Label + " (matched by " + f.MatchedBy + ")" : ""));
                 if (!f.Compared) { L("  Not compared: " + f.Error); L(""); continue; }
                 L(Fmt("  Control points : log covers plan {0}-{1} of {2} (0-{3}){4}", f.FirstPlanCp, f.FirstPlanCp + f.ControlPoints - 1,
                     f.PlanControlPoints, f.PlanControlPoints - 1, f.Partial ? "  PARTIAL" : ""));
@@ -560,8 +708,12 @@ namespace TrajectoryLogTools.Analysis
             }
             if (r.BeamsNotInLog.Count > 0)
             {
-                L("Plan treatment beams not in this log: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
-                L("(usual when each field is delivered in its own log)");
+                if (r.MultipleLogs) L("Plan treatment beams in none of these logs: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
+                else
+                {
+                    L("Plan treatment beams not in this log: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
+                    L("(usual when each field is delivered in its own log)");
+                }
             }
             return sb.ToString();
         }
@@ -598,8 +750,7 @@ namespace TrajectoryLogTools.Analysis
                         N(Wrap360(f.PlanGantry[k])), N(Wrap360(f.ExpectedGantry[k])), N(Wrap360(f.ActualGantry[k])), N(me), N(ma), N(Math.Sqrt(s2 / nv)),
                     })).Append('\n');
                 }
-                string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
-                string path = Path.Combine(folder, "plan_comparison_" + name + ".csv");
+                string path = Path.Combine(folder, "plan_comparison_" + FileStem(r, f) + ".csv");
                 FileUtil.WriteText(path, sb.ToString(), Encoding.UTF8, "the plan comparison table");
                 files.Add(path);
             }
@@ -607,5 +758,18 @@ namespace TrajectoryLogTools.Analysis
         }
 
         static string N(double v) { return double.IsNaN(v) ? "" : v.ToString("0.#####", Inv); }
+
+        /// <summary>
+        /// The file-name part for a field's table and figure: its name, or, when another compared field
+        /// has the same name (the same beam in two logs), its name and its log's number ("CW_log2").
+        /// </summary>
+        public static string FileStem(PlanComparisonResult r, PlanFieldComparison f)
+        {
+            string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
+            bool shared = r.Compared.Count(x => x.Label == f.Label) > 1;
+            if (!shared) return name;
+            int log = r.Logs.FindIndex(l => l.Path == f.LogPath && l.Label == f.LogLabel) + 1;
+            return name + "_log" + Math.Max(1, log) + (r.Compared.Count(x => x.Label == f.Label && x.LogPath == f.LogPath) > 1 ? "_sub" + f.Subbeam : "");
+        }
     }
 }

@@ -372,7 +372,7 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             string p = Dialogs.OpenFile("Compare " + Item.DisplayName + " with a log or its RT Plan", Dialogs.LogOrPlanFilter, Item.Folder);
             if (p == null) return;
-            if (Analysis.RtPlan.IsDicom(p)) { _main.ShowPlanCompare(Item, p); return; }
+            if (Analysis.RtPlan.IsDicom(p)) { _main.ShowPlanCompare(_main.WithChecked(Item), p); return; }
             var other = _main.OpenPaths(new[] { p });
             if (other.Count == 1 && other[0] != Item) _main.ShowCompare(Item, other[0]);
         }

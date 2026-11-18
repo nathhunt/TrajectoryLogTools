@@ -100,6 +100,19 @@ three questions:
   actual − plan **at each control point** (actual positions from the least-squares fit the MLC
   rebuild uses), with the gantry and cumulative MU differences beside it. Beam holds are left out.
 
+**Several logs against one plan.** Halcyon and TrueBeam write one log per field, so a whole plan
+is checked with all its logs together: tick them in Open logs and press **Compare with plan…**
+(or *Compare with…* on a ticked log), or add them on the page with **Add logs…** or by dropping
+them on A (✕ leaves one out). Every field of every log is compared with its beam as above, and
+the page adds:
+* **Beams of the plan**: for every treatment beam, which logs delivered it, how many of its
+  control points were delivered, MU planned and delivered, and a status: *Complete*, *Complete
+  (2 logs)* (a delivery interrupted and resumed in another log: the two parts together cover the
+  beam), *Partial: control points 87-179 not delivered*, *Delivered more than once* or *Not
+  delivered*;
+* a **Beams** card (e.g. *3 of 3 complete*), and the MU card against the plan's total MU;
+* identity log by log (a warning names any log of another patient or plan).
+
 Folded below: the per-field table (control points covered, MU plan / log planned / delivered,
 gantry, collimator, plan check, MLC and gantry statistics), the plan-check map and the full
 report. A log that covers part of a beam (an interrupted delivery resumed in another log) is
@@ -383,7 +396,7 @@ TrajectoryLogCli export <log | folder> ... [-o <folder>] [--v4] [--csv] [--full-
                         [--patient-id <text>] [--plan-name <text>] [--plan-uid <text>] [--field-name N=NAME ...]   (one log)
                         [--no-mlc] [--actual-only]
 TrajectoryLogCli compare-deliveries <logA> <logB> [-o <folder>] [--no-plot]
-TrajectoryLogCli compare-plan <log.bin | log.csv> <plan.dcm> [-o <folder>] [--no-plot]
+TrajectoryLogCli compare-plan <log.bin | log.csv> ... <plan.dcm> [-o <folder>] [--no-plot]
 TrajectoryLogCli compare-files <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]
 TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...] [--positions actual|expected] [--axis mu|cp]
                         [--gantry plan|actual] [--min-gap <mm>] [--include-hold] [--field n,m] [--verbose]
@@ -399,9 +412,10 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
   app: expected positions, control-point axis, no report files (`--report` saves them).
   `reconstruct-mlc` keeps LogToEclipseMlc's method defaults (actual, MU axis); like every command
   it writes report files only when asked (`--save-report` or `--report <file>`).
-* `compare-plan` works as the Compare page with a plan as B: it prints the report, and with `-o`
-  also writes the report, a table and a figure per field. Exit code 1 when a field can't be
-  compared, the plan check differs, or the patient or plan UID differ.
+* `compare-plan` works as the Compare page with a plan as B, for one log or several (the plan is
+  the DICOM file, the rest are logs): it prints the report, and with `-o` also writes the report,
+  a table and a figure per field. Exit code 1 when a field can't be compared, the plan check
+  differs, the patient or plan UID differ, or (several logs) a beam isn't delivered completely, once.
 
 The original commands do one kind of output per run and are kept for scripts:
 
