@@ -106,10 +106,9 @@ namespace TrajectoryLogTools.Charts
                     Mu(mp.GetPlot(1), f);
                     LeafDifference(mp.GetPlot(2), f, true);
                     LeafDifference(mp.GetPlot(3), f, false);
-                    mp.GetPlot(0).Title("Log: " + r.LogLabel + "   Plan: " + r.Plan.DisplayName + ", beam " + f.Beam.Label + "\nGantry angle difference" +
+                    mp.GetPlot(0).Title("Log: " + f.LogLabel + "   Plan: " + r.Plan.DisplayName + ", beam " + f.Beam.Label + "\nGantry angle difference" +
                                         (scale.HasValue ? " (" + Angles.Name(scale.Value) + ")" : " (IEC 61217)"), 12);
-                    string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
-                    string path = Path.Combine(folder, "plan_comparison_" + name + ".png");
+                    string path = Path.Combine(folder, "plan_comparison_" + PlanComparison.FileStem(r, f) + ".png");
                     mp.SavePng(path, width, height);
                     files.Add(path);
                 }

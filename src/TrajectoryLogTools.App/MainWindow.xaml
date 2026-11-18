@@ -120,8 +120,10 @@
                                 <Button DockPanel.Dock="Right" Command="{Binding CloseCommand}" ToolTip="Close the selected logs (Ctrl+W); nothing is deleted" AutomationProperties.Name="Close selected logs" Padding="8,5" Margin="6,0,0,0">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="11" />
                                 </Button>
-                                <UniformGrid Rows="1">
-                                    <Button Content="Compare" Command="{Binding CompareCheckedCommand}" Padding="6,5" Margin="0,0,6,0" ToolTip="Tick two logs to compare them" />
+                                <UniformGrid Columns="2">
+                                    <Button Content="Compare" Command="{Binding CompareCheckedCommand}" Padding="6,5" Margin="0,0,6,6" ToolTip="Tick two logs to compare them" />
+                                    <Button Content="Compare with plan…" Command="{Binding ComparePlanCommand}" Padding="6,5" Margin="0,0,0,6"
+                                            ToolTip="Compare the ticked logs (e.g. one per field), or the shown log, with their DICOM RT Plan" />
                                     <Button Content="Rebuild MLC…" Command="{Binding RebuildCommand}" Padding="6,5" Margin="0,0,6,0" ToolTip="Rebuild Eclipse MLC files for the ticked logs, or the shown log" />
                                     <Button Content="Export…" Command="{Binding ExportCommand}" Padding="6,5" ToolTip="Export the ticked logs, or the shown log (Ctrl+E)" />
                                 </UniformGrid>

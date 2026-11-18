@@ -471,6 +471,17 @@ namespace TrajectoryLogTools.Analysis
             double[][] fitSel = FitPiecewiseLinear(coord, ys.Take(nLeaf).Concat(new[] { gA }).ToArray(), nCp);
             double[][] fitExp = FitPiecewiseLinear(cpOfRow, ys.Skip(nLeaf).Concat(new[] { gE }).ToArray(), nCp);
 
+            // Jaws (TrueBeam): the log's planned jaw positions at each control point, IEC 61217 mm (X1 and
+            // Y1 are positive when open in the machine scales, negative in IEC; checked against RT Plans).
+            // Halcyon / Ethos record none (Eclipse uses +/-140 mm), nor are they read from IEC-scale logs.
+            double[][] jaws = null;
+            string[] jawCols = { "X1_cm_Expected", "X2_cm_Expected", "Y1_cm_Expected", "Y2_cm_Expected" };
+            if (scale == "varian" && jawCols.All(log.Has) && rows.All(r => jawCols.All(c => !double.IsNaN(r[log.Col[c]]))))
+            {
+                double[] sign = { -1, 1, -1, 1 };
+                jaws = FitPiecewiseLinear(cpOfRow, Enumerable.Range(0, 4).Select(q => rows.Select(r => sign[q] * r[log.Col[jawCols[q]]] * 10.0).ToArray()).ToArray(), nCp);
+            }
+
             double[,] recon = LeafToIec(fitSel, nCp, geom);   // [cp, value index in Eclipse order]
             double[,] reconExp = LeafToIec(fitExp, nCp, geom);
             int nClosed, nOpened, nTmp1, nTmp2; double gapShift, tmpShift;
@@ -532,8 +543,10 @@ namespace TrajectoryLogTools.Analysis
                     double mw = cp == 0 ? 0.0 : (cp == nCp - 1 ? 1.0 : muKnots[cp] / muTotal);
                     var sb = new StringBuilder();
                     sb.Append(F(mw)).Append(',');
-                    // No jaw data in the log. Halcyon/Ethos have no jaws (Eclipse uses +/-140 mm).
-                    sb.Append(F(-140)).Append(',').Append(F(140)).Append(',').Append(F(-140)).Append(',').Append(F(140)).Append(',');
+                    if (jaws != null)
+                        for (int q = 0; q < 4; q++) sb.Append(F(Math.Round(jaws[q][cp], 1))).Append(',');   // the plan's 0.1 mm steps
+                    else   // no jaw data in the log: Halcyon / Ethos have no jaws (Eclipse uses +/-140 mm)
+                        sb.Append(F(-140)).Append(',').Append(F(140)).Append(',').Append(F(-140)).Append(',').Append(F(140)).Append(',');
                     sb.Append(F(gantryOut[cp])).Append(',').Append(F(coll)).Append(',');
                     AppendLeaves(sb, recon, cp, nLeaf);
                     outLines.Add(sb.ToString());
@@ -573,7 +586,7 @@ namespace TrajectoryLogTools.Analysis
                 double[,] plan = new double[nCp, nLeaf];
                 for (int cp = 0; cp < nCp; cp++)
                     for (int k = 0; k < nLeaf; k++) plan[cp, k] = template.Cps[cp][EclipseMlcFile.NonLeafFields + k];
-                rep.AppendLine("Method check - reconstructed EXPECTED vs template plan (should be ~0):");
+                rep.AppendLine("Method check - reconstructed EXPECTED vs template plan (should be ~0):");   // as LogToEclipseMlc wrote it (golden files)
                 rep.AppendLine(DiffSummary(reconExp, plan, nCp, nLeaf, geom));
                 rep.AppendLine("Written file vs template plan:");
                 rep.AppendLine(DiffSummary(recon, plan, nCp, nLeaf, geom));
@@ -616,16 +629,36 @@ namespace TrajectoryLogTools.Analysis
             res.GantryActualVsExpectedMaxDeg = gActMax;
             res.GantryStartIec = template != null ? template.Cps[0][5] : gantryOut[0];
             res.GantryNote = template != null ? "from the template" : gantryHow;
-            for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0) res.EmptyIntervals.Add(k);
+            // An interval with no planned MU (a step-and-shoot transition: the leaves move with the beam
+            // off) has no beam-on samples by design; only intervals that should have delivered dose count.
+            // (The MU at the control points is fitted, so a transition shows as a few thousandths of an MU.)
+            double transitionMu = Math.Max(0.01, 1e-4 * muTotal);
+            for (int k = 0; k < nCp - 1; k++) if (perInterval[k] == 0 && muKnots[k + 1] - muKnots[k] > transitionMu) res.EmptyIntervals.Add(k);
             res.RemainingGapProblems = nGapViol + nDynViol;
             res.GapsClosed = nClosed; res.GapsOpened = nOpened;
             DiffStats(recon, reconExp, nCp, nLeaf, geom, res);
             if (template != null)
             {
+                // The method check: do the log's planned (expected) leaf positions follow the export? Checked on
+                // the snapshots in the middle half of each control-point interval, where the machine's planned
+                // path lies on the export's straight lines. At the control points themselves the machine rounds
+                // the corners where a leaf turns back (by up to ~0.1-0.6 mm), so the fit there (in the report)
+                // differs by that much from the export even when everything is right.
                 double mc = 0;
-                for (int cp = 0; cp < nCp; cp++)
-                    for (int k = 0; k < nLeaf; k++)
-                        mc = Math.Max(mc, Math.Abs(reconExp[cp, k] - template.Cps[cp][EclipseMlcFile.NonLeafFields + k]));
+                const int nf = EclipseMlcFile.NonLeafFields;
+                for (int sIdx = 0; sIdx < rows.Count; sIdx++)
+                {
+                    double c = cpOfRow[sIdx];
+                    int kk = Math.Max(0, Math.Min((int)Math.Floor(c), nCp - 2));
+                    double t = c - kk;
+                    if (t < 0.25 || t > 0.75) continue;
+                    for (int j = 0; j < nLeaf; j++)
+                    {
+                        LeafMapping m = geom.ToIec(j);
+                        double plan = template.Cps[kk][nf + m.EclipseIndex] * (1 - t) + template.Cps[kk + 1][nf + m.EclipseIndex] * t;
+                        mc = Math.Max(mc, Math.Abs(m.Sign * ys[nLeaf + j][sIdx] - plan));
+                    }
+                }
                 res.MethodCheckMaxMm = mc;
                 double gMax = 0, mwMax = 0;
                 for (int cp = 0; cp < nCp; cp++)
@@ -638,7 +671,7 @@ namespace TrajectoryLogTools.Analysis
                 if (Math.Abs(AngleDiff(template.Cps[0][6], coll)) > 0.5)
                     res.Problems.Add(Fmt("The collimator in the log ({0:F1} deg) differs from the Eclipse export ({1:F1} deg).", coll, template.Cps[0][6]));
                 if (mc > MethodCheckLimitMm)
-                    res.Problems.Add(Fmt("Method check: rebuilding the planned positions differs from the Eclipse export by up to {0:F3} mm (expected about 0).", mc));
+                    res.Problems.Add(Fmt("Method check: the log's planned leaf positions differ from the Eclipse export by up to {0:F3} mm between control points (expected about 0): is it this beam, and this plan version?", mc));
             }
             if (res.RemainingGapProblems > 0)
                 res.Problems.Add(res.RemainingGapProblems + " leaf gap(s) remain that Eclipse may reject (see the report).");

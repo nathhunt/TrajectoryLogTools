@@ -77,7 +77,7 @@ namespace TrajectoryLogTools.Analysis
         }
 
         /// <summary>The known MLC with this many leaves, or null.</summary>
-        public MlcGeometry Mlc { get { return MlcGeometry.FromLeafCount(LeafCount); } }
+        public MlcGeometry Mlc { get { return Log != null ? MlcGeometry.FromLeafCount(LeafCount, Log.MlcModel) : MlcGeometry.FromLeafCount(LeafCount); } }
 
         // =========================================================================================
         // Loading

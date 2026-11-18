@@ -2,11 +2,11 @@
 // records, how they pair up into opposing leaves, how log values map to Eclipse IEC 61217
 // X1 / X2 positions, and the leaf-gap rules Eclipse applies.
 //
-// Only the Halcyon / Ethos SX2 is defined so far (verified against Eclipse exports). Another MLC,
-// such as the TrueBeam Millennium 120 or HD120 (TrueBeam trajectory log specification
-// P1012906-005-E: 2 carriage values, then bank A leaves 1-60, then bank B leaves 1-60), is added
-// by creating another instance with its own mapping and adding it to Known. Until then the
-// analyses refuse logs whose MLC is not in Known, rather than guess the mapping.
+// Defined: the Halcyon / Ethos SX2 (verified against Eclipse exports and RT Plans) and the
+// TrueBeam Millennium 120 and HD120 (2 carriage values, then bank A leaves 1-60, then bank B
+// leaves 1-60; verified against RT Plans of TrueBeam deliveries). Another MLC is added by creating
+// an instance with its own mapping and adding it to Known; until then the analyses refuse logs
+// whose MLC is not in Known, rather than guess the mapping.
 
 using System;
 using System.Collections.Generic;
@@ -58,13 +58,56 @@ namespace TrajectoryLogTools.Core
                 : new LeafMapping(leaf - pairs, true, -1.0),
         };
 
-        /// <summary>MLC types the analyses support.</summary>
-        public static readonly IReadOnlyList<MlcGeometry> Known = new[] { Sx2 };
+        /// <summary>
+        /// TrueBeam 120-leaf MLC, Millennium 120 (log MLC model 2): 2 carriage values, then bank A
+        /// leaves 1-60 = X2 (same sign), then bank B leaves 1-60 = X1 (sign flipped); leaf n of each
+        /// bank is pair n, from Y = -200 mm. The same pattern as the SX2; checked against RT Plans:
+        /// the log's planned positions equal the plan's at the control points.
+        /// </summary>
+        public static readonly MlcGeometry Millennium120 = new MlcGeometry
+        {
+            Name = "Millennium 120",
+            Description = "TrueBeam Millennium 120 (60 pairs)",
+            BankSamples = 2,
+            LeafCount = 120,
+            MinDynamicGapMm = 0.5,
+            _layer = (pair, pairs) => "",
+            _toIec = (leaf, pairs) => leaf < pairs
+                ? new LeafMapping(leaf, false, 1.0)
+                : new LeafMapping(leaf - pairs, true, -1.0),
+        };
 
-        /// <summary>The known MLC with this many leaf values, or null.</summary>
+        /// <summary>TrueBeam High Definition 120 (log MLC model 3): laid out in the log as the Millennium 120.</summary>
+        public static readonly MlcGeometry Hd120 = new MlcGeometry
+        {
+            Name = "HD120",
+            Description = "TrueBeam HD120 (60 pairs)",
+            BankSamples = 2,
+            LeafCount = 120,
+            MinDynamicGapMm = 0.5,
+            _layer = (pair, pairs) => "",
+            _toIec = (leaf, pairs) => leaf < pairs
+                ? new LeafMapping(leaf, false, 1.0)
+                : new LeafMapping(leaf - pairs, true, -1.0),
+        };
+
+        /// <summary>The log header's MLC model value of the HD120 (the Millennium 120 is 2, the SX2 6).</summary>
+        public const int Hd120Model = 3;
+
+        /// <summary>MLC types the analyses support.</summary>
+        public static readonly IReadOnlyList<MlcGeometry> Known = new[] { Sx2, Millennium120, Hd120 };
+
+        /// <summary>The known MLC with this many leaf values, or null (120 leaves: the Millennium 120; see <see cref="FromLeafCount(int, int)"/>).</summary>
         public static MlcGeometry FromLeafCount(int leaves)
         {
             return Known.FirstOrDefault(g => g.LeafCount == leaves);
+        }
+
+        /// <summary>The known MLC with this many leaf values, told apart by the log header's MLC model where two have the same count.</summary>
+        public static MlcGeometry FromLeafCount(int leaves, int mlcModel)
+        {
+            if (leaves == 120) return mlcModel == Hd120Model ? Hd120 : Millennium120;
+            return FromLeafCount(leaves);
         }
 
         /// <summary>The known MLC recorded in this log, or null (no MLC axis, or an MLC not in Known).</summary>
@@ -72,7 +115,8 @@ namespace TrajectoryLogTools.Core
         {
             int i = Array.IndexOf(log.AxisIds, TrajectoryLog.MlcAxisId);
             if (i < 0) return null;
-            return Known.FirstOrDefault(g => g.BankSamples + g.LeafCount == log.SamplesPerAxis[i]);
+            MlcGeometry g = Known.FirstOrDefault(x => x.BankSamples + x.LeafCount == log.SamplesPerAxis[i]);
+            return g == null ? null : FromLeafCount(g.LeafCount, log.MlcModel);
         }
 
         public static string UnsupportedMessage(int leaves)

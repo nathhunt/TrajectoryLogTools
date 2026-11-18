@@ -1,6 +1,7 @@
 # Trajectory Log Tools
 
-One Windows application for Halcyon / Ethos trajectory logs (`.bin`, versions 4.0 and 5.1). It
+One Windows application for Halcyon / Ethos and TrueBeam trajectory logs (`.bin`, versions 4.0
+and 5.1; see [TrueBeam](#truebeam) for what is supported there). It
 combines four earlier tools:
 
 | Earlier tool | Now |
@@ -100,12 +101,32 @@ three questions:
   actual − plan **at each control point** (actual positions from the least-squares fit the MLC
   rebuild uses), with the gantry and cumulative MU differences beside it. Beam holds are left out.
 
+**Several logs against one plan.** Halcyon and TrueBeam write one log per field, so a whole plan
+is checked with all its logs together: tick them in Open logs and press **Compare with plan…**
+(or *Compare with…* on a ticked log), or add them on the page with **Add logs…** or by dropping
+them on A (✕ leaves one out). Every field of every log is compared with its beam as above, and
+the page adds:
+* **Beams of the plan**: for every treatment beam, which logs delivered it, how many of its
+  control points were delivered, MU planned and delivered, and a status: *Complete*, *Complete
+  (2 logs)* (a delivery interrupted and resumed in another log: the two parts together cover the
+  beam), *Partial: control points 87-179 not delivered*, *Delivered more than once* or *Not
+  delivered*;
+* a **Beams** card (e.g. *3 of 3 complete*), and the MU card against the plan's total MU;
+* identity log by log (a warning names any log of another patient or plan).
+
 Folded below: the per-field table (control points covered, MU plan / log planned / delivered,
 gantry, collimator, plan check, MLC and gantry statistics), the plan-check map and the full
 report. A log that covers part of a beam (an interrupted delivery resumed in another log) is
 aligned on the plan control points it covers and marked *partial*. **Save report…** writes
 `plan_comparison_report.txt` and, per field, a table and a figure by control point. Supported:
-photon RT Plans for the Halcyon / Ethos SX2 MLC (as the rest of the app).
+photon RT Plans for the Halcyon / Ethos SX2 and the TrueBeam Millennium 120 / HD120 MLCs. For
+TrueBeam the **jaws** are compared too (the plan's X / ASYMX and Y / ASYMY against the log's X1, X2,
+Y1, Y2, jaw tracking included): in the plan check, a Jaws card and the per-field table.
+
+**Step-and-shoot plans** (control points with no MU between them, while the leaves move to the
+next segment with the beam off): a snapshot at such a transition is compared with the whole move,
+not one end of it, and the control-point view follows the log's control-point counter there, so a
+transition isn't counted as an error.
 
 **Rebuild Eclipse MLC** writes, for each field, the Eclipse MLC file of the leaf positions as
 delivered. It works on the ticked logs (**Rebuild MLC…** under the list), or on the shown log
@@ -383,7 +404,7 @@ TrajectoryLogCli export <log | folder> ... [-o <folder>] [--v4] [--csv] [--full-
                         [--patient-id <text>] [--plan-name <text>] [--plan-uid <text>] [--field-name N=NAME ...]   (one log)
                         [--no-mlc] [--actual-only]
 TrajectoryLogCli compare-deliveries <logA> <logB> [-o <folder>] [--no-plot]
-TrajectoryLogCli compare-plan <log.bin | log.csv> <plan.dcm> [-o <folder>] [--no-plot]
+TrajectoryLogCli compare-plan <log.bin | log.csv> ... <plan.dcm> [-o <folder>] [--no-plot]
 TrajectoryLogCli compare-files <a.bin | folderA> <b.bin | folderB> [--ignore-version] [--tolerance x] [--max-diffs n]
 TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...] [--positions actual|expected] [--axis mu|cp]
                         [--gantry plan|actual] [--min-gap <mm>] [--include-hold] [--field n,m] [--verbose]
@@ -399,9 +420,10 @@ TrajectoryLogCli rebuild-mlc <log | folder> ... [-o <folder>] [-e export.csv ...
   app: expected positions, control-point axis, no report files (`--report` saves them).
   `reconstruct-mlc` keeps LogToEclipseMlc's method defaults (actual, MU axis); like every command
   it writes report files only when asked (`--save-report` or `--report <file>`).
-* `compare-plan` works as the Compare page with a plan as B: it prints the report, and with `-o`
-  also writes the report, a table and a figure per field. Exit code 1 when a field can't be
-  compared, the plan check differs, or the patient or plan UID differ.
+* `compare-plan` works as the Compare page with a plan as B, for one log or several (the plan is
+  the DICOM file, the rest are logs): it prints the report, and with `-o` also writes the report,
+  a table and a figure per field. Exit code 1 when a field can't be compared, the plan check
+  differs, the patient or plan UID differ, or (several logs) a beam isn't delivered completely, once.
 
 The original commands do one kind of output per run and are kept for scripts:
 
@@ -474,20 +496,29 @@ docs/engine-notes.md            how the engine converts and exports
 Core and Analysis also build for .NET Framework 4.8, so they could be used from an ESAPI script
 or a 4.8 tool if ever needed.
 
-## Adding TrueBeam later
+## TrueBeam
 
-TrueBeam support isn't included yet, but the code is arranged for it. The TrueBeam 2.7 MR2+
-format (*TrueBeam Trajectory Log File Specification* P1012906-005-E) has the same header,
-subbeam and snapshot layout. What would be added:
+TrueBeam logs (TrueBeam 2.7 MR2 and later, version 4.0) are read, shown and analysed like Halcyon
+logs: the log page, Compare, File comparison, Rebuild Eclipse MLC and Compare with plan.
 
-1. **MLC geometry**: an `MlcGeometry` instance for each MLC (Millennium 120 / HD120: 2
-   carriage values, then bank A leaves 1–60, then bank B leaves 1–60). It also needs the bank
-   → X1/X2 and sign mapping, which must be verified against an Eclipse export of the same beam.
-   Add it to `MlcGeometry.Known`, and the analyses accept the logs.
-2. **Versions**: add `"3.0"` to `TrajectoryLog.SupportedVersions`. TrueBeam 2.7 MR2+ also
-   writes `"4.0"`, so the machine has to be told apart by MLC (model field and sample count),
-   and the Halcyon v4.0/v5.1 conversion offered only for Halcyon logs.
-3. **Jaws**: TrueBeam records real jaw positions, so an MLC rebuilt without a template should
-   take its jaws from the log (Halcyon has none and uses ±140 mm).
-4. **Tracking axes** 60–64 (tracking beams only): names and units in `TrajectoryLog.AxisName` / `AxisUnit`.
-5. **Tests**: golden cases from real, anonymised TrueBeam logs and their Eclipse exports.
+* **MLC**: Millennium 120 and HD120 (the log header's MLC model: 2 and 3; HD120 is defined the
+  same way but hasn't been tested with a real HD120 log; 2 carriage values, then
+  bank A leaves 1–60, then bank B leaves 1–60). Bank A is X2 (same sign), bank B is X1 (sign
+  flipped), leaf n is pair n from Y = −200 mm — checked against RT Plans of TrueBeam deliveries:
+  the log's planned leaf positions equal the plan's at the control points.
+* **Jaws**: X1 and Y1 are positive when open in the log (machine scale), negative in IEC 61217;
+  checked the same way. Compared with the plan in Compare with plan; an MLC rebuilt without an
+  Eclipse export takes the log's planned jaws at each control point (Halcyon has none: ±140 mm).
+* **Rebuild**: without an Eclipse export, the file's *MLC Model* line is `Millennium 120` (as
+  Eclipse writes it: checked against an Eclipse export of a TrueBeam beam, whose values and layout
+  the rebuilt file matches) or `HD120` (not checked: no HD120 machine here; give an Eclipse export,
+  *Use Eclipse exports*, which copies its header, until one has been compared).
+* **Method check** (with an Eclipse export): the log's planned leaf positions are compared with the
+  export between control points, where they lie on its lines; at the control points the machine
+  rounds the corners where a leaf turns back (~0.1 mm on TrueBeam), which is normal. The QA report
+  still lists the difference at the control points.
+* **Converter / Export to v4.0**: TrueBeam logs are already v4.0 (listed as such); the v5.1 →
+  v4.0 conversion is for Halcyon / Ethos logs.
+* **Not yet**: version 3.0 logs (TrueBeam before 2.7 MR2); the couch angle against the plan;
+  logs recorded in the IEC scale (axis scale 2), whose jaw convention hasn't been checked;
+  tracking axes 60–64.

@@ -51,6 +51,8 @@ namespace TrajectoryLogTools.Analysis
 
     public sealed class PlanFieldComparison
     {
+        /// <summary>The log the field is in (path and label, e.g. "CW 12/11/2026 11:03").</summary>
+        public string LogPath = "", LogLabel = "";
         public int Subbeam;
         public string LogName = "";
         /// <summary>The plan beam this field was paired with; null when none fits (see <see cref="Error"/>).</summary>
@@ -87,7 +89,8 @@ namespace TrajectoryLogTools.Analysis
             get
             {
                 return Compared && TransferLeafMaxMm <= PlanComparison.TransferLeafTolMm && TransferGantryMaxDeg <= PlanComparison.TransferGantryTolDeg
-                       && TransferMuMax <= PlanComparison.TransferMuTol && !(Math.Abs(TransferCollimatorDeg) > PlanComparison.TransferGantryTolDeg);
+                       && TransferMuMax <= PlanComparison.TransferMuTol && !(Math.Abs(TransferCollimatorDeg) > PlanComparison.TransferGantryTolDeg)
+                       && !(TransferJawMaxMm > PlanComparison.TransferJawTolMm);
             }
         }
 
@@ -96,6 +99,15 @@ namespace TrajectoryLogTools.Analysis
         public DiffStat Leaves = new DiffStat(), Gantry = new DiffStat();
         /// <summary>At the control points (fitted actual positions).</summary>
         public DiffStat CpLeaves = new DiffStat();
+
+        // ---- jaws (TrueBeam: the plan's X / ASYMX and Y / ASYMY against the log's X1 X2 Y1 Y2) ----
+        /// <summary>Jaws compared (the plan has them and the log records them); false for Halcyon / Ethos.</summary>
+        public bool JawsCompared;
+        /// <summary>Transfer check of the jaws: largest |log expected - plan|, mid-interval snapshots, mm (NaN when not compared).</summary>
+        public double TransferJawMaxMm = double.NaN;
+        public string TransferJawMaxAt = "";
+        /// <summary>Every beam-on snapshot's actual jaws against the plan at the MU delivered so far.</summary>
+        public DiffStat Jaws = new DiffStat();
         /// <summary>RMS of actual - plan per value (Eclipse order) over the beam-on snapshots, mm.</summary>
         public double[] LeafRms;
 
@@ -103,18 +115,65 @@ namespace TrajectoryLogTools.Analysis
         public string Label { get { return LogName.Length > 0 ? LogName : "Field " + Subbeam; } }
     }
 
+    /// <summary>One log of a comparison and what it says about itself.</summary>
+    public sealed class PlanLogInfo
+    {
+        public string Path = "", Label = "";
+        public string PatientId, PlanName, PlanUid;
+        /// <summary>Null when the log doesn't say (e.g. a CSV export).</summary>
+        public bool? SamePatient, SamePlanUid;
+        /// <summary>Why none of the log could be compared (e.g. an MLC not supported), or null.</summary>
+        public string Error;
+    }
+
+    /// <summary>One treatment beam of the plan and how the logs delivered it.</summary>
+    public sealed class PlanBeamSummary
+    {
+        public RtBeam Beam;
+        /// <summary>The compared fields of the logs paired with this beam, in log order.</summary>
+        public List<PlanFieldComparison> Fields = new List<PlanFieldComparison>();
+        /// <summary>Plan control points delivered by at least one log, of the beam's.</summary>
+        public int CoveredControlPoints, ControlPoints;
+        /// <summary>Control points delivered by more than one log (beyond the one a resumed delivery starts on).</summary>
+        public int RepeatedControlPoints;
+        public double MuPlan = double.NaN, MuDelivered;
+        /// <summary>The control-point ranges not delivered, e.g. "87-179" ("" when complete).</summary>
+        public string Missing = "";
+        public bool Delivered { get { return Fields.Count > 0; } }
+        public bool Complete { get { return Delivered && CoveredControlPoints == ControlPoints; } }
+        public bool Repeated { get { return RepeatedControlPoints > 0; } }
+        /// <summary>"Complete", "Complete (2 logs)", "Partial: control points 87-179 not delivered", "Delivered more than once", "Not delivered".</summary>
+        public string Status
+        {
+            get
+            {
+                if (!Delivered) return "Not delivered";
+                if (Repeated) return "Delivered more than once (" + RepeatedControlPoints + " control points in more than one log)";
+                if (!Complete) return "Partial: control points " + Missing + " not delivered";
+                return Fields.Count == 1 ? "Complete" : "Complete (" + Fields.Count + " logs)";
+            }
+        }
+    }
+
     public sealed class PlanComparisonResult
     {
         public RtPlan Plan;
+        /// <summary>The logs compared, in the order given (the first one's details are also below, for one log).</summary>
+        public List<PlanLogInfo> Logs = new List<PlanLogInfo>();
         public string LogPath = "", LogLabel = "";
         public MlcGeometry Mlc;
         public int AxisScale;
         public string LogPatientId, LogPlanName, LogPlanUid;
-        /// <summary>Null when the log doesn't say (e.g. a CSV export).</summary>
+        /// <summary>False when any log names another patient / plan; true when all say this one; null when none say.</summary>
         public bool? SamePatient, SamePlanUid;
         public List<PlanFieldComparison> Fields = new List<PlanFieldComparison>();
-        /// <summary>Treatment beams of the plan with no field in this log.</summary>
+        /// <summary>Treatment beams of the plan with no field in the logs.</summary>
         public List<RtBeam> BeamsNotInLog = new List<RtBeam>();
+        /// <summary>Every treatment beam of the plan: delivered by which fields, complete or not, MU.</summary>
+        public List<PlanBeamSummary> Beams = new List<PlanBeamSummary>();
+        public bool MultipleLogs { get { return Logs.Count > 1; } }
+        public double MuPlanTotal { get { return Beams.Where(b => !double.IsNaN(b.MuPlan)).Sum(b => b.MuPlan); } }
+        public double MuDeliveredTotal { get { return Beams.Sum(b => b.MuDelivered); } }
 
         public IEnumerable<PlanFieldComparison> Compared { get { return Fields.Where(f => f.Compared); } }
         public bool AnyCompared { get { return Fields.Any(f => f.Compared); } }
@@ -124,6 +183,8 @@ namespace TrajectoryLogTools.Analysis
         public DiffStat Leaves { get { return PlanComparison.Combine(Compared.Select(f => f.Leaves)); } }
         public DiffStat Gantry { get { return PlanComparison.Combine(Compared.Select(f => f.Gantry)); } }
         public DiffStat CpLeaves { get { return PlanComparison.Combine(Compared.Select(f => f.CpLeaves)); } }
+        public bool AnyJaws { get { return Compared.Any(f => f.JawsCompared); } }
+        public DiffStat Jaws { get { return PlanComparison.Combine(Compared.Where(f => f.JawsCompared).Select(f => f.Jaws)); } }
     }
 
     public static class PlanComparison
@@ -136,17 +197,64 @@ namespace TrajectoryLogTools.Analysis
         public const double TransferLeafTolMm = 0.05;
         public const double TransferGantryTolDeg = 0.05;
         public const double TransferMuTol = 0.05;
+        /// <summary>Jaws: the log stores cm as float32 and the plan has 0.1 mm steps.</summary>
+        public const double TransferJawTolMm = 0.05;
+        static readonly string[] JawNames = { "X1", "X2", "Y1", "Y2" };
 
         public static PlanComparisonResult Compare(DeliveryRecord record, RtPlan plan, string logLabel = null)
         {
-            MlcGeometry geom = record.Mlc;
-            if (geom == null) throw new InvalidDataException(MlcGeometry.UnsupportedMessage(record.LeafCount));
-            var r = new PlanComparisonResult
+            if (record.Mlc == null) throw new InvalidDataException(MlcGeometry.UnsupportedMessage(record.LeafCount));
+            return Compare(new[] { record }, new[] { logLabel }, plan);
+        }
+
+        /// <summary>
+        /// Several logs (e.g. one per field, as Halcyon and TrueBeam write them, or a delivery interrupted
+        /// and resumed in another log) against one plan. Each field of each log is paired with a
+        /// treatment beam and compared as for one log; the result also says, beam by beam, which logs
+        /// delivered it, whether every control point was delivered (and none twice), and the MU.
+        /// </summary>
+        public static PlanComparisonResult Compare(IList<DeliveryRecord> records, IList<string> labels, RtPlan plan)
+        {
+            var r = new PlanComparisonResult { Plan = plan };
+            var beams = plan.TreatmentBeams.ToList();
+            var usedAnywhere = new HashSet<RtBeam>();
+            for (int i = 0; i < records.Count; i++)
             {
-                Plan = plan, Mlc = geom, AxisScale = record.AxisScale,
-                LogPath = record.SourcePath ?? "",
-                LogLabel = logLabel ?? DeliveryComparison.ShortLabel(record.SourcePath),
-            };
+                DeliveryRecord record = records[i];
+                string label = labels != null && i < labels.Count && labels[i] != null ? labels[i] : DeliveryComparison.ShortLabel(record.SourcePath);
+                var info = new PlanLogInfo { Path = record.SourcePath ?? "", Label = label };
+                r.Logs.Add(info);
+                using (AppLog.Scope("Compare with the plan", "Log", info.Path, "Plan", plan.Path))
+                    CompareLog(r, info, record, plan, beams, usedAnywhere);
+            }
+            PlanLogInfo first = r.Logs.FirstOrDefault();
+            if (first != null)
+            {
+                r.LogPath = first.Path; r.LogLabel = first.Label;
+                r.LogPatientId = first.PatientId; r.LogPlanName = first.PlanName; r.LogPlanUid = first.PlanUid;
+            }
+            r.SamePatient = Together(r.Logs.Select(l => l.SamePatient));
+            r.SamePlanUid = Together(r.Logs.Select(l => l.SamePlanUid));
+            DeliveryRecord any = records.FirstOrDefault(x => x.Mlc != null);
+            r.Mlc = any != null ? any.Mlc : null;
+            r.AxisScale = records.Count > 0 ? records[0].AxisScale : 0;
+
+            foreach (RtBeam beam in beams) r.Beams.Add(Summarise(beam, r.Fields.Where(f => f.Compared && f.Beam == beam).ToList()));
+            r.BeamsNotInLog.AddRange(r.Beams.Where(b => !b.Delivered).Select(b => b.Beam));
+            return r;
+        }
+
+        /// <summary>False if any is false, true if all known ones are true (and one is known), else null.</summary>
+        static bool? Together(IEnumerable<bool?> values)
+        {
+            var known = values.Where(v => v.HasValue).Select(v => v.Value).ToList();
+            if (known.Count == 0) return null;
+            return known.All(v => v);
+        }
+
+        static void CompareLog(PlanComparisonResult r, PlanLogInfo info, DeliveryRecord record, RtPlan plan, List<RtBeam> beams, HashSet<RtBeam> usedAnywhere)
+        {
+            MlcGeometry geom = record.Mlc;
             bool varian = record.AxisScale != 2;
 
             // ---- 1. identity ----
@@ -155,43 +263,51 @@ namespace TrajectoryLogTools.Analysis
             {
                 for (int k = 0; k < record.Log.Subbeams.Count; k++) names[k + 1] = (MetaData.DisplayName(record.Log.Subbeams[k].Name) ?? "").Trim();
                 var meta = new LogHeader { MetaDataText = record.Log.MetaDataText ?? "" };
-                r.LogPatientId = Blank(meta.PatientId);
-                r.LogPlanName = Blank(meta.PlanName);
-                r.LogPlanUid = Blank(meta.PlanUid);
+                info.PatientId = Blank(meta.PatientId);
+                info.PlanName = Blank(meta.PlanName);
+                info.PlanUid = Blank(meta.PlanUid);
                 // a one-field log may name its field only in the metadata
                 string beamName = Blank(meta.Meta("BeamName") ?? meta.Meta("Beam Name"));
                 if (record.Log.Subbeams.Count <= 1 && beamName != null && (!names.ContainsKey(1) || names[1].Length == 0)) names[1] = beamName.Trim();
             }
-            if (r.LogPatientId != null && plan.PatientId.Length > 0) r.SamePatient = string.Equals(r.LogPatientId.Trim(), plan.PatientId, StringComparison.OrdinalIgnoreCase);
-            if (r.LogPlanUid != null && plan.SopInstanceUid.Length > 0) r.SamePlanUid = r.LogPlanUid.Trim() == plan.SopInstanceUid;
+            if (info.PatientId != null && plan.PatientId.Length > 0) info.SamePatient = string.Equals(info.PatientId.Trim(), plan.PatientId, StringComparison.OrdinalIgnoreCase);
+            if (info.PlanUid != null && plan.SopInstanceUid.Length > 0) info.SamePlanUid = info.PlanUid.Trim() == plan.SopInstanceUid;
 
-            // ---- fields, paired with plan beams ----
-            var beams = plan.TreatmentBeams.ToList();
+            if (geom == null)
+            {
+                info.Error = MlcGeometry.UnsupportedMessage(record.LeafCount);
+                r.Fields.Add(new PlanFieldComparison { LogPath = info.Path, LogLabel = info.Label, Subbeam = 1, Error = info.Error });
+                AppLog.Warn("Plan comparison: the log can't be compared: " + info.Error, null, "Log", info.Path);
+                return;
+            }
+
+            // ---- fields, paired with plan beams (a beam once per log; across logs it may come again: a resumed delivery) ----
             var used = new HashSet<RtBeam>();
             var fields = new List<Tuple<PlanFieldComparison, FieldData>>();
             foreach (int sb in MlcReconstructor.SubbeamsIn(record))
             {
-                var f = new PlanFieldComparison { Subbeam = sb, LogName = names.ContainsKey(sb) ? names[sb] : "" };
+                var f = new PlanFieldComparison { LogPath = info.Path, LogLabel = info.Label, Subbeam = sb, LogName = names.ContainsKey(sb) ? names[sb] : "" };
                 FieldData d = null;
                 try { d = FieldData.From(record, sb, geom, varian); }
                 catch (Exception ex)
                 {
                     f.Error = ex.Message;
-                    AppLog.Warn("Plan comparison: field " + f.Label + " of the log can't be compared: " + ex.Message, ex, "Log", r.LogPath, "Plan", plan.Path, "Subbeam", sb);
+                    AppLog.Warn("Plan comparison: field " + f.Label + " of the log can't be compared: " + ex.Message, ex, "Subbeam", sb);
                 }
                 fields.Add(Tuple.Create(f, d));
                 r.Fields.Add(f);
             }
-            // by name first, then by control points and gantry
+            // by name first
             foreach (var t in fields)
             {
                 if (t.Item1.LogName.Length == 0) continue;
                 RtBeam b = beams.FirstOrDefault(x => !used.Contains(x) && string.Equals(x.Name.Trim(), t.Item1.LogName, StringComparison.OrdinalIgnoreCase));
-                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "name"; used.Add(b); }
+                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "name"; used.Add(b); usedAnywhere.Add(b); }
             }
             // Without a name: the beams with enough control points, the one whose plan values the
             // log's expected values match best (same number of control points first; the starting
-            // gantry alone can't tell apart arcs that start at the same angle).
+            // gantry alone can't tell apart arcs that start at the same angle; then a beam no other
+            // log has delivered).
             foreach (var t in fields)
             {
                 if (t.Item1.Beam != null || t.Item2 == null) continue;
@@ -199,9 +315,10 @@ namespace TrajectoryLogTools.Analysis
                 RtBeam b = beams.Where(x => !used.Contains(x) && x.ControlPoints.Count >= d.ControlPoints)
                                 .OrderBy(x => x.ControlPoints.Count == d.ControlPoints ? 0 : 1)
                                 .ThenBy(x => TrialScore(d, x, geom))
+                                .ThenBy(x => usedAnywhere.Contains(x) ? 1 : 0)
                                 .ThenBy(x => Math.Abs(Angles.WrapDifference(x.ControlPoints[0].GantryIec - d.ExpectedGantryStart)))
                                 .FirstOrDefault();
-                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "control points and plan values"; used.Add(b); }
+                if (b != null) { t.Item1.Beam = b; t.Item1.MatchedBy = "control points and plan values"; used.Add(b); usedAnywhere.Add(b); }
             }
             foreach (var t in fields)
             {
@@ -212,12 +329,37 @@ namespace TrajectoryLogTools.Analysis
                 catch (Exception ex)
                 {
                     f.Error = ex.Message;
-                    AppLog.Warn("Plan comparison: field " + f.Label + " against plan beam " + f.Beam.Label + " failed: " + ex.Message, ex,
-                                "Log", r.LogPath, "Plan", plan.Path, "Subbeam", f.Subbeam);
+                    AppLog.Warn("Plan comparison: field " + f.Label + " against plan beam " + f.Beam.Label + " failed: " + ex.Message, ex, "Subbeam", f.Subbeam);
                 }
             }
-            r.BeamsNotInLog.AddRange(beams.Where(b => !used.Contains(b)));
-            return r;
+            if (r.Mlc == null) { r.Mlc = geom; r.AxisScale = record.AxisScale; }
+        }
+
+        /// <summary>How the fields delivered a beam: control points covered (and covered twice), MU.</summary>
+        static PlanBeamSummary Summarise(RtBeam beam, List<PlanFieldComparison> fields)
+        {
+            int n = beam.ControlPoints.Count;
+            var s = new PlanBeamSummary { Beam = beam, Fields = fields, ControlPoints = n, MuPlan = beam.Mu };
+            var count = new int[n];
+            foreach (PlanFieldComparison f in fields)
+            {
+                for (int k = f.FirstPlanCp; k < f.FirstPlanCp + f.ControlPoints && k < n; k++) count[k]++;
+                if (!double.IsNaN(f.MuDelivered)) s.MuDelivered += f.MuDelivered;
+            }
+            s.CoveredControlPoints = count.Count(c => c > 0);
+            // a delivery resumed in another log starts on the control point the first one stopped at: one shared control point per extra log is expected
+            s.RepeatedControlPoints = Math.Max(0, count.Count(c => c > 1) - Math.Max(0, fields.Count - 1));
+            var gaps = new List<string>();
+            for (int k = 0; k < n; k++)
+            {
+                if (count[k] > 0) continue;
+                int e = k;
+                while (e + 1 < n && count[e + 1] == 0) e++;
+                gaps.Add(e > k ? k + "-" + e : k.ToString(Inv));
+                k = e;
+            }
+            s.Missing = string.Join(", ", gaps);
+            return s;
         }
 
         static string Blank(string s) { return string.IsNullOrWhiteSpace(s) ? null : s.Trim(); }
@@ -233,6 +375,7 @@ namespace TrajectoryLogTools.Analysis
             // beam-on snapshots: local control point, local MU (expected / actual), gantry IEC, leaves IEC mm
             public double[] Cp, MuE, MuA, GantryE, GantryA, CollE, CollA;
             public double[][] LeafE, LeafA;   // [value][snapshot], Eclipse order
+            public double[][] JawE, JawA;     // [X1 X2 Y1 Y2][snapshot], IEC 61217 mm; null when the log has none
             public double ExpectedGantryStart = double.NaN;
 
             public static FieldData From(DeliveryRecord rec, int subbeam, MlcGeometry geom, bool varian)
@@ -285,6 +428,19 @@ namespace TrajectoryLogTools.Analysis
                 d.GantryA = Unwrap(on.Select(s => iec(gA[s])).ToArray());
                 d.CollE = cE == null ? null : on.Select(s => iec(cE[s])).ToArray();
                 d.CollA = cA == null ? null : on.Select(s => iec(cA[s])).ToArray();
+                // Jaws, cm in the machine scales: X1 and Y1 are positive when open, which is negative in
+                // IEC 61217 (checked against TrueBeam RT Plans). Not read from IEC-scale logs (axis scale 2),
+                // whose jaw convention hasn't been checked against data.
+                if (varian)
+                {
+                    var jaw = new[] { "X1", "X2", "Y1", "Y2" }.Select(n => new { E = rec.TryColumn(n + "_cm_Expected"), A = rec.TryColumn(n + "_cm_Actual") }).ToArray();
+                    if (jaw.All(j => j.E != null && j.A != null) && on.All(s => jaw.All(j => !double.IsNaN(j.E[s]) && !double.IsNaN(j.A[s]))))
+                    {
+                        double[] sign = { -1, 1, -1, 1 };
+                        d.JawE = Enumerable.Range(0, 4).Select(q => on.Select(s => sign[q] * jaw[q].E[s] * 10.0).ToArray()).ToArray();
+                        d.JawA = Enumerable.Range(0, 4).Select(q => on.Select(s => sign[q] * jaw[q].A[s] * 10.0).ToArray()).ToArray();
+                    }
+                }
                 d.LeafE = new double[nLeaf][];
                 d.LeafA = new double[nLeaf][];
                 for (int j = 0; j < nLeaf; j++)
@@ -391,6 +547,28 @@ namespace TrajectoryLogTools.Analysis
             if (!double.IsNaN(f.PlanCollimator) && !double.IsNaN(f.ExpectedCollimator))
                 f.TransferCollimatorDeg = Angles.WrapDifference(f.ExpectedCollimator - f.PlanCollimator);
 
+            // jaws, where the plan has them and the log records them: transfer check as the leaves
+            double[,] planJaws = d.JawE != null ? beam.Jaws() : null;
+            if (planJaws != null)
+            {
+                f.JawsCompared = true;
+                double jmax = 0; int jk = 0, jq = 0;
+                for (int s = 0; s < d.Cp.Length; s++)
+                {
+                    double c = d.Cp[s];
+                    int k = Math.Max(0, Math.Min((int)Math.Floor(c), n - 2));
+                    double t = c - k;
+                    if (t < 0.25 || t > 0.75) continue;
+                    for (int q = 0; q < 4; q++)
+                    {
+                        double e = Math.Abs(d.JawE[q][s] - (planJaws[o0 + k, q] * (1 - t) + planJaws[o0 + k + 1, q] * t));
+                        if (e > jmax) { jmax = e; jk = k; jq = q; }
+                    }
+                }
+                f.TransferJawMaxMm = jmax;
+                f.TransferJawMaxAt = Fmt("{0}, between control points {1} and {2}", JawNames[jq], o0 + jk, o0 + jk + 1);
+            }
+
             // ---- 3a. every beam-on snapshot against the plan at the MU delivered so far ----
             var coord = new double[d.Cp.Length];
             var abs = new List<double>(d.Cp.Length * nv);
@@ -403,10 +581,16 @@ namespace TrajectoryLogTools.Analysis
                 double c = coord[s] = MlcReconstructor.InverseInterp(f.PlanMu, d.MuA[s]);
                 int k = Math.Min((int)Math.Floor(c), n - 2);
                 double t = c - k;
+                // At a step-and-shoot transition (control points with no MU between them, while the leaves
+                // move to the next segment) the plan allows any position along the move: a snapshot within
+                // TransitionMu of such a transition is compared with the whole move, not one end of it.
+                int lo, hi;
+                bool transition = Transition(f.PlanMu, d.MuA[s], out lo, out hi);
                 for (int v = 0; v < nv; v++)
                 {
                     double p = f.PlanLeaves[k, v] * (1 - t) + f.PlanLeaves[k + 1, v] * t;
                     double e = d.LeafA[v][s] - p;
+                    if (transition) e = OutsideRange(d.LeafA[v][s], f.PlanLeaves, v, lo, hi, e);
                     double a = Math.Abs(e);
                     sum2[v] += e * e;
                     abs.Add(a);
@@ -414,6 +598,7 @@ namespace TrajectoryLogTools.Analysis
                 }
                 double pg = f.PlanGantry[k] * (1 - t) + f.PlanGantry[k + 1] * t;
                 double ge = Math.Abs(Angles.WrapDifference(d.GantryA[s] - pg));
+                if (transition) ge = Math.Min(ge, Enumerable.Range(lo, hi - lo + 1).Min(j => Math.Abs(Angles.WrapDifference(d.GantryA[s] - f.PlanGantry[j]))));
                 gSum2 += ge * ge;
                 gAbs.Add(ge);
                 if (ge > gMax) { gMax = ge; gMaxS = s; }
@@ -422,8 +607,35 @@ namespace TrajectoryLogTools.Analysis
             f.Leaves = Stat(abs, sum2.Sum(), Where(geom, maxV, o0 + (int)Math.Round(coord[maxS])));
             f.Gantry = Stat(gAbs, gSum2, Fmt("control point {0}", o0 + (int)Math.Round(coord[gMaxS])));
 
+            if (planJaws != null)
+            {
+                var jAbs = new List<double>(d.Cp.Length * 4);
+                double jSum2 = 0, jMax = -1; int jMaxS = 0, jMaxQ = 0;
+                for (int s = 0; s < d.Cp.Length; s++)
+                {
+                    int k = Math.Min((int)Math.Floor(coord[s]), n - 2);
+                    double t = coord[s] - k;
+                    int lo, hi;
+                    bool transition = Transition(f.PlanMu, d.MuA[s], out lo, out hi);
+                    for (int q = 0; q < 4; q++)
+                    {
+                        double e = Math.Abs(d.JawA[q][s] - (planJaws[o0 + k, q] * (1 - t) + planJaws[o0 + k + 1, q] * t));
+                        if (transition)
+                            for (int j = lo; j <= hi; j++) e = Math.Min(e, Math.Abs(d.JawA[q][s] - planJaws[o0 + j, q]));
+                        jSum2 += e * e;
+                        jAbs.Add(e);
+                        if (e > jMax) { jMax = e; jMaxS = s; jMaxQ = q; }
+                    }
+                }
+                f.Jaws = Stat(jAbs, jSum2, Fmt("{0}, control point {1}", JawNames[jMaxQ], o0 + (int)Math.Round(coord[jMaxS])));
+            }
+
             // ---- 3b. at the control points: fitted actual positions (on the plan's MU axis) ----
-            double[][] fitA = MlcReconstructor.FitPiecewiseLinear(coord, d.LeafA.Concat(new[] { d.GantryA }).ToArray(), n);
+            // With step-and-shoot transitions (control points with no MU between them) the delivered MU
+            // can't tell the two ends of a leaf move apart; the log's own control-point counter, which
+            // runs on through the move, can: use it then.
+            bool stepAndShoot = Enumerable.Range(0, n - 1).Any(k => f.PlanMu[k + 1] - f.PlanMu[k] <= 1e-6);
+            double[][] fitA = MlcReconstructor.FitPiecewiseLinear(stepAndShoot ? d.Cp : coord, d.LeafA.Concat(new[] { d.GantryA }).ToArray(), n);
             double[][] fitMuA = MlcReconstructor.FitPiecewiseLinear(d.Cp, new[] { d.MuA }, n);
             f.ActualLeaves = new double[n, nv];
             f.ActualGantry = new double[n];
@@ -456,6 +668,38 @@ namespace TrajectoryLogTools.Analysis
                 return f.TransferLeafMaxMm + f.TransferGantryMaxDeg;
             }
             catch (Exception) { return double.PositiveInfinity; }
+        }
+
+        /// <summary>MU within which a snapshot counts as at a step-and-shoot transition (delivered MU is a little noisy).</summary>
+        public const double TransitionMu = 0.05;
+
+        /// <summary>
+        /// True when <paramref name="mu"/> is within TransitionMu of control points with no MU between
+        /// them (a step-and-shoot transition): <paramref name="lo"/>..<paramref name="hi"/> are those
+        /// control points. Never true for a plan whose MU rises at every control point (VMAT, dynamic IMRT).
+        /// </summary>
+        static bool Transition(double[] planMu, double mu, out int lo, out int hi)
+        {
+            lo = hi = -1;
+            for (int k = 0; k + 1 < planMu.Length; k++)
+            {
+                if (planMu[k + 1] - planMu[k] > 1e-6) continue;                 // MU rises: not a transition
+                if (Math.Abs(planMu[k] - mu) > TransitionMu) continue;
+                int a = k, b = k + 1;
+                while (b + 1 < planMu.Length && planMu[b + 1] - planMu[b] <= 1e-6) b++;
+                lo = a; hi = b;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>How far <paramref name="value"/> is outside the plan's positions of value <paramref name="v"/> over control points lo..hi (0 inside); the signed <paramref name="fallback"/> if that is smaller.</summary>
+        static double OutsideRange(double value, double[,] plan, int v, int lo, int hi, double fallback)
+        {
+            double min = double.PositiveInfinity, max = double.NegativeInfinity;
+            for (int j = lo; j <= hi; j++) { min = Math.Min(min, plan[j, v]); max = Math.Max(max, plan[j, v]); }
+            double e = value < min ? value - min : value > max ? value - max : 0;
+            return Math.Abs(e) < Math.Abs(fallback) ? e : fallback;
         }
 
         static DiffStat Stat(List<double> abs, double sum2, string maxAt)
@@ -525,21 +769,42 @@ namespace TrajectoryLogTools.Analysis
             Action<string> L = s => sb.AppendLine(s);
             RtPlan p = r.Plan;
             L("LOG VS PLAN COMPARISON");
-            L("Log  : " + r.LogLabel + (r.LogPath.Length > 0 ? "  (" + r.LogPath + ")" : ""));
+            if (r.MultipleLogs)
+            {
+                L("Logs : " + r.Logs.Count);
+                foreach (PlanLogInfo l in r.Logs) L("       " + l.Label + (l.Path.Length > 0 ? "  (" + l.Path + ")" : "") + (l.Error != null ? "  NOT COMPARED: " + l.Error : ""));
+            }
+            else L("Log  : " + r.LogLabel + (r.LogPath.Length > 0 ? "  (" + r.LogPath + ")" : ""));
             L("Plan : " + p.DisplayName + (p.Name.Length > 0 && p.Name != p.Label ? " / " + p.Name : "") +
               (p.ApprovalStatus.Length > 0 ? "  [" + p.ApprovalStatus + "]" : "") + "  (" + p.Path + ")");
-            L("Positions IEC 61217 mm (X1, X2 per leaf pair; " + r.Mlc.Description + "), angles IEC 61217 degrees.");
+            L("Positions IEC 61217 mm (X1, X2 per leaf pair; " + (r.Mlc != null ? r.Mlc.Description : "MLC not supported") + "), angles IEC 61217 degrees.");
             L("");
             L("IDENTITY");
-            L("  Patient ID : log " + (r.LogPatientId ?? "(not recorded)") + ", plan " + (p.PatientId.Length > 0 ? p.PatientId : "(none)") +
-              (r.SamePatient == true ? "  -> same" : r.SamePatient == false ? "  -> DIFFERENT PATIENTS" : ""));
-            L("  Plan UID   : log " + (r.LogPlanUid ?? "(not recorded)") + ", plan " + p.SopInstanceUid +
-              (r.SamePlanUid == true ? "  -> same plan" : r.SamePlanUid == false ? "  -> DIFFERENT PLAN (or plan version)" : ""));
-            L("  Plan name  : log " + (r.LogPlanName ?? "(not recorded)") + ", plan " + p.DisplayName);
+            // logs that all say the same are reported once
+            bool alike = r.Logs.Select(l => (l.PatientId ?? "") + "|" + (l.PlanUid ?? "") + "|" + (l.PlanName ?? "")).Distinct().Count() == 1;
+            foreach (PlanLogInfo l in alike ? r.Logs.Take(1) : r.Logs)
+            {
+                if (r.MultipleLogs) L("  " + (alike ? "All " + r.Logs.Count + " logs" : l.Label) + ":");
+                string pad = r.MultipleLogs ? "    " : "  ";
+                L(pad + "Patient ID : log " + (l.PatientId ?? "(not recorded)") + ", plan " + (p.PatientId.Length > 0 ? p.PatientId : "(none)") +
+                  (l.SamePatient == true ? "  -> same" : l.SamePatient == false ? "  -> DIFFERENT PATIENTS" : ""));
+                L(pad + "Plan UID   : log " + (l.PlanUid ?? "(not recorded)") + ", plan " + p.SopInstanceUid +
+                  (l.SamePlanUid == true ? "  -> same plan" : l.SamePlanUid == false ? "  -> DIFFERENT PLAN (or plan version)" : ""));
+                L(pad + "Plan name  : log " + (l.PlanName ?? "(not recorded)") + ", plan " + p.DisplayName);
+            }
             L("");
+            if (r.MultipleLogs)
+            {
+                L("BEAMS");
+                foreach (PlanBeamSummary b in r.Beams)
+                    L(Fmt("  {0,-14} {1}; control points {2} of {3}; MU plan {4}, delivered {5}{6}", b.Beam.Label, b.Status, b.CoveredControlPoints, b.ControlPoints,
+                        Mu(b.MuPlan), Mu(b.MuDelivered), b.Fields.Count > 0 ? "; in " + string.Join(", ", b.Fields.Select(f => f.LogLabel)) : ""));
+                L(Fmt("  Total MU: plan {0}, delivered {1}", Mu(r.MuPlanTotal), Mu(r.MuDeliveredTotal)));
+                L("");
+            }
             foreach (PlanFieldComparison f in r.Fields)
             {
-                L("FIELD " + f.Label + (f.Beam != null ? "  <->  plan beam " + f.Beam.Label + " (matched by " + f.MatchedBy + ")" : ""));
+                L("FIELD " + f.Label + (r.MultipleLogs ? " of " + f.LogLabel : "") + (f.Beam != null ? "  <->  plan beam " + f.Beam.Label + " (matched by " + f.MatchedBy + ")" : ""));
                 if (!f.Compared) { L("  Not compared: " + f.Error); L(""); continue; }
                 L(Fmt("  Control points : log covers plan {0}-{1} of {2} (0-{3}){4}", f.FirstPlanCp, f.FirstPlanCp + f.ControlPoints - 1,
                     f.PlanControlPoints, f.PlanControlPoints - 1, f.Partial ? "  PARTIAL" : ""));
@@ -548,10 +813,12 @@ namespace TrajectoryLogTools.Analysis
                 L("  Transfer check (log expected vs plan, between control points): " + (f.TransferOk ? "MATCHES" : "DIFFERS"));
                 L("    leaves max " + Mm(f.TransferLeafMaxMm) + " (" + f.TransferLeafMaxAt + "), gantry max " + Deg(f.TransferGantryMaxDeg) +
                   ", MU max " + Mu(f.TransferMuMax) + ", collimator " + Deg(f.TransferCollimatorDeg));
+                if (f.JawsCompared) L("    jaws max " + Mm(f.TransferJawMaxMm) + " (" + f.TransferJawMaxAt + ")");
                 L("  Delivery (log actual vs plan):");
                 L(Fmt("    every beam-on snapshot ({0}), against the plan at the MU delivered:", f.Snapshots));
                 L("      leaves  max " + Mm(f.Leaves.Max) + " (" + f.Leaves.MaxAt + "), RMS " + Mm(f.Leaves.Rms) + ", 95% under " + Mm(f.Leaves.P95));
                 L("      gantry  max " + Deg(f.Gantry.Max) + " (" + f.Gantry.MaxAt + "), RMS " + Deg(f.Gantry.Rms));
+                if (f.JawsCompared) L("      jaws    max " + Mm(f.Jaws.Max) + " (" + f.Jaws.MaxAt + "), RMS " + Mm(f.Jaws.Rms));
                 L("    at control points (fitted actual positions):");
                 L("      leaves  max " + Mm(f.CpLeaves.Max) + " (" + f.CpLeaves.MaxAt + "), RMS " + Mm(f.CpLeaves.Rms) + ", 95% under " + Mm(f.CpLeaves.P95));
                 L("    collimator actual " + Deg(f.ActualCollimator) + ", plan " + Deg(f.PlanCollimator));
@@ -560,8 +827,12 @@ namespace TrajectoryLogTools.Analysis
             }
             if (r.BeamsNotInLog.Count > 0)
             {
-                L("Plan treatment beams not in this log: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
-                L("(usual when each field is delivered in its own log)");
+                if (r.MultipleLogs) L("Plan treatment beams in none of these logs: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
+                else
+                {
+                    L("Plan treatment beams not in this log: " + string.Join(", ", r.BeamsNotInLog.Select(b => b.Label)));
+                    L("(usual when each field is delivered in its own log)");
+                }
             }
             return sb.ToString();
         }
@@ -598,8 +869,7 @@ namespace TrajectoryLogTools.Analysis
                         N(Wrap360(f.PlanGantry[k])), N(Wrap360(f.ExpectedGantry[k])), N(Wrap360(f.ActualGantry[k])), N(me), N(ma), N(Math.Sqrt(s2 / nv)),
                     })).Append('\n');
                 }
-                string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
-                string path = Path.Combine(folder, "plan_comparison_" + name + ".csv");
+                string path = Path.Combine(folder, "plan_comparison_" + FileStem(r, f) + ".csv");
                 FileUtil.WriteText(path, sb.ToString(), Encoding.UTF8, "the plan comparison table");
                 files.Add(path);
             }
@@ -607,5 +877,18 @@ namespace TrajectoryLogTools.Analysis
         }
 
         static string N(double v) { return double.IsNaN(v) ? "" : v.ToString("0.#####", Inv); }
+
+        /// <summary>
+        /// The file-name part for a field's table and figure: its name, or, when another compared field
+        /// has the same name (the same beam in two logs), its name and its log's number ("CW_log2").
+        /// </summary>
+        public static string FileStem(PlanComparisonResult r, PlanFieldComparison f)
+        {
+            string name = new string(f.Label.Select(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_').ToArray());
+            bool shared = r.Compared.Count(x => x.Label == f.Label) > 1;
+            if (!shared) return name;
+            int log = r.Logs.FindIndex(l => l.Path == f.LogPath && l.Label == f.LogLabel) + 1;
+            return name + "_log" + Math.Max(1, log) + (r.Compared.Count(x => x.Label == f.Label && x.LogPath == f.LogPath) > 1 ? "_sub" + f.Subbeam : "");
+        }
     }
 }

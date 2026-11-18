@@ -315,7 +315,7 @@ namespace TrajectoryLogTools.Cli
         static string FieldName(DeliveryRecord d, int subbeam)
         {
             var subs = d.Log != null ? d.Log.Subbeams : new List<Subbeam>();
-            if (subbeam >= 1 && subbeam <= subs.Count && !string.IsNullOrWhiteSpace(subs[subbeam - 1].Name)) return subs[subbeam - 1].Name.Trim();
+            if (subbeam >= 1 && subbeam <= subs.Count && !string.IsNullOrWhiteSpace(subs[subbeam - 1].Name)) return MetaData.DisplayName(subs[subbeam - 1].Name).Trim();
             return subbeam == 0 ? "Field" : "Field " + subbeam;
         }
     }

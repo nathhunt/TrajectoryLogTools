@@ -15,6 +15,7 @@ namespace TrajectoryLogTools.Wpf
         public const string LogFilter = "Trajectory logs (*.bin)|*.bin|Log CSV exports (*.csv)|*.csv|All files (*.*)|*.*";
         /// <summary>A log, or a DICOM RT Plan to compare a log with.</summary>
         public const string LogOrPlanFilter = "Trajectory logs and RT Plans (*.bin;*.csv;*.dcm)|*.bin;*.csv;*.dcm|Trajectory logs (*.bin)|*.bin|DICOM RT Plans (*.dcm)|*.dcm|Log CSV exports (*.csv)|*.csv|All files (*.*)|*.*";
+        public const string PlanFilter = "DICOM RT Plans (*.dcm)|*.dcm|All files (*.*)|*.*";
         public const string BinFilter = "Trajectory logs (*.bin)|*.bin|All files (*.*)|*.*";
         public const string EclipseFilter = "Eclipse MLC exports (*.csv)|*.csv|All files (*.*)|*.*";
 

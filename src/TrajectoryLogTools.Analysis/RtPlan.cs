@@ -99,6 +99,24 @@ namespace TrajectoryLogTools.Analysis
         /// Leaf positions per control point, IEC 61217 mm, in Eclipse value order (X1, X2 of pair 1,
         /// then pair 2, ...), pairs in the order of <paramref name="geom"/>: [control point, value].
         /// </summary>
+        /// <summary>
+        /// Jaw positions per control point, IEC 61217 mm: [control point, X1 X2 Y1 Y2], from the X /
+        /// ASYMX and Y / ASYMY devices; null when the beam has none (e.g. Halcyon, whose plan jaws are fixed).
+        /// </summary>
+        public double[,] Jaws()
+        {
+            var v = new double[ControlPoints.Count, 4];
+            for (int c = 0; c < ControlPoints.Count; c++)
+            {
+                double[] x, y;
+                var p = ControlPoints[c].Positions;
+                if (!(p.TryGetValue("ASYMX", out x) || p.TryGetValue("X", out x)) || x.Length != 2) return null;
+                if (!(p.TryGetValue("ASYMY", out y) || p.TryGetValue("Y", out y)) || y.Length != 2) return null;
+                v[c, 0] = x[0]; v[c, 1] = x[1]; v[c, 2] = y[0]; v[c, 3] = y[1];
+            }
+            return v;
+        }
+
         public double[,] Leaves(MlcGeometry geom)
         {
             string error;
