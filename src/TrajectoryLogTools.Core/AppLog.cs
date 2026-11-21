@@ -388,9 +388,11 @@ namespace TrajectoryLogTools.Core
         {
             error = null;
             byte[] bytes = Encoding.UTF8.GetBytes(text);
-            lock (Gate)
+            for (int attempt = 0; ; attempt++)
             {
-                for (int attempt = 0; ; attempt++)
+                // The lock keeps this process's entries whole; it is not held while waiting below, so
+                // entries from other threads (the UI's included) aren't held up by a busy file.
+                lock (Gate)
                 {
                     try
                     {
@@ -401,7 +403,7 @@ namespace TrajectoryLogTools.Core
                     }
                     catch (IOException ex) when (attempt < 5 && !(ex is DirectoryNotFoundException) && !(ex is PathTooLongException))
                     {
-                        Thread.Sleep(200);   // busy (the same user's other copy of the app): try again
+                        // busy (the same user's other copy of the app): try again after the wait below
                     }
                     catch (Exception ex)
                     {
@@ -409,6 +411,7 @@ namespace TrajectoryLogTools.Core
                         return false;
                     }
                 }
+                Thread.Sleep(200);
             }
         }
 
