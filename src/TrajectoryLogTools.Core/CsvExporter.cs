@@ -34,6 +34,8 @@ namespace TrajectoryLogTools.Core
                 int id = log.AxisIds[a];
                 if (id == TrajectoryLog.TimeAxisId) continue;
                 if (id == 42) { cols.Add("ControlPoint"); continue; }
+                // Same rule as the rows below: an axis with no data at all is left out (MLC included).
+                if (!hasData[a]) continue;
                 if (id == 50)
                 {
                     if (opt.NoMlc) continue;
@@ -41,7 +43,6 @@ namespace TrajectoryLogTools.Core
                         AddPair(cols, MlcColumn(k, log.SamplesPerAxis[a]) + "_cm", both);
                     continue;
                 }
-                if (!hasData[a]) continue;
                 string unit = TrajectoryLog.AxisUnit(id);
                 string name = TrajectoryLog.AxisName(id) + (unit.Length > 0 && unit != "MU" ? "_" + unit : "");
                 if (log.SamplesPerAxis[a] == 1) AddPair(cols, name, both);
