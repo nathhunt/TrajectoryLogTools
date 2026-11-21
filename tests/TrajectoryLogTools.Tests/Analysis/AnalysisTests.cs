@@ -73,6 +73,32 @@ namespace TrajectoryLogTools.Tests
         }
     }
 
+    public class DeliveryComparisonEdgeTests
+    {
+        static DeliveryRecord Delivery(int firstCp)
+        {
+            // 40 snapshots, beam on throughout, control points firstCp .. firstCp + 19.5
+            var b = LogBuilder.V51(40);
+            b.Value = (s, id, k, act) => id == 42 ? firstCp + s / 2f : id == 41 ? 0f : LogBuilder.DefaultValue(s, id, k, act);
+            return DeliveryRecord.FromLog(LogBuilder.Parse(b.Build()));
+        }
+
+        [Fact]
+        public void NoControlPointsInCommon_SaysSo()
+        {
+            // A delivered control points 0 - 19.5, B 30 - 49.5: nothing to compare them on.
+            var ex = Assert.Throws<InvalidDataException>(() => DeliveryComparison.Compare(Delivery(0), Delivery(30)));
+            Assert.Contains("no control points in common", ex.Message);
+        }
+
+        [Fact]
+        public void OverlappingControlPoints_Compare()
+        {
+            var r = DeliveryComparison.Compare(Delivery(0), Delivery(10));   // 10 - 19.5 in common
+            Assert.NotEmpty(r.Summary);
+        }
+    }
+
     public class DeliveryRecordTests
     {
         [Fact]

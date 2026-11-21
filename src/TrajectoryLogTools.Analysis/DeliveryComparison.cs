@@ -217,6 +217,10 @@ namespace TrajectoryLogTools.Analysis
             bool[] fa = Covered(a, fineAll), fb = Covered(b, fineAll);
             bool[] fineOk = fa.Select((v, i) => v && fb[i]).ToArray();
             double[] fine = Where(fineAll, fineOk);
+            // (Without any, the statistics below have nothing to work on: Max() of nothing.)
+            if (fine.Length == 0)
+                throw new InvalidDataException("The two deliveries have no control points in common with the beam on, so there is nothing to compare " +
+                                               "(e.g. one delivery stopped before the other started, or they are different fields).");
 
             for (int k = 0; k < Axes.GetLength(0); k++)
             {
