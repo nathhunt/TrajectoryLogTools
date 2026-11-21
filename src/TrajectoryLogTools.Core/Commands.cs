@@ -64,15 +64,19 @@ namespace TrajectoryLogTools.Core
 
             var log = TrajectoryLog.Parse(FileUtil.ReadAll(input, "the log"), opt.IgnoreCrc);
             if (log.Version == "4.0") throw new SkipException("already version 4.0");
+            string csvPath = opt.TimeCsv && log.TimeAxisIndex >= 0
+                ? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output)), Path.GetFileNameWithoutExtension(output) + "_time.csv")
+                : null;
+            // Checked before anything is written, so it never leaves a v4.0 log without its time file.
+            if (csvPath != null && File.Exists(csvPath) && !opt.Overwrite)
+                throw new IOException("Output exists (use --overwrite): " + csvPath);
 
             var notes = new List<string>();
             byte[] converted = V4Converter.Convert(log, opt, notes);
             Unverified(notes, FileUtil.WriteVerified(output, converted, opt.Overwrite));
 
-            if (opt.TimeCsv && log.TimeAxisIndex >= 0)
+            if (csvPath != null)
             {
-                string csvPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output)),
-                                              Path.GetFileNameWithoutExtension(output) + "_time.csv");
                 // Expected / Actual hold the exact float values, so to-v5 --time-from can restore them.
                 var sb = new StringBuilder("Snapshot,SecondsSinceMidnight,Clock,Expected,Actual\r\n");
                 for (int s = 0; s < log.NumSnapshots; s++)
@@ -82,7 +86,7 @@ namespace TrajectoryLogTools.Core
                       .Append(',').Append(Fmt.Exact(t)).Append(',').Append(Fmt.Exact(log.Actual(s, log.TimeAxisIndex, 0)))
                       .Append("\r\n");
                 }
-                Unverified(notes, FileUtil.WriteVerified(csvPath, Encoding.UTF8.GetBytes(sb.ToString()), true));
+                Unverified(notes, FileUtil.WriteVerified(csvPath, Encoding.UTF8.GetBytes(sb.ToString()), opt.Overwrite));
                 notes.Add("Time axis saved to " + csvPath);
             }
 

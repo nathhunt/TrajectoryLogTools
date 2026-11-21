@@ -135,6 +135,24 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
+        public void ToV4_TimeCsvAlreadyThere_NeedsOverwrite()
+        {
+            using (var dir = new TempDir())
+            {
+                string input = dir.Write("in.bin", LogBuilder.V51(3).Build());
+                string csv = dir.Write(Path.Combine("v4.0", "in_time.csv"), Encoding.UTF8.GetBytes("keep me"));
+                // Refused before anything is written: not the v4.0 log without its time file.
+                var ex = Assert.Throws<IOException>(() => Commands.RunToV4(input, false, Opt("to-v4", input, "--time-csv")));
+                Assert.Contains("use --overwrite", ex.Message);
+                Assert.Equal("keep me", File.ReadAllText(csv));
+                Assert.False(File.Exists(Path.Combine(dir.Path, "v4.0", "in.bin")));
+                // With --overwrite it is replaced.
+                Commands.RunToV4(input, false, Opt("to-v4", input, "--time-csv", "--overwrite"));
+                Assert.StartsWith("Snapshot,", File.ReadAllText(csv));
+            }
+        }
+
+        [Fact]
         public void ToV4_TimeCsvSkippedWithoutTimeAxis()
         {
             using (var dir = new TempDir())
