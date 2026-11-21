@@ -367,8 +367,7 @@ and golden-file regeneration. It also has debug configurations (GUI, GUI pre-fil
 Eclipse, and the CLI commands). In Visual Studio, `Properties/launchSettings.json` adds a
 pre-filled GUI profile.
 
-The GUI builds on Linux and macOS too (`EnableWindowsTargeting`), so CI can compile it, but it
-runs on Windows only. The libraries, the CLI and the tests run on any OS.
+The GUI builds on Linux and macOS too (`EnableWindowsTargeting`), but it runs on Windows only. The libraries, the CLI and the tests run on any OS.
 
 ## Launching from Eclipse
 
