@@ -282,7 +282,8 @@ namespace TrajectoryLogTools.Core
         {
             string[] lines = (text ?? "").Replace("\r\n", "\n").Split('\n');
             var sb = new StringBuilder();
-            sb.Append(Fmt.DateTimeSeconds(DateTime.Now)).Append('.').Append(DateTime.Now.ToString("fff", System.Globalization.CultureInfo.InvariantCulture))
+            DateTime now = DateTime.Now;   // read once: seconds and milliseconds must come from the same instant
+            sb.Append(Fmt.DateTimeSeconds(now)).Append('.').Append(now.ToString("fff", System.Globalization.CultureInfo.InvariantCulture))
               .Append("  ").Append(level == Level.Info ? "INFO " : level == Level.Warn ? "WARN " : "ERROR").Append("  ").Append(lines[0]).Append(Environment.NewLine);
             for (int i = 1; i < lines.Length; i++) sb.Append("        ").Append(lines[i]).Append(Environment.NewLine);
             return sb.ToString();
