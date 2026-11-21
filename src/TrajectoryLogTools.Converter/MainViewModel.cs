@@ -180,6 +180,7 @@ namespace TrajectoryLogTools.Converter
 
             List<V4BatchItem> plan = null;
             string problem = null;
+            var unreadable = new List<string>();   // subfolders that couldn't be searched
             if (error != null) problem = error;
             else if (output.Length == 0) problem = "Choose the output folder (the default is set in Settings).";
             else if (folderMode && input.Length == 0) problem = "Choose the input folder (the default is set in Settings).";
@@ -194,7 +195,7 @@ namespace TrajectoryLogTools.Converter
                     plan = await Task.Run(() =>
                     {
                         if (!folderMode) return new List<V4BatchItem> { V4Batch.PlanOne(single, output, overwrite) };
-                        List<LogFile> found = LogFinder.Find(settings);
+                        List<LogFile> found = LogFinder.Find(settings, unreadable);
                         cts.Token.ThrowIfCancellationRequested();
                         return V4Batch.Plan(found, output, overwrite, includeImaging);
                     }, cts.Token);
@@ -229,7 +230,18 @@ namespace TrajectoryLogTools.Converter
                 if (other > 0) parts.Add(other + " that can't be converted");
                 ListSummary = string.Join(" · ", parts) + (folderMode && Filter.IsActive ? "  (" + Filter.Describe() + ")" : "");
             }
+            if (problem == null && unreadable.Count > 0)
+                ListSummary += (ListSummary.Length > 0 ? " · " : "") + UnreadableText(unreadable);
             Counts();
+        }
+
+        /// <summary>"2 subfolders couldn't be searched (no access?): …"; their logs are not in the list.</summary>
+        static string UnreadableText(List<string> unreadable)
+        {
+            return unreadable.Count + (unreadable.Count == 1 ? " subfolder" : " subfolders") + " couldn't be searched, so any logs in " +
+                   (unreadable.Count == 1 ? "it are" : "them are") + " not listed (details in the log): " +
+                   string.Join("; ", unreadable.Take(3).Select(u => u.Split(new[] { ": " }, 2, StringSplitOptions.None)[0])) +
+                   (unreadable.Count > 3 ? "; …" : "");
         }
 
         void FillRows()

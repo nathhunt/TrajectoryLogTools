@@ -9,4 +9,8 @@
     <!-- .NET Framework 4.8 reference assemblies from NuGet: no Developer Pack needed. -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The tests reach a few internals, e.g. LogFinder.BinFiles with folder listings that fail. -->
+    <InternalsVisibleTo Include="TrajectoryLogTools.Tests" />
+  </ItemGroup>
 </Project>

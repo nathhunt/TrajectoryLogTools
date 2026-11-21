@@ -92,7 +92,14 @@ namespace TrajectoryLogTools.Core
             return f;
         }
 
-        public static List<LogFile> Find(FindSettings s)
+        public static List<LogFile> Find(FindSettings s) { return Find(s, null); }
+
+        /// <summary>
+        /// The logs found. A subfolder that can't be searched (no permission, removed meanwhile, ...)
+        /// is left out rather than failing the whole search; each is added to <paramref name="skipped"/>
+        /// ("folder: reason") when given, and logged. The folder itself must be readable.
+        /// </summary>
+        public static List<LogFile> Find(FindSettings s, List<string> skipped)
         {
             var result = new List<LogFile>();
             if (!s.FolderMode)
@@ -103,8 +110,7 @@ namespace TrajectoryLogTools.Core
 
             string root = Path.GetFullPath(s.Input);
             string outRoot = string.IsNullOrEmpty(s.Output) ? null : Path.GetFullPath(s.Output);
-            var option = s.IncludeSubfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            foreach (string path in Directory.GetFiles(root, "*.bin", option))
+            foreach (string path in BinFiles(root, s.IncludeSubfolders, skipped, Directory.GetFiles, Directory.GetFiles, Directory.GetDirectories))
             {
                 // Don't pick up our own earlier output when it sits inside the input folder.
                 if (outRoot != null && !PathEquals(outRoot, root) && IsUnder(path, outRoot)) continue;
@@ -117,6 +123,48 @@ namespace TrajectoryLogTools.Core
                          .ThenBy(f => f.Date)
                          .ThenBy(f => f.FullPath, StringComparer.OrdinalIgnoreCase)
                          .ToList();
+        }
+
+        /// <summary>Subfolder levels searched at most when walking folder by folder (stops a link loop).</summary>
+        internal const int MaxDepth = 64;
+
+        /// <summary>
+        /// The .bin files of <paramref name="root"/> (and its subfolders). One call for the whole tree, as
+        /// before; only if that fails is the tree walked folder by folder, so the folders that can't be read
+        /// are left out (and listed in <paramref name="skipped"/>) instead of failing the search. The
+        /// listing functions are parameters for the tests.
+        /// </summary>
+        internal static string[] BinFiles(string root, bool recurse, List<string> skipped,
+                                          Func<string, string, SearchOption, string[]> tree,
+                                          Func<string, string, string[]> files, Func<string, string[]> folders)
+        {
+            try { return tree(root, "*.bin", recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly); }
+            catch (Exception ex) when (recurse && FileUtil.IsFileError(ex)) { }   // walk it below, to find which folder
+
+            string[] top = files(root, "*.bin");   // the folder chosen must be readable: throws as before
+            var found = new List<string>(top);
+            var pending = new Stack<KeyValuePair<string, int>>();
+            foreach (string sub in Enumerable.Reverse(folders(root))) pending.Push(new KeyValuePair<string, int>(sub, 1));
+            while (pending.Count > 0)
+            {
+                var next = pending.Pop();
+                string dir = next.Key;
+                string[] here, subs;
+                try
+                {
+                    here = files(dir, "*.bin");
+                    subs = next.Value < MaxDepth ? folders(dir) : new string[0];
+                }
+                catch (Exception ex) when (FileUtil.IsFileError(ex))
+                {
+                    if (skipped != null) skipped.Add(dir + ": " + ex.Message);
+                    AppLog.Warn("A subfolder was left out of the search, it can't be read: " + dir, ex, "Folder searched", root, "Subfolder", dir);
+                    continue;
+                }
+                found.AddRange(here);
+                foreach (string sub in Enumerable.Reverse(subs)) pending.Push(new KeyValuePair<string, int>(sub, next.Value + 1));
+            }
+            return found.ToArray();
         }
 
         public static string Normalize(string path)
