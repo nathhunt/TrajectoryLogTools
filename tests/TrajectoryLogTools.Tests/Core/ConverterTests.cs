@@ -509,6 +509,9 @@ namespace TrajectoryLogTools.Tests
             var v5 = ToV5(b, new Options { Serial = "NEW" });
             Assert.Equal("NEW", v5.MachineSerial);
             Assert.Equal(1, v5.MachineSpecifier);
+            // As to-v4: refused rather than written past the 6-byte field into the reserved bytes.
+            Assert.Throws<ArgumentException>(() => ToV5(LogBuilder.V40(), new Options { Serial = "TOOLONG" }));
+            Assert.Throws<ArgumentException>(() => ToV5(LogBuilder.V40(), new Options { Serial = "ABé" }));
         }
 
         [Fact]
