@@ -73,7 +73,7 @@ namespace TrajectoryLogTools.Core
         /// <summary>Treatment date/time from a "yyyyMMddHHmmss" stamp in the file name (last one wins).</summary>
         public static bool TryDateFromName(string path, out DateTime date)
         {
-            MatchCollection ms = StampRx.Matches(Path.GetFileNameWithoutExtension(path));
+            MatchCollection ms = StampRx.Matches(Path.GetFileNameWithoutExtension(path) ?? "");
             for (int i = ms.Count - 1; i >= 0; i--)
                 if (DateTime.TryParseExact(ms[i].Value, "yyyyMMddHHmmss", CultureInfo.InvariantCulture,
                                            DateTimeStyles.None, out date))

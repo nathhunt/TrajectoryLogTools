@@ -54,23 +54,13 @@ namespace TrajectoryLogTools.Core
 
     public static class FileUtil
     {
-        static readonly Regex StampRx = new Regex(@"(?<!\d)\d{14}(?!\d)");
-
-        /// <summary>Time of day from a "yyyyMMddHHmmss" stamp in the file name (last one wins).</summary>
+        /// <summary>Time of day from a "yyyyMMddHHmmss" stamp in the file name (last one wins); see <see cref="LogFinder.TryDateFromName"/>.</summary>
         public static bool TryTimeFromName(string path, out TimeSpan time)
         {
-            MatchCollection ms = StampRx.Matches(Path.GetFileNameWithoutExtension(path) ?? "");
-            for (int i = ms.Count - 1; i >= 0; i--)
-            {
-                DateTime d;
-                if (DateTime.TryParseExact(ms[i].Value, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out d))
-                {
-                    time = d.TimeOfDay;
-                    return true;
-                }
-            }
-            time = TimeSpan.Zero;
-            return false;
+            DateTime d;
+            bool found = LogFinder.TryDateFromName(path, out d);
+            time = found ? d.TimeOfDay : TimeSpan.Zero;
+            return found;
         }
 
         /// <summary>

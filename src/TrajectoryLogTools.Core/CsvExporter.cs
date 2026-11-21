@@ -115,7 +115,7 @@ namespace TrajectoryLogTools.Core
         {
             byte[] b = log.Raw;
             var sb = new StringBuilder(log.NumSnapshots * log.FloatsPerSnapshot * 12 + 8192);
-            Action<string[]> row = cells => sb.Append(string.Join(",", cells.Select(CsvCell))).Append("\r\n");
+            Action<string[]> row = cells => sb.Append(string.Join(",", cells.Select(Csv.Field))).Append("\r\n");
             Action<int, string, string> field = (offset, name, value) => row(new[] { Inv(offset), name, value });
 
             row(new[] { "TRAJECTORY LOG FULL DUMP" });
@@ -239,12 +239,6 @@ namespace TrajectoryLogTools.Core
             var sb = new StringBuilder(len * 3);
             for (int i = 0; i < len; i++) { if (i > 0) sb.Append(' '); sb.Append(b[p + i].ToString("X2", CultureInfo.InvariantCulture)); }
             return sb.ToString();
-        }
-
-        static string CsvCell(string s)
-        {
-            if (s.IndexOfAny(new[] { ',', '"', '\r', '\n' }) < 0) return s;
-            return "\"" + s.Replace("\"", "\"\"") + "\"";
         }
 
         static void AddPair(List<string> cols, string name, bool both)
