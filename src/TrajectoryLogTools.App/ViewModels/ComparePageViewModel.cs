@@ -174,7 +174,7 @@ namespace TrajectoryLogTools.App.ViewModels
         {
             AxisStat mlcE = Stat(r, "MLC", "Expected"), mlcA = Stat(r, "MLC", "Actual");
             AxisStat gE = Stat(r, "Gantry", "Expected"), gA = Stat(r, "Gantry", "Actual"), muA = Stat(r, "MU", "Actual");
-            bool samePlan = (mlcE == null || mlcE.Max < 0.01) && (gE == null || gE.Max < 0.05);
+            bool samePlan = ComparisonRules.IsSamePlan(mlcE?.Max, gE?.Max);
             if (samePlan)
             {
                 VerdictKind = "ok";
@@ -189,12 +189,12 @@ namespace TrajectoryLogTools.App.ViewModels
 
             var settings = AppSettings.Current;
             if (mlcA != null)
-                Cards.Add(Card("MLC actual, A − B", mlcA.Max.ToString("F2", Inv) + " mm max",
+                Cards.Add(Fact.WithTolerance("MLC actual, A − B", mlcA.Max.ToString("F2", Inv) + " mm max",
                                string.Format(Inv, "RMS {0:F3} mm · 95% under {1:F3} mm", mlcA.Rms, mlcA.P95), mlcA.Max, settings.MlcToleranceMm, "mm"));
             if (gA != null)
-                Cards.Add(Card("Gantry actual, A − B", gA.Max.ToString("F2", Inv) + "° max", "RMS " + gA.Rms.ToString("F3", Inv) + "°", gA.Max, settings.GantryToleranceDeg, "°"));
+                Cards.Add(Fact.WithTolerance("Gantry actual, A − B", gA.Max.ToString("F2", Inv) + "° max", "RMS " + gA.Rms.ToString("F3", Inv) + "°", gA.Max, settings.GantryToleranceDeg, "°"));
             if (muA != null)
-                Cards.Add(Card("MU actual, A − B", muA.Max.ToString("F3", Inv) + " MU max",
+                Cards.Add(Fact.WithTolerance("MU actual, A − B", muA.Max.ToString("F3", Inv) + " MU max",
                                string.Format(Inv, "A {0:F2}, B {1:F2} delivered", r.A.MuDelivered, r.B.MuDelivered), muA.Max, settings.MuTolerance, " MU"));
             int ia = r.A.Holds.Count(h => h.Type == "interruption"), ib = r.B.Holds.Count(h => h.Type == "interruption");
             Cards.Add(new Fact
@@ -214,18 +214,6 @@ namespace TrajectoryLogTools.App.ViewModels
             foreach (var s in r.Summary) Axes.Add(AxisRow.From(s, r.AxisScale));
             foreach (string n in new[] { nameof(BeamsHeader), nameof(HoldsHeader), nameof(AxesHeader), nameof(ReportHeader) }) OnPropertyChanged(n);
             Report = DeliveryComparison.Report(r);
-        }
-
-        static Fact Card(string label, string value, string detail, double max, double? tolerance, string unit)
-        {
-            var f = new Fact { Label = label, Value = value, Detail = detail };
-            if (tolerance.HasValue)
-            {
-                bool within = max <= tolerance.Value;
-                f.Kind = within ? "ok" : "critical";
-                f.Detail = (within ? "Within " : "Over ") + tolerance.Value.ToString("0.###", Inv) + unit + " · " + detail;
-            }
-            return f;
         }
 
         /// <summary>Opens the File comparison window for A and B (not modal, so it can sit beside the page).</summary>

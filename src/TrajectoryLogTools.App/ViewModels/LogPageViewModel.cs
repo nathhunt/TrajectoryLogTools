@@ -26,6 +26,19 @@ namespace TrajectoryLogTools.App.ViewModels
         public string Detail { get; set; }
         /// <summary>"neutral", "ok", "caution" or "critical".</summary>
         public string Kind { get; set; } = "neutral";
+
+        /// <summary>A card for a largest difference: marked within ("ok") or over ("critical") the tolerance when one is set (see <see cref="ComparisonRules.WithinTolerance"/>).</summary>
+        public static Fact WithTolerance(string label, string value, string detail, double max, double? tolerance, string unit)
+        {
+            var f = new Fact { Label = label, Value = value, Detail = detail };
+            bool? within = ComparisonRules.WithinTolerance(max, tolerance);
+            if (within.HasValue)
+            {
+                f.Kind = within.Value ? "ok" : "critical";
+                f.Detail = (within.Value ? "Within " : "Over ") + tolerance.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + unit + " · " + detail;
+            }
+            return f;
+        }
     }
 
     /// <summary>A stretch of the delivery timeline.</summary>

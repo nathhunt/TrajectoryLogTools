@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TrajectoryLogTools.Analysis;
 using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.Core;
 
@@ -127,11 +128,7 @@ namespace TrajectoryLogTools.App.ViewModels
 
         static string Text(double? v) { return v.HasValue ? v.Value.ToString(CultureInfo.InvariantCulture) : ""; }
 
-        static double? Parse(string s)
-        {
-            double v;
-            return double.TryParse((s ?? "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v) && v > 0 ? v : (double?)null;
-        }
+        static double? Parse(string s) { return ComparisonRules.ParseTolerance(s); }
 
 
         /// <summary>Saves; returns false (with a message) if a tolerance isn't a number.</summary>
