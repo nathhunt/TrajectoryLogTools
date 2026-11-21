@@ -168,7 +168,7 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
-        public void TryAppend_WaitingForABusyFile_DoesNotHoldUpOtherEntries()
+        public async System.Threading.Tasks.Task TryAppend_WaitingForABusyFile_DoesNotHoldUpOtherEntries()
         {
             using (var dir = new TempDir())
             {
@@ -176,12 +176,12 @@ namespace TrajectoryLogTools.Tests
                 string error;
                 using (new FileStream(busy, FileMode.Create, FileAccess.Write, FileShare.None))   // another program has it
                 {
-                    var waiting = System.Threading.Tasks.Task.Run(() => AppLog.TryAppend(busy, "a", out error));   // retries for about a second
+                    var waiting = System.Threading.Tasks.Task.Run(() => { string e; return AppLog.TryAppend(busy, "a", out e); });   // retries for about a second
                     System.Threading.Thread.Sleep(100);
                     Assert.True(AppLog.TryAppend(other, "b", out error));
                     // Written while the first is still retrying: its wait doesn't block everyone else.
                     Assert.False(waiting.IsCompleted, "the other entry waited for the busy file's retries");
-                    Assert.False(waiting.Result);   // the busy file never became free
+                    Assert.False(await waiting);   // the busy file never became free
                 }
                 Assert.Equal("b", File.ReadAllText(other));
             }
