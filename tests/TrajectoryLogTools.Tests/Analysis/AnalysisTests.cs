@@ -62,6 +62,15 @@ namespace TrajectoryLogTools.Tests
             var ex = Assert.Throws<InvalidDataException>(() => MlcReconstructor.Run(r, "x.bin", new MlcReconstructionOptions()));
             Assert.Contains("not supported yet", ex.Message);
         }
+
+        [Fact]
+        public void Summary_OfALogWithNoSnapshots_SaysSo()
+        {
+            // A valid file (the engine reads it) with nothing recorded: a clear message, not "Sequence contains no elements".
+            var r = DeliveryRecord.FromLog(LogBuilder.Parse(LogBuilder.V51(0).Build()));
+            var ex = Assert.Throws<InvalidDataException>(() => DeliveryComparison.SummariseLog(r));
+            Assert.Contains("no snapshots", ex.Message);
+        }
     }
 
     public class DeliveryRecordTests

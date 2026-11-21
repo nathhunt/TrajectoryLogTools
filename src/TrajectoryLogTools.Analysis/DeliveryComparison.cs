@@ -311,6 +311,7 @@ namespace TrajectoryLogTools.Analysis
 
         static LogSummary Summarise(DeliveryRecord d, string[] leaves, string label, bool dropped)
         {
+            if (d.RowCount == 0) throw new InvalidDataException("The log has no snapshots: nothing was recorded, so there is no delivery to summarise.");
             var s = new LogSummary { Label = label, DroppedFirstSnapshot = dropped };
             s.MuPlanned = d.Column("MU_Expected").Max();
             s.MuDelivered = d.Column("MU_Actual").Max();
