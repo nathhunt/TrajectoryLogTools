@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Code coverage for the libraries (Core, Analysis) and the command-line tool.
      IncludeTestAssembly is off: the test code itself is not measured.
-     dotnet test tests/TrajectoryLogTools.Tests --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings -->
+     Run it with the VS Code task "test with coverage", or see the README (Tests) for the command line.
+     (The command itself can't be written here: XML comments may not contain two hyphens in a row.) -->
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
