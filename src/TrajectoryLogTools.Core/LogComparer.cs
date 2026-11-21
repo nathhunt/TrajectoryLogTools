@@ -151,6 +151,7 @@ namespace TrajectoryLogTools.Core
             int snaps = Math.Min(a.NumSnapshots, b.NumSnapshots);
             r.SnapshotsCompared = snaps;
             int listed = 0;
+            bool notListed = false;   // a value difference that --max-diffs left out of the list
             foreach (int id in axesA.Where(id => !axesB.Contains(id)))
                 r.Axes.Add(new AxisDifference { AxisId = id, Axis = TrajectoryLog.AxisName(id), State = "only in A", Samples = a.SamplesPerAxis[Array.IndexOf(a.AxisIds, id)] });
             foreach (int id in axesB.Where(id => !axesA.Contains(id)))
@@ -173,7 +174,6 @@ namespace TrajectoryLogTools.Core
                 long count = 0;
                 var details = new List<string>();
                 var diffSnapshots = new HashSet<int>();
-                double maxDiff = 0;
                 for (int s = 0; s < snaps; s++)
                     for (int k = 0; k < n; k++)
                         for (int act = 0; act < 2; act++)
@@ -184,7 +184,6 @@ namespace TrajectoryLogTools.Core
                             count++;
                             diffSnapshots.Add(s);
                             double d = Math.Abs((double)x - y);
-                            if (!double.IsNaN(d) && d > maxDiff) maxDiff = d;
                             if (act == 0) ad.ExpectedDiffer++; else ad.ActualDiffer++;
                             bool noValue = IsNoValue(x) != IsNoValue(y);
                             if (noValue) ad.NoValueDiffer++;
@@ -200,18 +199,21 @@ namespace TrajectoryLogTools.Core
                                 details.Add(string.Format(CultureInfo.InvariantCulture, "  snapshot {0}, {1} {2}: {3} vs {4}",
                                     s + 1, SampleName(id, k, n), act == 0 ? "expected" : "actual", Fmt.Exact(x), Fmt.Exact(y)));
                             }
+                            else notListed = true;
                         }
                 if (count == 0) continue;
                 ad.State = "differs";
                 ad.ValuesDiffer = count;
                 ad.SnapshotsDiffer = diffSnapshots.Count;
                 r.DifferenceCount += count;
+                // The largest difference leaves out "no value" markers (float max), as the structured result does.
                 r.Differences.Add(string.Format(CultureInfo.InvariantCulture,
-                    "{0}: {1:N0} value(s) differ in {2:N0} snapshot(s), max |difference| {3}",
-                    axis, count, diffSnapshots.Count, maxDiff.ToString("G6", CultureInfo.InvariantCulture)));
+                    "{0}: {1:N0} value(s) differ in {2:N0} snapshot(s), max |difference| {3}{4}",
+                    axis, count, diffSnapshots.Count, ad.MaxDifference.ToString("G6", CultureInfo.InvariantCulture),
+                    ad.NoValueDiffer > 0 ? string.Format(CultureInfo.InvariantCulture, ", {0:N0} of them \"no value\" in one log only", ad.NoValueDiffer) : ""));
                 r.Differences.AddRange(details);
             }
-            if (r.Differences.Count > 0 && listed == maxValueDiffs && maxValueDiffs > 0)
+            if (notListed && maxValueDiffs > 0)
                 r.Info.Add("value differences listed up to --max-diffs " + maxValueDiffs);
             if (r.Same && a.CrcVariant != b.CrcVariant)
                 r.Info.Add("CRC variant " + a.CrcVariant.Name + " vs " + b.CrcVariant.Name);
