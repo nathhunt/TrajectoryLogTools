@@ -89,14 +89,38 @@
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Command="{Binding ToggleCommand}" Padding="12,5" Margin="12,0,0,0" VerticalAlignment="Center"
                             AutomationProperties.Name="{Binding ButtonText}">
-                        <!-- "Unlock to edit" is red, so unlocking is a deliberate step; "Lock" is a plain button -->
+                        <!-- "Unlock to edit" is red, so unlocking is a deliberate step; "Lock" is a plain button.
+                             The Fluent button template draws its own hover and pressed colours over Background,
+                             so the red one has a template of its own: red, lighter on hover, darker pressed,
+                             white text throughout. -->
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Unlocked}" Value="False">
-                                        <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}" />
-                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                                         <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="Cursor" Value="Hand" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd" Background="#C42B1C" BorderBrush="#A4262C" BorderThickness="1" CornerRadius="4"
+                                                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#D83B2D" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#A4262C" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                            <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
