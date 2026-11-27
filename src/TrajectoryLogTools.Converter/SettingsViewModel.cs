@@ -48,6 +48,9 @@ namespace TrajectoryLogTools.Converter
 
         public string FilePath { get { return ConverterSettings.FilePath; } }
 
+        /// <summary>Every setting here applies to everyone using this copy of the app: locked until Unlock is pressed.</summary>
+        public SystemSettingsLock Lock { get; } = new SystemSettingsLock("the converter's settings");
+
         public SettingsViewModel(ConverterSettings settings)
         {
             Settings = settings;
@@ -94,6 +97,7 @@ namespace TrajectoryLogTools.Converter
         /// <summary>Checks and saves; returns false (after a message) when it can't.</summary>
         public bool Save()
         {
+            if (!Lock.Unlocked) return false;   // nothing can have changed while locked
             if (UsePeriod && PeriodDays == 1 && PeriodTo < PeriodFrom)
             {
                 Dialogs.Warn("The period ends before it starts: with Today, the end time must be after the start time.");

@@ -70,4 +70,37 @@
         <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
         <Setter Property="Cursor" Value="Hand" />
     </Style>
+    <!-- The lock bar of settings for everyone (DataContext: a SystemSettingsLock) -->
+    <DataTemplate x:Key="SystemSettingsLockBar" DataType="{x:Type wpf:SystemSettingsLock}">
+        <Border CornerRadius="6" Padding="12,8" BorderThickness="1">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <!-- locked: quiet; unlocked: the caution colour, as a reminder while editing -->
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Unlocked}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Command="{Binding ToggleCommand}" Padding="12,5" Margin="12,0,0,0" VerticalAlignment="Center"
+                            AutomationProperties.Name="{Binding ButtonText}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ButtonText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="{Binding Icon}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Visibility="{Binding Warning, Converter={StaticResource NotEmptyToVisibility}}" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
 </ResourceDictionary>

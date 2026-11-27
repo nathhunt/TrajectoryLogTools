@@ -97,6 +97,8 @@ namespace TrajectoryLogTools.App.ViewModels
         public string LogWhere { get { return Core.AppLog.WhereText; } }
         public string DefaultLogFolder { get { return Core.AppLog.DefaultFolder; } }
         public string SharedFilePath { get { return SharedSettings.FilePath; } }
+        /// <summary>The Logs settings apply to everyone: locked until Unlock is pressed.</summary>
+        public SystemSettingsLock Lock { get; } = new SystemSettingsLock("the main app's settings for everyone (logs)");
 
         public SettingsViewModel(MainViewModel main)
         {
@@ -154,7 +156,7 @@ namespace TrajectoryLogTools.App.ViewModels
             // the log settings are for everyone: saved only when changed (it needs write access to the app's folder)
             var shared = SharedSettings.Current;
             string folder = (LogFolder ?? "").Trim().Trim('"');
-            if (!string.Equals(folder, (shared.LogFolder ?? "").Trim(), StringComparison.OrdinalIgnoreCase) || shared.LogRetentionDays != LogRetentionDays)
+            if (Lock.Unlocked && (!string.Equals(folder, (shared.LogFolder ?? "").Trim(), StringComparison.OrdinalIgnoreCase) || shared.LogRetentionDays != LogRetentionDays))
             {
                 string oldFolder = shared.LogFolder;
                 int oldDays = shared.LogRetentionDays;

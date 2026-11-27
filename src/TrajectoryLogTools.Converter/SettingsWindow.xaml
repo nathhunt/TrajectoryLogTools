@@ -7,69 +7,75 @@
     <StackPanel Margin="24,18,24,18">
         <TextBlock Text="Settings" Style="{StaticResource PageTitle}" Margin="0,0,0,14" />
 
-        <TextBlock Text="Default input folder (v5.1 logs)" Style="{StaticResource SectionTitle}" />
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseInputCommand}" Padding="12,5" Margin="8,0,0,0" />
-            <TextBox Text="{Binding InputFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default input folder" />
-        </DockPanel>
-        <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" Margin="0,8,0,0" />
-        <CheckBox Content="Leave out kV imaging (CBCT) logs" IsChecked="{Binding LeaveOutImaging}" Margin="0,6,0,0" />
+        <ContentControl Content="{Binding Lock}" ContentTemplate="{StaticResource SystemSettingsLockBar}" Focusable="False" Margin="0,0,0,14" />
 
-        <TextBlock Text="Default output folder (v4.0 logs)" Style="{StaticResource SectionTitle}" Margin="0,18,0,8" />
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseOutputCommand}" Padding="12,5" Margin="8,0,0,0" />
-            <TextBox Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default output folder" />
-        </DockPanel>
+        <!-- All of these apply to everyone: greyed out until unlocked -->
+        <StackPanel IsEnabled="{Binding Lock.Unlocked}">
+            <TextBlock Text="Default input folder (v5.1 logs)" Style="{StaticResource SectionTitle}" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseInputCommand}" Padding="12,5" Margin="8,0,0,0" />
+                <TextBox Text="{Binding InputFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default input folder" />
+            </DockPanel>
+            <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" Margin="0,8,0,0" />
+            <CheckBox Content="Leave out kV imaging (CBCT) logs" IsChecked="{Binding LeaveOutImaging}" Margin="0,6,0,0" />
 
-        <TextBlock Text="Filter and list when the app opens" Style="{StaticResource SectionTitle}" Margin="0,18,0,8" />
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <CheckBox Content="Only logs treated in" IsChecked="{Binding UsePeriod}" VerticalAlignment="Center" Margin="0,0,10,0" />
-            <ComboBox Grid.Column="1" ItemsSource="{Binding PeriodChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding PeriodDays}"
-                      MinWidth="190" IsEnabled="{Binding UsePeriod}" AutomationProperties.Name="Default period" />
-            <TextBlock Grid.Column="2" Text="from" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <StackPanel Grid.Column="3" Orientation="Horizontal" IsEnabled="{Binding UsePeriod}">
-                <wpf:TimePicker Time="{Binding PeriodFrom, Mode=TwoWay}" AutomationProperties.Name="Default period start time" />
-                <TextBlock Text="to" VerticalAlignment="Center" Margin="8,0" />
-                <wpf:TimePicker Time="{Binding PeriodTo, Mode=TwoWay}" AutomationProperties.Name="Default period end time" />
+            <TextBlock Text="Default output folder (v4.0 logs)" Style="{StaticResource SectionTitle}" Margin="0,18,0,8" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseOutputCommand}" Padding="12,5" Margin="8,0,0,0" />
+                <TextBox Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default output folder" />
+            </DockPanel>
+
+            <TextBlock Text="Filter and list when the app opens" Style="{StaticResource SectionTitle}" Margin="0,18,0,8" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <CheckBox Content="Only logs treated in" IsChecked="{Binding UsePeriod}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding PeriodChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding PeriodDays}"
+                          MinWidth="190" IsEnabled="{Binding UsePeriod}" AutomationProperties.Name="Default period" />
+                <TextBlock Grid.Column="2" Text="from" VerticalAlignment="Center" Margin="12,0,8,0" />
+                <StackPanel Grid.Column="3" Orientation="Horizontal" IsEnabled="{Binding UsePeriod}">
+                    <wpf:TimePicker Time="{Binding PeriodFrom, Mode=TwoWay}" AutomationProperties.Name="Default period start time" />
+                    <TextBlock Text="to" VerticalAlignment="Center" Margin="8,0" />
+                    <wpf:TimePicker Time="{Binding PeriodTo, Mode=TwoWay}" AutomationProperties.Name="Default period end time" />
+                </StackPanel>
+
+                <CheckBox Grid.Row="1" Content="Only at times of day between" IsChecked="{Binding UseTimeOfDay}" VerticalAlignment="Center" Margin="0,8,10,0" Grid.ColumnSpan="2" />
+                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="0,8,0,0" IsEnabled="{Binding UseTimeOfDay}">
+                    <wpf:TimePicker Time="{Binding DayFrom, Mode=TwoWay}" AutomationProperties.Name="Default time of day from" />
+                    <TextBlock Text="and" VerticalAlignment="Center" Margin="8,0" />
+                    <wpf:TimePicker Time="{Binding DayTo, Mode=TwoWay}" AutomationProperties.Name="Default time of day to" />
+                </StackPanel>
+            </Grid>
+            <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap"
+                       Text="The period runs from the start time on its first day to the end time today, e.g. Today from 00:00 to 23:59." />
+            <CheckBox Content="Replace logs already in the output folder" IsChecked="{Binding Overwrite}" Margin="0,10,0,0" />
+            <CheckBox Content="Show the logs that won't be converted" IsChecked="{Binding ShowSkipped}" Margin="0,6,0,0" />
+
+            <TextBlock Text="Logs" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
+            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
+                       Text="Everything the app does (conversions, settings, errors) is logged: one file per user, computer and day. Empty folder = the Logs folder beside the app; everyone using the app must be able to write to it." />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" ToolTip="Open the folder the log is in now" />
+                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" />
+                <TextBox Text="{Binding LogFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Log folder" ToolTip="{Binding DefaultLogFolder}" />
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock Text="Delete logs older than" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <ComboBox ItemsSource="{Binding RetentionChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding LogRetentionDays}"
+                          MinWidth="140" AutomationProperties.Name="Keep logs for" />
             </StackPanel>
+            <TextBlock Text="{Binding LogWhere, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap" />
 
-            <CheckBox Grid.Row="1" Content="Only at times of day between" IsChecked="{Binding UseTimeOfDay}" VerticalAlignment="Center" Margin="0,8,10,0" Grid.ColumnSpan="2" />
-            <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="0,8,0,0" IsEnabled="{Binding UseTimeOfDay}">
-                <wpf:TimePicker Time="{Binding DayFrom, Mode=TwoWay}" AutomationProperties.Name="Default time of day from" />
-                <TextBlock Text="and" VerticalAlignment="Center" Margin="8,0" />
-                <wpf:TimePicker Time="{Binding DayTo, Mode=TwoWay}" AutomationProperties.Name="Default time of day to" />
-            </StackPanel>
-        </Grid>
-        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap"
-                   Text="The period runs from the start time on its first day to the end time today, e.g. Today from 00:00 to 23:59." />
-        <CheckBox Content="Replace logs already in the output folder" IsChecked="{Binding Overwrite}" Margin="0,10,0,0" />
-        <CheckBox Content="Show the logs that won't be converted" IsChecked="{Binding ShowSkipped}" Margin="0,6,0,0" />
-
-        <TextBlock Text="Logs" Style="{StaticResource SectionTitle}" Margin="0,18,0,4" />
-        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8" TextWrapping="Wrap"
-                   Text="Everything the app does (conversions, settings, errors) is logged: one file per user, computer and day. Empty folder = the Logs folder beside the app; everyone using the app must be able to write to it." />
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" ToolTip="Open the folder the log is in now" />
-            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseLogFolderCommand}" Padding="12,5" Margin="8,0,0,0" />
-            <TextBox Text="{Binding LogFolder, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Log folder" ToolTip="{Binding DefaultLogFolder}" />
-        </DockPanel>
-        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <TextBlock Text="Delete logs older than" VerticalAlignment="Center" Margin="0,0,10,0" />
-            <ComboBox ItemsSource="{Binding RetentionChoices}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding LogRetentionDays}"
-                      MinWidth="140" AutomationProperties.Name="Keep logs for" />
         </StackPanel>
-        <TextBlock Text="{Binding LogWhere, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap" />
 
         <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0">
             <Run Text="Saved beside the app, so everyone using this copy of the app gets the same settings (they apply when the app opens and when you save here):" />
@@ -77,7 +83,8 @@
         </TextBlock>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Save" Click="Save_Click" Style="{DynamicResource AccentButtonStyle}" Padding="18,6" IsDefault="True" />
+            <Button Content="Save" Click="Save_Click" Style="{DynamicResource AccentButtonStyle}" Padding="18,6" IsDefault="True"
+                    IsEnabled="{Binding Lock.Unlocked}" ToolTip="Unlock to edit and save the settings" />
             <Button Content="Cancel" IsCancel="True" Padding="16,6" Margin="8,0,0,0" />
         </StackPanel>
     </StackPanel>
