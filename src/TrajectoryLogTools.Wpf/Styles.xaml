@@ -89,6 +89,18 @@
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Command="{Binding ToggleCommand}" Padding="12,5" Margin="12,0,0,0" VerticalAlignment="Center"
                             AutomationProperties.Name="{Binding ButtonText}">
+                        <!-- "Unlock to edit" is red, so unlocking is a deliberate step; "Lock" is a plain button -->
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Unlocked}" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" Margin="0,0,6,0" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding ButtonText}" VerticalAlignment="Center" />
