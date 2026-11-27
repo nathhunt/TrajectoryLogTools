@@ -382,6 +382,62 @@ namespace TrajectoryLogTools.Tests
             Assert.False(LogFinder.InTimeWindow(T(12, 0), T(22, 0), T(2, 0)));
         }
 
+        // ---- subfolders that can't be read (simulated: the tests may run as a user who can read everything) ----
+
+        static string[] TreeFails(string root, string pattern, SearchOption o) { throw new UnauthorizedAccessException("Access to the path is denied."); }
+
+        [Fact]
+        public void BinFiles_UnreadableSubfolder_IsLeftOutAndListed()
+        {
+            using (var dir = new TempDir())
+            {
+                dir.Write("top.bin", new byte[0]);
+                dir.Write(Path.Combine("a", "one.bin"), new byte[0]);
+                dir.Write(Path.Combine("a", "c", "two.bin"), new byte[0]);
+                dir.Write(Path.Combine("locked", "hidden.bin"), new byte[0]);
+                string locked = dir.File("locked");
+                Func<string, string, string[]> files = (d, p) =>
+                {
+                    if (d == locked) throw new UnauthorizedAccessException("Access to the path '" + d + "' is denied.");
+                    return Directory.GetFiles(d, p);
+                };
+                var skipped = new System.Collections.Generic.List<string>();
+                string[] found = LogFinder.BinFiles(dir.Path, true, skipped, TreeFails, files, Directory.GetDirectories);
+                Assert.Equal(new[] { "one.bin", "top.bin", "two.bin" }, found.Select(Path.GetFileName).OrderBy(x => x));
+                Assert.Single(skipped);
+                Assert.StartsWith(locked + ": ", skipped[0]);
+            }
+        }
+
+        [Fact]
+        public void BinFiles_WhenTheTreeCanBeRead_IsTheOneCall()
+        {
+            // Same result as before the fallback existed: the framework's own listing, nothing walked.
+            Func<string, string, string[]> files = (d, p) => { throw new InvalidOperationException("should not walk"); };
+            Func<string, string[]> folders = d => { throw new InvalidOperationException("should not walk"); };
+            string[] found = LogFinder.BinFiles("root", true, null, (r, p, o) => new[] { "x.bin" }, files, folders);
+            Assert.Equal(new[] { "x.bin" }, found);
+        }
+
+        [Fact]
+        public void BinFiles_UnreadableFolderChosen_StillFails()
+        {
+            Func<string, string, string[]> files = (d, p) => { throw new UnauthorizedAccessException("denied"); };
+            Assert.Throws<UnauthorizedAccessException>(() => LogFinder.BinFiles("root", true, null, TreeFails, files, d => new string[0]));
+            Assert.Throws<UnauthorizedAccessException>(() => LogFinder.BinFiles("root", false, null, TreeFails, files, d => new string[0]));
+        }
+
+        [Fact]
+        public void BinFiles_LinkLoop_StopsAtMaxDepth()
+        {
+            // A folder that contains itself (a link loop) is walked only MaxDepth levels deep.
+            int listed = 0;
+            Func<string, string, string[]> files = (d, p) => { listed++; return new[] { d + "/f.bin" }; };
+            string[] found = LogFinder.BinFiles("r", true, null, TreeFails, files, d => new[] { d + "/loop" });
+            Assert.Equal(LogFinder.MaxDepth + 1, listed);   // the folder itself, then MaxDepth levels
+            Assert.Equal(LogFinder.MaxDepth + 1, found.Length);
+        }
+
         [Fact]
         public void Find_ByTimeOfDay()
         {

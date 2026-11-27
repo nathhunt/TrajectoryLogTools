@@ -34,6 +34,8 @@ namespace TrajectoryLogTools.Core
                 int id = log.AxisIds[a];
                 if (id == TrajectoryLog.TimeAxisId) continue;
                 if (id == 42) { cols.Add("ControlPoint"); continue; }
+                // Same rule as the rows below: an axis with no data at all is left out (MLC included).
+                if (!hasData[a]) continue;
                 if (id == 50)
                 {
                     if (opt.NoMlc) continue;
@@ -41,7 +43,6 @@ namespace TrajectoryLogTools.Core
                         AddPair(cols, MlcColumn(k, log.SamplesPerAxis[a]) + "_cm", both);
                     continue;
                 }
-                if (!hasData[a]) continue;
                 string unit = TrajectoryLog.AxisUnit(id);
                 string name = TrajectoryLog.AxisName(id) + (unit.Length > 0 && unit != "MU" ? "_" + unit : "");
                 if (log.SamplesPerAxis[a] == 1) AddPair(cols, name, both);
@@ -114,7 +115,7 @@ namespace TrajectoryLogTools.Core
         {
             byte[] b = log.Raw;
             var sb = new StringBuilder(log.NumSnapshots * log.FloatsPerSnapshot * 12 + 8192);
-            Action<string[]> row = cells => sb.Append(string.Join(",", cells.Select(CsvCell))).Append("\r\n");
+            Action<string[]> row = cells => sb.Append(string.Join(",", cells.Select(Csv.Field))).Append("\r\n");
             Action<int, string, string> field = (offset, name, value) => row(new[] { Inv(offset), name, value });
 
             row(new[] { "TRAJECTORY LOG FULL DUMP" });
@@ -238,12 +239,6 @@ namespace TrajectoryLogTools.Core
             var sb = new StringBuilder(len * 3);
             for (int i = 0; i < len; i++) { if (i > 0) sb.Append(' '); sb.Append(b[p + i].ToString("X2", CultureInfo.InvariantCulture)); }
             return sb.ToString();
-        }
-
-        static string CsvCell(string s)
-        {
-            if (s.IndexOfAny(new[] { ',', '"', '\r', '\n' }) < 0) return s;
-            return "\"" + s.Replace("\"", "\"\"") + "\"";
         }
 
         static void AddPair(List<string> cols, string name, bool both)

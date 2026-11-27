@@ -264,9 +264,9 @@ namespace TrajectoryLogTools.App.ViewModels
             if (compared.Count > 0)
             {
                 DiffStat leaves = r.Leaves, gantry = r.Gantry;
-                Cards.Add(Card("MLC, actual − plan", leaves.Max.ToString("F2", Inv) + " mm max",
+                Cards.Add(Fact.WithTolerance("MLC, actual − plan", leaves.Max.ToString("F2", Inv) + " mm max",
                                string.Format(Inv, "RMS {0:F3} mm · 95% under {1:F3} mm", leaves.Rms, leaves.P95), leaves.Max, settings.MlcToleranceMm, "mm"));
-                Cards.Add(Card("Gantry, actual − plan", gantry.Max.ToString("F2", Inv) + "° max", "RMS " + gantry.Rms.ToString("F3", Inv) + "°", gantry.Max, settings.GantryToleranceDeg, "°"));
+                Cards.Add(Fact.WithTolerance("Gantry, actual − plan", gantry.Max.ToString("F2", Inv) + "° max", "RMS " + gantry.Rms.ToString("F3", Inv) + "°", gantry.Max, settings.GantryToleranceDeg, "°"));
                 if (r.AnyJaws)   // TrueBeam: the jaws too (Halcyon / Ethos have none)
                 {
                     DiffStat jaws = r.Jaws;
@@ -274,7 +274,7 @@ namespace TrajectoryLogTools.App.ViewModels
                 }
                 // one log: the MU of what it covers; several: the plan's total against all delivered
                 double planned = several ? r.MuPlanTotal : compared.Sum(f => f.MuPlanCovered), delivered = several ? r.MuDeliveredTotal : compared.Sum(f => f.MuDelivered);
-                Cards.Add(Card("MU, delivered − plan", (delivered - planned).ToString("+0.000;−0.000;0.000", Inv) + " MU",
+                Cards.Add(Fact.WithTolerance("MU, delivered − plan", (delivered - planned).ToString("+0.000;−0.000;0.000", Inv) + " MU",
                                string.Format(Inv, "{0:F2} of {1:F2} MU{2}", delivered, planned, several ? " (plan total)" : ""), Math.Abs(delivered - planned), settings.MuTolerance, " MU"));
                 Cards.Add(new Fact
                 {
@@ -322,18 +322,6 @@ namespace TrajectoryLogTools.App.ViewModels
             OnPropertyChanged(nameof(FieldsHeader));
             OnPropertyChanged(nameof(ShowFieldPicker));
             Report = PlanComparison.Report(r);
-        }
-
-        static Fact Card(string label, string value, string detail, double max, double? tolerance, string unit)
-        {
-            var f = new Fact { Label = label, Value = value, Detail = detail };
-            if (tolerance.HasValue)
-            {
-                bool within = max <= tolerance.Value;
-                f.Kind = within ? "ok" : "critical";
-                f.Detail = (within ? "Within " : "Over ") + tolerance.Value.ToString("0.###", Inv) + unit + " · " + detail;
-            }
-            return f;
         }
 
         [RelayCommand]

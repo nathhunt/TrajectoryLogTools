@@ -30,18 +30,7 @@ namespace TrajectoryLogTools.Core
         public bool DateFromName;
 
         /// <summary>Value of a metadata line "Key: value" / "Key:&lt;tab&gt;value" / "Key=value" (case-insensitive key), or null.</summary>
-        public string Meta(string key)
-        {
-            foreach (string raw in MetaDataText.Replace("\r\n", "\n").Split('\n'))
-            {
-                int i = raw.IndexOfAny(new[] { ':', '=' });
-                if (i <= 0) continue;
-                if (!string.Equals(raw.Substring(0, i).Trim(), key, StringComparison.OrdinalIgnoreCase)) continue;
-                string v = raw.Substring(i + 1).Trim();
-                return v.Length > 0 ? v : null;
-            }
-            return null;
-        }
+        public string Meta(string key) { return MetaData.Get(MetaDataText, key); }
 
         /// <summary>Plan name from the metadata, else null.</summary>
         public string PlanName { get { return First(MetaData.PlanNameKeys); } }

@@ -160,6 +160,17 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
+        public void MaxDiffs_NoteOnlyWhenSomeWereNotListed()
+        {
+            var b = LogBuilder.V51(5);
+            b.Value = (s, id, k, act) => id == 0 && !act && s < 3 ? -5f : LogBuilder.DefaultValue(s, id, k, act);
+            var r = Compare(LogBuilder.V51(5), b, 0, false, 3);
+            Assert.Equal(3, r.DifferenceCount);            // exactly as many as may be listed: all of them are
+            Assert.Equal(1 + 3, r.Differences.Count);
+            Assert.DoesNotContain(r.Info, i => i.Contains("--max-diffs"));
+        }
+
+        [Fact]
         public void MaxDiffsZero_ListsSummaryOnly()
         {
             var b = WithValue(LogBuilder.V51(), 0, 0, 0, true, -1f);
@@ -298,6 +309,10 @@ namespace TrajectoryLogTools.Tests
             Assert.True(coll.MaxDifference < 1000);                              // the marker isn't a difference size
             Assert.Equal("no value", coll.Examples[0].B);
             Assert.True(double.IsNaN(coll.Examples[0].Difference));
+            // The printed summary agrees: the marker is counted apart, not shown as a 3.4E+38 difference.
+            string line = r.Differences.Single(d => d.StartsWith("CollRtn:"));
+            Assert.DoesNotContain("E+38", line);
+            Assert.EndsWith(", 1 of them \"no value\" in one log only", line);
         }
     }
 }
