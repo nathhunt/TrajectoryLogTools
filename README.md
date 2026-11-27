@@ -237,6 +237,11 @@ app** (or the folder set in Settings), so all the logs of a deployed copy are in
   own folder can stay read-only. If the folder can't be written to, the log goes to the user's
   `%LocalAppData%\TrajectoryLogTools\Logs` instead and Settings says so. Logs can hold patient IDs
   (in file names and messages), and in a shared folder everyone with access can read them.
+* **Settings for everyone are locked:** settings that apply to everyone using a copy of an app
+  (all of the converter's Settings; the main app's Logs section) are greyed out until **Unlock to
+  edit** is pressed, so they aren't changed by accident. Unlocking is logged, and says at once if
+  this user can't save them (the app's folder isn't writable for them). The converter's Save works
+  only while unlocked; the main app's personal settings (theme, angles, tolerances) are never locked.
 * **Settings:** the converter keeps the log folder and retention in its settings file; the main
   app in `TrajectoryLogTools.settings.json` beside it (for everyone; the rest of its settings are
   per user). *Open* in Settings opens the folder.
