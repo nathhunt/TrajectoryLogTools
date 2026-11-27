@@ -217,6 +217,10 @@ namespace TrajectoryLogTools.Analysis
             bool[] fa = Covered(a, fineAll), fb = Covered(b, fineAll);
             bool[] fineOk = fa.Select((v, i) => v && fb[i]).ToArray();
             double[] fine = Where(fineAll, fineOk);
+            // (Without any, the statistics below have nothing to work on: Max() of nothing.)
+            if (fine.Length == 0)
+                throw new InvalidDataException("The two deliveries have no control points in common with the beam on, so there is nothing to compare " +
+                                               "(e.g. one delivery stopped before the other started, or they are different fields).");
 
             for (int k = 0; k < Axes.GetLength(0); k++)
             {
@@ -311,6 +315,7 @@ namespace TrajectoryLogTools.Analysis
 
         static LogSummary Summarise(DeliveryRecord d, string[] leaves, string label, bool dropped)
         {
+            if (d.RowCount == 0) throw new InvalidDataException("The log has no snapshots: nothing was recorded, so there is no delivery to summarise.");
             var s = new LogSummary { Label = label, DroppedFirstSnapshot = dropped };
             s.MuPlanned = d.Column("MU_Expected").Max();
             s.MuDelivered = d.Column("MU_Actual").Max();

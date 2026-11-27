@@ -335,6 +335,7 @@ The first build downloads packages from nuget.org. `global.json` asks for a .NET
 | Build | **Build > Build Solution** | **Ctrl+Shift+B** | `dotnet build TrajectoryLogTools.sln` |
 | Run / debug the GUI | **F5** (TrajectoryLogTools.App is the startup project) | **F5** > *GUI* | `dotnet run --project src/TrajectoryLogTools.App` |
 | Tests | **Test > Run All Tests** | **Run Task** > *test* | `dotnet test tests/TrajectoryLogTools.Tests` |
+| Tests with coverage | | **Run Task** > *test with coverage* | `dotnet test tests/TrajectoryLogTools.Tests --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings` |
 | Publish (deploy folder) | Right-click **TrajectoryLogTools.App > Publish** > *Deploy* > **Publish** | **Run Task** > *publish* | `dotnet publish src/TrajectoryLogTools.App -p:PublishProfile=Deploy` or `scripts\publish.ps1` |
 
 Publishing writes two separate folders. Each is self-contained (its own copy of the .NET 10
@@ -371,8 +372,7 @@ and golden-file regeneration. It also has debug configurations (GUI, GUI pre-fil
 Eclipse, and the CLI commands). In Visual Studio, `Properties/launchSettings.json` adds a
 pre-filled GUI profile.
 
-The GUI builds on Linux and macOS too (`EnableWindowsTargeting`), so CI can compile it, but it
-runs on Windows only. The libraries, the CLI and the tests run on any OS.
+The GUI builds on Linux and macOS too (`EnableWindowsTargeting`), but it runs on Windows only. The libraries, the CLI and the tests run on any OS.
 
 ## Launching from Eclipse
 

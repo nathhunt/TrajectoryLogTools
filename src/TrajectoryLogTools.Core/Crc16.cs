@@ -10,6 +10,11 @@ using System.Text.RegularExpressions;
 
 namespace TrajectoryLogTools.Core
 {
+    /// <summary>
+    /// 16-bit CCITT CRC (poly 0x1021, seed 0xFFFF) as stated in the spec. The spec does not say
+    /// whether the bit order is reflected or whether a final XOR is applied, so the variant that
+    /// reproduces the input file's CRC is detected and reused for the output.
+    /// </summary>
     public static class Crc16
     {
         public sealed class Variant

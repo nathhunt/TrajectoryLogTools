@@ -82,6 +82,8 @@ namespace TrajectoryLogTools.Core
             }
             if (opt.Serial != null)
             {
+                // Checked here as well as by Options.Parse, for callers that build Options in code (as V4Converter does).
+                if (opt.Serial.Length > 6 || opt.Serial.Any(c => c < 32 || c > 126)) throw new ArgumentException("The serial number must be up to 6 ASCII characters.");
                 Array.Clear(header, mi + 1, 6);
                 byte[] serial = Encoding.ASCII.GetBytes(opt.Serial);
                 Buffer.BlockCopy(serial, 0, header, mi + 1, serial.Length);

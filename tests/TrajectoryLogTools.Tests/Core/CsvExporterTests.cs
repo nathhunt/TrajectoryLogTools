@@ -156,6 +156,19 @@ namespace TrajectoryLogTools.Tests
         }
 
         [Fact]
+        public void MlcWithNoData_LeftOutOfHeaderAndRows()
+        {
+            // An MLC axis holding the "no value" marker in every snapshot is left out like any other
+            // such axis: the header must not list columns the rows don't have.
+            var b = LogBuilder.V51(3);
+            b.Value = (s, id, k, act) => id == 50 ? float.MaxValue : LogBuilder.DefaultValue(s, id, k, act);
+            string[][] rows = Csv(b);
+            Assert.DoesNotContain(rows[0], c => c.StartsWith("MLC"));
+            Assert.Equal("CouchRol_deg_Actual", rows[0].Last());
+            Assert.All(rows, r => Assert.Equal(rows[0].Length, r.Length));
+        }
+
+        [Fact]
         public void ActualOnly()
         {
             string[][] rows = Csv(LogBuilder.V51(2), new Options { ActualOnly = true });

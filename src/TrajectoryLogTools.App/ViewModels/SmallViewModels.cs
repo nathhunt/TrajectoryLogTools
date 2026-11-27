@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TrajectoryLogTools.Analysis;
 using TrajectoryLogTools.App.Services;
 using TrajectoryLogTools.Core;
 
@@ -63,9 +64,13 @@ namespace TrajectoryLogTools.App.ViewModels
             }
             try
             {
-                Found = LogFinder.Find(settings);
+                var unreadable = new List<string>();
+                Found = LogFinder.Find(settings, unreadable);
                 Result = Found.Count == 0 ? "No logs found." : Found.Count + (Found.Count == 1 ? " log found." : " logs found.");
                 if (Found.Count > 200) Result += " That's a lot to open at once; consider a date range.";
+                if (unreadable.Count > 0)
+                    Result += " " + unreadable.Count + (unreadable.Count == 1 ? " subfolder" : " subfolders") +
+                              " couldn't be searched (no access?), so logs in them aren't listed; the log has the details.";
             }
             catch (Exception ex)
             {
@@ -125,11 +130,7 @@ namespace TrajectoryLogTools.App.ViewModels
 
         static string Text(double? v) { return v.HasValue ? v.Value.ToString(CultureInfo.InvariantCulture) : ""; }
 
-        static double? Parse(string s)
-        {
-            double v;
-            return double.TryParse((s ?? "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v) && v > 0 ? v : (double?)null;
-        }
+        static double? Parse(string s) { return ComparisonRules.ParseTolerance(s); }
 
 
         /// <summary>Saves; returns false (with a message) if a tolerance isn't a number.</summary>

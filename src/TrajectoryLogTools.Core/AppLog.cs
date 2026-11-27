@@ -282,7 +282,8 @@ namespace TrajectoryLogTools.Core
         {
             string[] lines = (text ?? "").Replace("\r\n", "\n").Split('\n');
             var sb = new StringBuilder();
-            sb.Append(Fmt.DateTimeSeconds(DateTime.Now)).Append('.').Append(DateTime.Now.ToString("fff", System.Globalization.CultureInfo.InvariantCulture))
+            DateTime now = DateTime.Now;   // read once: seconds and milliseconds must come from the same instant
+            sb.Append(Fmt.DateTimeSeconds(now)).Append('.').Append(now.ToString("fff", System.Globalization.CultureInfo.InvariantCulture))
               .Append("  ").Append(level == Level.Info ? "INFO " : level == Level.Warn ? "WARN " : "ERROR").Append("  ").Append(lines[0]).Append(Environment.NewLine);
             for (int i = 1; i < lines.Length; i++) sb.Append("        ").Append(lines[i]).Append(Environment.NewLine);
             return sb.ToString();
@@ -387,9 +388,11 @@ namespace TrajectoryLogTools.Core
         {
             error = null;
             byte[] bytes = Encoding.UTF8.GetBytes(text);
-            lock (Gate)
+            for (int attempt = 0; ; attempt++)
             {
-                for (int attempt = 0; ; attempt++)
+                // The lock keeps this process's entries whole; it is not held while waiting below, so
+                // entries from other threads (the UI's included) aren't held up by a busy file.
+                lock (Gate)
                 {
                     try
                     {
@@ -400,7 +403,7 @@ namespace TrajectoryLogTools.Core
                     }
                     catch (IOException ex) when (attempt < 5 && !(ex is DirectoryNotFoundException) && !(ex is PathTooLongException))
                     {
-                        Thread.Sleep(200);   // busy (the same user's other copy of the app): try again
+                        // busy (the same user's other copy of the app): try again after the wait below
                     }
                     catch (Exception ex)
                     {
@@ -408,6 +411,7 @@ namespace TrajectoryLogTools.Core
                         return false;
                     }
                 }
+                Thread.Sleep(200);
             }
         }
 
